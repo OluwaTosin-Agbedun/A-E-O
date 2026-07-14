@@ -1,7 +1,8 @@
 import { Calendar, MapPin, Tag, ArrowUpRight } from 'lucide-react';
-import { EVENTS } from '../data';
+import { useCMS } from '../context/CMSContext';
 
 export default function Events() {
+  const { events } = useCMS();
   return (
     <section className="py-16 bg-paper border-b border-line" id="events">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +20,7 @@ export default function Events() {
 
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {EVENTS.map((evt) => (
+          {events.map((evt) => (
             <div 
               key={evt.id}
               className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-md transition-all flex items-start gap-5 relative group"

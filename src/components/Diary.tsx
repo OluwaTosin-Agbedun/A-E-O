@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Calendar, Tag, Layers, Landmark, Info, MapPin } from 'lucide-react';
-import { DIARY_NATIONAL, DIARY_LOCAL, DIARY_AFRICA, DIARY_OTHER } from '../data';
+import { useCMS } from '../context/CMSContext';
 import { DiaryItem } from '../types';
 
 export default function Diary() {
+  const { diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
   const [activeTab, setActiveTab] = useState<'national' | 'local' | 'africa' | 'other'>('national');
 
   const getActiveData = (): DiaryItem[] => {
     switch (activeTab) {
-      case 'national': return DIARY_NATIONAL;
-      case 'local': return DIARY_LOCAL;
-      case 'africa': return DIARY_AFRICA;
-      case 'other': return DIARY_OTHER;
+      case 'national': return diaryNat;
+      case 'local': return diaryLoc;
+      case 'africa': return diaryAfr;
+      case 'other': return diaryOth;
     }
   };
 

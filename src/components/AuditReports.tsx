@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Filter, BookOpen, Download, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { REPORTS } from '../data';
+import { useCMS } from '../context/CMSContext';
 import { Report } from '../types';
 
 interface AuditReportsProps {
@@ -8,10 +8,11 @@ interface AuditReportsProps {
 }
 
 export default function AuditReports({ onOpenReport }: AuditReportsProps) {
+  const { reports } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<'all' | 'analysis' | 'tech'>('all');
 
-  const filteredReports = REPORTS.filter((report) => {
+  const filteredReports = reports.filter((report) => {
     const matchesSearch = 
       report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       report.summary.toLowerCase().includes(searchQuery.toLowerCase());
@@ -123,11 +124,7 @@ export default function AuditReports({ onOpenReport }: AuditReportsProps) {
                 </div>
 
                 <div className="border-t border-line pt-4 mt-auto">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-mut">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      PDF · {report.size}
-                    </span>
+                  <div className="flex items-center">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
                       Read online
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -153,7 +150,10 @@ export default function AuditReports({ onOpenReport }: AuditReportsProps) {
 
         <div className="mt-12 text-center">
           <button 
-            onClick={() => alert("Connecting to the Athena Centre repository... Loading older archived reports (2019-2023).")}
+            onClick={() => {
+              window.history.pushState({}, '', '/reports-archive');
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
             className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-ink bg-paper border border-line px-5 py-3 rounded-lg hover:border-brand-blue hover:text-brand-blue transition-all cursor-pointer uppercase"
           >
             All archive audit reports &rarr;

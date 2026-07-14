@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Download, CheckCircle2, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
-import { REPORTS } from '../data';
+import { useCMS } from '../context/CMSContext';
 
 interface ReportReaderProps {
   reportId: string | null;
@@ -8,6 +8,7 @@ interface ReportReaderProps {
 }
 
 export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
+  const { reports } = useCMS();
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
@@ -22,7 +23,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
 
   if (!reportId) return null;
 
-  const report = REPORTS.find(r => r.id === reportId);
+  const report = reports.find(r => r.id === reportId);
   if (!report) return null;
 
   const handleDownloadPDF = () => {

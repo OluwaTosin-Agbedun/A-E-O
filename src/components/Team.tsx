@@ -1,7 +1,8 @@
 import { Users, Mail, Linkedin, Globe } from 'lucide-react';
-import { TEAM } from '../data';
+import { useCMS } from '../context/CMSContext';
 
 export default function Team() {
+  const { team } = useCMS();
   return (
     <section className="py-16 bg-white border-b border-line" id="team">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +20,7 @@ export default function Team() {
 
         {/* Team Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {TEAM.map((member) => (
+          {team.map((member) => (
             <div 
               key={member.id}
               className="bg-paper border border-line rounded-2xl p-6 text-center shadow-custom hover:shadow-md transition-all group hover:-translate-y-1"

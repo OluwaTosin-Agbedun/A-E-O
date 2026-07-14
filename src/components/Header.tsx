@@ -8,9 +8,29 @@ export default function Header() {
   const handleScroll = (id: string) => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleBrandClick = () => {
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -22,7 +42,7 @@ export default function Header() {
             {/* Logo/Brand */}
             <div 
               className="flex items-center gap-3 cursor-pointer" 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={handleBrandClick}
             >
               <div className="w-9 h-9 rounded bg-brand-blue flex items-center justify-center font-display font-bold text-lg text-white tracking-tighter">
                 A
