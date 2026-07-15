@@ -107,13 +107,7 @@ export default function Diary() {
           ))}
         </div>
 
-        {/* Footnote */}
-        <div className="mt-4 flex items-start gap-2 text-xs text-mut max-w-2xl bg-paper p-3 rounded-lg border border-line">
-          <Info className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" />
-          <span>
-            Due to the recent Supreme Court judgment on financial autonomy, state local government polls are experiencing fluid schedules. Athena continuously synchronizes with individual State Independent Electoral Commissions (SIECs).
-          </span>
-        </div>
+        {/* Footnote removed */}
 
       </div>
     </section>

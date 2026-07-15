@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig } from '../types';
+import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem } from '../types';
 import { 
   REPORTS as initialReports, 
   DIARY_NATIONAL as initialDiaryNat, 
@@ -126,6 +126,7 @@ interface CMSContextType {
   diaryAfr: DiaryItem[];
   diaryOth: DiaryItem[];
   events: EventItem[];
+  announcements: AnnouncementItem[];
   team: TeamMember[];
   weekly: WeeklyIssue[];
   heroConfig: HeroConfig;
@@ -140,6 +141,9 @@ interface CMSContextType {
   
   saveEvent: (event: EventItem) => void;
   deleteEvent: (id: string) => void;
+
+  saveAnnouncement: (announcement: AnnouncementItem) => void;
+  deleteAnnouncement: (id: string) => void;
   
   saveTeamMember: (member: TeamMember) => void;
   deleteTeamMember: (id: string) => void;
@@ -184,6 +188,11 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<EventItem[]>(() => {
     const saved = localStorage.getItem('aeo_events');
     return saved ? JSON.parse(saved) : initialEvents;
+  });
+
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(() => {
+    const saved = localStorage.getItem('aeo_announcements');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
@@ -238,6 +247,10 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('aeo_events', JSON.stringify(events));
   }, [events]);
+
+  useEffect(() => {
+    localStorage.setItem('aeo_announcements', JSON.stringify(announcements));
+  }, [announcements]);
 
   useEffect(() => {
     localStorage.setItem('aeo_team', JSON.stringify(team));
@@ -299,6 +312,20 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     setEvents(prev => prev.filter(e => e.id !== id));
   };
 
+  const saveAnnouncement = (announcement: AnnouncementItem) => {
+    setAnnouncements(prev => {
+      const exists = prev.some(a => a.id === announcement.id);
+      if (exists) {
+        return prev.map(a => a.id === announcement.id ? announcement : a);
+      }
+      return [...prev, announcement];
+    });
+  };
+
+  const deleteAnnouncement = (id: string) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
   const saveTeamMember = (member: TeamMember) => {
     setTeam(prev => {
       const exists = prev.some(t => t.id === member.id);
@@ -342,6 +369,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('aeo_diary_afr');
     localStorage.removeItem('aeo_diary_oth');
     localStorage.removeItem('aeo_events');
+    localStorage.removeItem('aeo_announcements');
     localStorage.removeItem('aeo_team');
     localStorage.removeItem('aeo_weekly');
     localStorage.removeItem('aeo_hero');
@@ -353,6 +381,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     setDiaryAfr(initialDiaryAfr);
     setDiaryOth(initialDiaryOth);
     setEvents(initialEvents);
+    setAnnouncements([]);
     setTeam(initialTeam);
     setWeekly(initialWeekly);
     setHeroConfig(INITIAL_HERO_CONFIG);
@@ -367,6 +396,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       diaryAfr,
       diaryOth,
       events,
+      announcements,
       team,
       weekly,
       heroConfig,
@@ -377,6 +407,8 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       deleteDiaryItem,
       saveEvent,
       deleteEvent,
+      saveAnnouncement,
+      deleteAnnouncement,
       saveTeamMember,
       deleteTeamMember,
       saveWeeklyIssue,

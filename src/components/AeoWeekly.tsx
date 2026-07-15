@@ -65,7 +65,7 @@ export default function AeoWeekly({ onSelectIssue }: AeoWeeklyProps) {
                     }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue font-mono cursor-pointer hover:underline"
                   >
-                    <span>Read online</span>
+                    <span>Read more</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

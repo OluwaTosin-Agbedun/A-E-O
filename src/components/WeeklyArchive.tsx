@@ -151,7 +151,7 @@ export default function WeeklyArchive() {
 
                   <div className="mt-6 pt-4 border-t border-line flex items-center">
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
-                      Read online
+                      Read more
                       <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>

@@ -17,8 +17,6 @@ export default function Stats() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-12 relative z-10">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {statsConfig.map((stat, idx) => {
-          const IconComponent = iconMap[stat.iconName] || Shield;
-          
           const cardStyle: React.CSSProperties = {};
           let cardClass = "text-white rounded-2xl p-5 sm:p-6 shadow-custom transform hover:-translate-y-1 transition-all cursor-pointer relative group overflow-hidden";
           
@@ -37,20 +35,12 @@ export default function Stats() {
               className={cardClass}
               style={cardStyle}
             >
-              {/* Background pattern */}
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <IconComponent className="w-5 h-5 text-white" />
-              </div>
-
               <div className="flex items-center justify-between mb-4">
                 <span 
                   className={`font-semibold tracking-wider uppercase ${stat.titleFontFamily || 'font-mono'} ${stat.titleFontSize || 'text-xs'}`}
                   style={{ color: stat.titleColor || 'rgba(255,255,255,0.8)' }}
                 >
                   {stat.title}
-                </span>
-                <span className="p-1.5 bg-white/10 rounded-lg">
-                  <IconComponent className="w-5 h-5 text-white" />
                 </span>
               </div>
 

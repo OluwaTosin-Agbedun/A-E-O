@@ -28,9 +28,7 @@ export default function Footer() {
             <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
               An independent, non-partisan research initiatives platform auditing election data benchmarks and measuring overall democratic health indicators across Nigeria and regional partner nations.
             </p>
-            <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded inline-block">
-              Institutional Redesign Series
-            </div>
+            {/* Removed Institutional Redesign Series badge */}
           </div>
 
           {/* Column 2: Explore Navigation */}
@@ -39,16 +37,6 @@ export default function Footer() {
               Explore
             </h4>
             <ul className="space-y-2 text-xs">
-              <li>
-                <button onClick={() => handleScroll('ehii')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
-                  EHII Index
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleScroll('plm')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
-                  Landscape Monitor
-                </button>
-              </li>
               <li>
                 <button onClick={() => handleScroll('reports')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
                   Audit Reports
@@ -127,7 +115,7 @@ export default function Footer() {
             </span>
           </div>
           <div className="text-center sm:text-right text-slate-400 font-bold">
-            Anchored to primary documents · never to rumour.
+            {/* Tagline removed */}
           </div>
         </div>
 

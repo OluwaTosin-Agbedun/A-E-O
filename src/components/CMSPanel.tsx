@@ -1,10 +1,12 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { 
   X, Database, Edit3, Trash2, Plus, Save, RotateCcw, 
-  BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight 
+  BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight, LogOut, Bell, Search, Loader2
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig } from '../types';
+import { auth, db } from '../lib/firebase';
+import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem } from '../types';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -13,7 +15,7 @@ interface CMSPanelProps {
   onNavigateHome?: () => void;
 }
 
-type TabType = 'reports' | 'diary' | 'weekly' | 'events' | 'team' | 'hero_stats';
+type TabType = 'reports' | 'diary' | 'weekly' | 'events' | 'announcements' | 'team' | 'hero_stats' | 'subscribers';
 
 export default function CMSPanel({ 
   isOpen = false, 
@@ -22,9 +24,10 @@ export default function CMSPanel({
   onNavigateHome = () => {} 
 }: CMSPanelProps) {
   const {
-    reports, diaryNat, diaryLoc, diaryAfr, diaryOth, events, team, weekly,
+    reports, diaryNat, diaryLoc, diaryAfr, diaryOth, events, announcements, team, weekly,
     heroConfig, statsConfig,
     saveReport, deleteReport, saveDiaryItem, deleteDiaryItem, saveEvent, deleteEvent,
+    saveAnnouncement, deleteAnnouncement,
     saveTeamMember, deleteTeamMember, saveWeeklyIssue, deleteWeeklyIssue,
     saveHeroConfig, saveStatsConfig, resetAllData
   } = useCMS();
@@ -38,6 +41,11 @@ export default function CMSPanel({
   const [localStats, setLocalStats] = useState<StatItemConfig[]>(statsConfig);
   const [expandedStatStyles, setExpandedStatStyles] = useState<number | null>(null);
 
+  // Subscribers states
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subSearch, setSubSearch] = useState('');
+
   // Sync local states if the context gets reset or updated
   useEffect(() => {
     setLocalHero(heroConfig);
@@ -46,6 +54,26 @@ export default function CMSPanel({
   useEffect(() => {
     setLocalStats(statsConfig);
   }, [statsConfig]);
+
+  // Real-time Firestore subscribers sync
+  useEffect(() => {
+    if (activeTab === 'subscribers') {
+      setSubLoading(true);
+      const q = query(collection(db, 'subscribers'), orderBy('subscribedAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const list: any[] = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setSubscribers(list);
+        setSubLoading(false);
+      }, (error) => {
+        console.error("Error listening to subscribers:", error);
+        setSubLoading(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [activeTab]);
 
   // Flash status messages
   const [statusMsg, setStatusMsg] = useState('');
@@ -73,6 +101,11 @@ export default function CMSPanel({
   // 4. Event Form
   const [eventForm, setEventForm] = useState<Partial<EventItem>>({
     id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing'
+  });
+
+  // Announcement Form
+  const [announcementForm, setAnnouncementForm] = useState<Partial<AnnouncementItem>>({
+    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press'
   });
 
   // 5. Team Member Form
@@ -211,6 +244,31 @@ export default function CMSPanel({
     showStatus(`Event "${finalEvent.title}" saved!`);
   };
 
+  const handleSaveAnnouncement = (e: FormEvent) => {
+    e.preventDefault();
+    if (!announcementForm.title || !announcementForm.month || !announcementForm.day) {
+      alert('Please fill out Title, Month, and Day.');
+      return;
+    }
+
+    const finalId = announcementForm.id || generateId();
+    const finalAnnouncement: AnnouncementItem = {
+      id: finalId,
+      month: announcementForm.month.toUpperCase(),
+      day: announcementForm.day,
+      date: announcementForm.date || `${announcementForm.day} ${announcementForm.month} 2026`,
+      title: announcementForm.title,
+      summary: announcementForm.summary || '',
+      content: announcementForm.content || '',
+      category: announcementForm.category || 'press'
+    };
+
+    saveAnnouncement(finalAnnouncement);
+    setEditingId(null);
+    setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press' });
+    showStatus(`Announcement "${finalAnnouncement.title}" saved!`);
+  };
+
   const handleSaveTeam = (e: FormEvent) => {
     e.preventDefault();
     if (!teamForm.name || !teamForm.role) {
@@ -310,13 +368,22 @@ export default function CMSPanel({
               <span>Reset Data</span>
             </button>
             {isStandalone ? (
-              <button 
-                onClick={onNavigateHome}
-                className="px-3.5 py-1.5 bg-brand-blue hover:bg-brand-blue-dark text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
-              >
-                <span>Back to Website</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => auth.signOut()}
+                  className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+                <button 
+                  onClick={onNavigateHome}
+                  className="px-3.5 py-1.5 bg-brand-blue hover:bg-brand-blue-dark text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+                >
+                  <span>Back to Website</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ) : (
               <button 
                 onClick={onClose}
@@ -375,6 +442,15 @@ export default function CMSPanel({
             <span>Events ({events.length})</span>
           </button>
           <button
+            onClick={() => { setActiveTab('announcements'); setEditingId(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'announcements' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span>Announcements ({announcements.length})</span>
+          </button>
+          <button
             onClick={() => { setActiveTab('team'); setEditingId(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'team' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
@@ -391,6 +467,15 @@ export default function CMSPanel({
           >
             <Database className="w-3.5 h-3.5 text-brand-purple" />
             <span className="font-bold">Hero & Stats (Visual CMS)</span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('subscribers'); setEditingId(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border border-brand-blue/20 ${
+              activeTab === 'subscribers' ? 'bg-brand-blue text-white' : 'hover:bg-line text-brand-blue'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-brand-blue" />
+            <span className="font-bold">Subscribers ({subscribers.length})</span>
           </button>
         </div>
 
@@ -1025,6 +1110,152 @@ export default function CMSPanel({
                     </div>
                   ))}
                 </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ANNOUNCEMENTS TAB */}
+          {activeTab === 'announcements' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Announcement Editor */}
+              <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
+                <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
+                  <Plus className="w-4.5 h-4.5 text-brand-blue" />
+                  <span>{editingId ? 'Edit Announcement' : 'Create Announcement'}</span>
+                </h3>
+
+                <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Month string</label>
+                      <input 
+                        type="text" 
+                        value={announcementForm.month} 
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, month: e.target.value })}
+                        placeholder="E.g., JUL"
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Day string</label>
+                      <input 
+                        type="text" 
+                        value={announcementForm.day} 
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, day: e.target.value })}
+                        placeholder="E.g., 15"
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Category</label>
+                      <select
+                        value={announcementForm.category}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, category: e.target.value as any })}
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                      >
+                        <option value="press">Press Release</option>
+                        <option value="bulletin">Official Bulletin</option>
+                        <option value="statement">Public Statement</option>
+                        <option value="alert">Security/Audit Alert</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
+                    <input 
+                      type="text" 
+                      value={announcementForm.date} 
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                      placeholder="E.g., 15 July 2026"
+                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Announcement Title</label>
+                    <input 
+                      type="text" 
+                      value={announcementForm.title} 
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                      placeholder="E.g., Official Statement on Osun Result Portal Upload Integrity"
+                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Summary / Teaser</label>
+                    <textarea 
+                      value={announcementForm.summary} 
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
+                      placeholder="E.g., AEO outlines the 4 critical protocols needed to guarantee live transmission audits."
+                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Optional Markdown/Text)</label>
+                    <textarea 
+                      value={announcementForm.content} 
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                      placeholder="E.g., Full detailed text of the announcement or statement."
+                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-32 resize-y font-mono"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Announcement</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Announcement Catalog */}
+              <div className="lg:col-span-5 space-y-3">
+                <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Announcements Catalog</h3>
+                {announcements.length === 0 ? (
+                  <div className="p-6 border border-dashed border-line rounded-xl text-center">
+                    <p className="text-xs text-mut font-mono">No announcements configured yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {announcements.map(ann => (
+                      <div key={ann.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs">
+                        <div>
+                          <span className="text-[10px] font-mono text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase font-bold inline-block mb-1">
+                            {ann.category}
+                          </span>
+                          <span className="text-[10px] font-mono text-mut block">{ann.date}</span>
+                          <h4 className="font-semibold text-xs text-ink leading-snug mt-1">{ann.title}</h4>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingId(ann.id);
+                              setAnnouncementForm(ann);
+                            }}
+                            className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete announcement "${ann.title}"?`)) deleteAnnouncement(ann.id);
+                            }}
+                            className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1897,6 +2128,118 @@ export default function CMSPanel({
                 </button>
               </div>
 
+            </div>
+          )}
+
+          {/* SUBSCRIBERS TAB */}
+          {activeTab === 'subscribers' && (
+            <div className="space-y-6">
+              {/* Header Info */}
+              <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-2xl p-4 flex items-start gap-3.5">
+                <Users className="w-5 h-5 text-brand-blue shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="font-display font-bold text-xs text-brand-blue uppercase tracking-wider">Subscribers Database</h4>
+                  <p className="text-xs text-ink/80 leading-relaxed">
+                    This table displays all verified professional subscriptions received through the <strong>AEO update widgets</strong>.
+                    Subscribers are synced in real-time with the secure cloud Firestore database.
+                  </p>
+                </div>
+              </div>
+
+              {/* Controls bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-paper p-4 border border-line rounded-xl">
+                <div className="relative flex-grow max-w-md">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-mut" />
+                  <input
+                    type="text"
+                    placeholder="Search subscribers by email..."
+                    value={subSearch}
+                    onChange={(e) => setSubSearch(e.target.value)}
+                    className="w-full bg-white border border-line rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                  />
+                </div>
+                <div className="text-xs text-ink2 font-mono font-semibold self-center">
+                  Total Subscribers: {subscribers.length}
+                </div>
+              </div>
+
+              {/* Table / List of subscribers */}
+              <div className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm">
+                {subLoading ? (
+                  <div className="p-12 text-center text-sm font-mono text-mut flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-brand-blue" />
+                    <span>Loading secure database sync...</span>
+                  </div>
+                ) : subscribers.length === 0 ? (
+                  <div className="p-12 text-center text-sm text-mut leading-relaxed">
+                    No active subscribers found in this region database.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-paper border-b border-line text-[10px] font-mono font-bold text-mut uppercase tracking-wider">
+                          <th className="px-6 py-4">Email Address</th>
+                          <th className="px-6 py-4">Selected Notification Channels</th>
+                          <th className="px-6 py-4">Subscribed Date</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line text-xs">
+                        {subscribers
+                          .filter(sub => sub.email?.toLowerCase().includes(subSearch.toLowerCase()))
+                          .map((sub) => (
+                            <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4 font-semibold text-ink font-mono">{sub.email}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {sub.channels && Array.isArray(sub.channels) ? (
+                                    sub.channels.map((chan: string, i: number) => (
+                                      <span key={i} className="px-2 py-0.5 rounded bg-blue-50 text-brand-blue text-[10px] font-semibold border border-blue-100">
+                                        {chan}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-mut italic">No channels</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-mut font-mono">
+                                {sub.subscribedAt ? new Date(sub.subscribedAt).toLocaleString() : 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Are you sure you want to remove ${sub.email} from subscribers?`)) {
+                                      try {
+                                        await deleteDoc(doc(db, 'subscribers', sub.id));
+                                        showStatus('Subscriber removed from database.');
+                                      } catch (err) {
+                                        console.error(err);
+                                        alert('Failed to delete subscriber.');
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 hover:bg-rose-50 text-mut hover:text-rose-600 rounded-lg transition-colors cursor-pointer inline-flex items-center"
+                                  title="Remove Subscriber"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        {subscribers.filter(sub => sub.email?.toLowerCase().includes(subSearch.toLowerCase())).length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-6 py-8 text-center text-mut italic">
+                              No subscribers match your search term.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

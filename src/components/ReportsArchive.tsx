@@ -144,7 +144,7 @@ export default function ReportsArchive() {
                   <div className="border-t border-line pt-4 mt-auto">
                     <div className="flex items-center">
                       <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
-                        Read online
+                        Read more
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>

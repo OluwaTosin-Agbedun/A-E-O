@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "subscriber": {
+      "title": "Subscriber",
+      "description": "An email subscriber for analytical updates and notifications",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's subscriber email address",
+          "maxLength": 128
+        },
+        "channels": {
+          "type": "array",
+          "description": "Notification channels selected by the user"
+        },
+        "subscribedAt": {
+          "type": "string",
+          "description": "Timestamp of the subscription"
+        }
+      },
+      "required": ["email", "channels", "subscribedAt"]
+    }
+  },
+  "firestore": {
+    "/subscribers/{subscriberId}": {
+      "schema": "subscriber",
+      "description": "List of active email subscribers"
+    }
+  }
+}

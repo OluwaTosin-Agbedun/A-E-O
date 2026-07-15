@@ -74,10 +74,6 @@ export default function Hero() {
           
           {/* Main Hero Copy */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full text-xs font-mono font-semibold tracking-wider text-blue-200 uppercase">
-              <span className="w-2 h-2 rounded-full bg-brand-blue animate-ping"></span>
-              {heroConfig.badgeText}
-            </div>
             
             <h1 
               className={`${heroConfig.titleFontFamily || 'font-display'} ${heroConfig.titleFontSize || 'text-4xl sm:text-5xl lg:text-6xl'} font-bold tracking-tight leading-none`}

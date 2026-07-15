@@ -1,4 +1,4 @@
-import { Users, Mail, Linkedin, Globe } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 
 export default function Team() {
@@ -46,21 +46,6 @@ export default function Team() {
                   title="Secure Mail"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                </button>
-                <a 
-                  href="#team"
-                  onClick={(e) => { e.preventDefault(); alert("Linking to official LinkedIn profile validation pipeline."); }}
-                  className="p-1.5 bg-white rounded-lg text-mut hover:text-brand-blue hover:bg-white shadow-sm border border-line transition-colors"
-                  title="LinkedIn"
-                >
-                  <Linkedin className="w-3.5 h-3.5" />
-                </a>
-                <button 
-                  onClick={() => alert(`Reading research publications by ${member.name}.`)}
-                  className="p-1.5 bg-white rounded-lg text-mut hover:text-brand-purple hover:bg-white shadow-sm border border-line transition-colors cursor-pointer"
-                  title="Scholarly bio"
-                >
-                  <Globe className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

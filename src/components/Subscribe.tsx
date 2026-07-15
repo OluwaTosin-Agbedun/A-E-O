@@ -1,5 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { Mail, Check, AlertCircle, Sparkles, Send } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function Subscribe() {
   const [email, setEmail] = useState('');
@@ -24,7 +26,7 @@ export default function Subscribe() {
     }
   };
 
-  const handleSubscribe = (e: FormEvent) => {
+  const handleSubscribe = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -44,13 +46,24 @@ export default function Subscribe() {
       return;
     }
 
-    // Success simulation
-    setSuccess(true);
-    setTimeout(() => {
-      // Clear states after showing success
-      setEmail('');
-      setSuccess(false);
-    }, 5000);
+    try {
+      const subscriberId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+      const docRef = doc(db, 'subscribers', subscriberId);
+      await setDoc(docRef, {
+        email: email.trim().toLowerCase(),
+        channels: selectedChannels,
+        subscribedAt: new Date().toISOString()
+      });
+
+      setSuccess(true);
+      setTimeout(() => {
+        setEmail('');
+        setSuccess(false);
+      }, 5000);
+    } catch (err: any) {
+      console.error('Subscription error:', err);
+      setError('Failed to subscribe. Please try again.');
+    }
   };
 
   return (

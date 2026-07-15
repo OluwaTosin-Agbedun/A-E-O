@@ -1,6 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
+import { db } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface WeeklyReaderProps {
   weeklyId: string | null;
@@ -108,14 +110,29 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
   const articleDetails = getFullContent(issue.id);
 
-  const handleSubscribe = (e: FormEvent) => {
+  const handleSubscribe = async (e: FormEvent) => {
     e.preventDefault();
+    setSubError('');
+    
     if (!subEmail || !subEmail.includes('@')) {
       setSubError('Please enter a valid email address.');
       return;
     }
-    setIsSubscribed(true);
-    setSubError('');
+
+    try {
+      const subscriberId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+      const docRef = doc(db, 'subscribers', subscriberId);
+      await setDoc(docRef, {
+        email: subEmail.trim().toLowerCase(),
+        channels: ['AEO Weekly'],
+        subscribedAt: new Date().toISOString()
+      });
+
+      setIsSubscribed(true);
+    } catch (err: any) {
+      console.error('Weekly Reader Subscription error:', err);
+      setSubError('Failed to subscribe. Please try again.');
+    }
   };
 
   const handleShare = () => {

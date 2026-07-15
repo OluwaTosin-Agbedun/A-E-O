@@ -34,6 +34,13 @@ export default function Header() {
     }
   };
 
+  const navigateTo = (to: string) => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+    window.history.pushState({}, '', to);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <>
       <header className="sticky top-0 z-40 bg-navy text-white shadow-md border-b border-white/10 transition-all">
@@ -75,13 +82,6 @@ export default function Header() {
               >
                 Diary of Election
               </a>
-              <a 
-                href="#ehii" 
-                onClick={(e) => { e.preventDefault(); handleScroll('ehii'); }}
-                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
-              >
-                EHII Index
-              </a>
 
               {/* Publications Dropdown */}
               <div 
@@ -99,21 +99,8 @@ export default function Header() {
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-0 w-80 bg-white text-ink border border-line rounded-xl shadow-custom p-2 animate-fade-in z-50">
                     <a 
-                      href="#plm" 
-                      onClick={(e) => { e.preventDefault(); handleScroll('plm'); }}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
-                    >
-                      <BookOpen className="w-5 h-5 text-brand-purple mt-0.5" />
-                      <div>
-                        <span className="block text-xs font-bold font-mono text-brand-purple uppercase tracking-wider">Landscape</span>
-                        <span className="block text-sm font-semibold">Political Landscape Monitor</span>
-                        <span className="block text-xs text-mut font-normal mt-0.5">The DCI & monthly updates on competition.</span>
-                      </div>
-                    </a>
-
-                    <a 
-                      href="#reports" 
-                      onClick={(e) => { e.preventDefault(); handleScroll('reports'); }}
+                      href="/reports-archive" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/reports-archive'); }}
                       className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
                     >
                       <FileText className="w-5 h-5 text-brand-blue mt-0.5" />
@@ -125,8 +112,8 @@ export default function Header() {
                     </a>
 
                     <a 
-                      href="#weekly" 
-                      onClick={(e) => { e.preventDefault(); handleScroll('weekly'); }}
+                      href="/weekly-archive" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/weekly-archive'); }}
                       className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
                     >
                       <Mail className="w-5 h-5 text-brand-green mt-0.5" />
@@ -138,15 +125,15 @@ export default function Header() {
                     </a>
 
                     <a 
-                      href="#events" 
-                      onClick={(e) => { e.preventDefault(); handleScroll('events'); }}
+                      href="/press-bulletins" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/press-bulletins'); }}
                       className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
                     >
                       <Bell className="w-5 h-5 text-amber-500 mt-0.5" />
                       <div>
                         <span className="block text-xs font-bold font-mono text-amber-500 uppercase tracking-wider">Announcements</span>
                         <span className="block text-sm font-semibold">Press & Bulletins</span>
-                        <span className="block text-xs text-mut font-normal mt-0.5">Upcoming events, statements, and alerts.</span>
+                        <span className="block text-xs text-mut font-normal mt-0.5">Upcoming statements, announcements, and alerts.</span>
                       </div>
                     </a>
                   </div>
@@ -154,8 +141,8 @@ export default function Header() {
               </div>
 
               <a 
-                href="#events" 
-                onClick={(e) => { e.preventDefault(); handleScroll('events'); }}
+                href="/events" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/events'); }}
                 className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
               >
                 Events
@@ -208,36 +195,29 @@ export default function Header() {
               Diary of Election
             </a>
             <a 
-              href="#ehii" 
-              onClick={(e) => { e.preventDefault(); handleScroll('ehii'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
-            >
-              EHII Index
-            </a>
-            <a 
-              href="#plm" 
-              onClick={(e) => { e.preventDefault(); handleScroll('plm'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
-            >
-              Political Landscape Monitor
-            </a>
-            <a 
-              href="#reports" 
-              onClick={(e) => { e.preventDefault(); handleScroll('reports'); }}
+              href="/reports-archive" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/reports-archive'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
               Audit Reports
             </a>
             <a 
-              href="#weekly" 
-              onClick={(e) => { e.preventDefault(); handleScroll('weekly'); }}
+              href="/weekly-archive" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/weekly-archive'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
               AEO Weekly Digest
             </a>
             <a 
-              href="#events" 
-              onClick={(e) => { e.preventDefault(); handleScroll('events'); }}
+              href="/press-bulletins" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/press-bulletins'); }}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+            >
+              Press &amp; Bulletins
+            </a>
+            <a 
+              href="/events" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/events'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
               Events

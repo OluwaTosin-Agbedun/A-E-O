@@ -113,3 +113,14 @@ export interface StatItemConfig {
   valueColor?: string; // e.g. "text-white" or custom hex
 }
 
+export interface AnnouncementItem {
+  id: string;
+  month: string;
+  day: string;
+  date: string;
+  title: string;
+  summary: string;
+  content?: string;
+  category: 'press' | 'bulletin' | 'statement' | 'alert';
+}
+
