@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { 
   signInWithEmailAndPassword, 
@@ -41,12 +41,16 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
         friendlyMessage = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
         friendlyMessage = 'Password should be at least 6 characters.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'Email/Password sign-in is not enabled in your Firebase project. Please enable Email/Password provider in the Firebase Authentication console, or sign in using Google Auth below.';
       }
       setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex flex-col justify-center bg-panel py-12 sm:px-6 lg:px-8">
@@ -60,8 +64,8 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
         </button>
 
         <div className="text-center">
-          <h2 className="mt-2 text-center text-3xl font-display font-bold tracking-tight text-ink">
-            {isSignUp ? 'Create Admin Account' : 'admin panel'}
+          <h2 className="mt-2 text-center text-3xl font-display font-bold tracking-tight text-ink uppercase">
+            AEO Admin
           </h2>
           <p className="mt-2 text-center text-xs text-ink2 max-w">
             Authorized observatory staff only. Access is logged and audited.
@@ -138,6 +142,8 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
               </button>
             </div>
           </form>
+
+
         </div>
       </div>
     </div>
