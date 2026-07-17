@@ -15,7 +15,69 @@ interface CMSPanelProps {
   onNavigateHome?: () => void;
 }
 
-type TabType = 'reports' | 'diary' | 'weekly' | 'events' | 'announcements' | 'team' | 'hero_stats' | 'subscribers';
+type TabType = 'publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers';
+
+const FileUploadField = ({ 
+  label, 
+  accept, 
+  value, 
+  onChange 
+}: { 
+  label: string; 
+  accept: string; 
+  value?: string; 
+  onChange: (base64OrUrl: string) => void;
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        onChange(e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-[10px] font-mono uppercase font-bold text-mut">{label}</label>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+        <div className="md:col-span-8 font-mono">
+          <input 
+            type="text" 
+            value={value || ''} 
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Paste URL or drag file →"
+            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+          />
+        </div>
+        <div className="md:col-span-4">
+          <label 
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]); }}
+            className={`flex items-center justify-center border border-dashed text-[10px] font-mono font-bold uppercase rounded-lg h-10 cursor-pointer transition-colors ${
+              isDragging ? 'border-brand-purple bg-purple-50 text-brand-purple' : 'border-line hover:border-mut text-mut hover:bg-slate-50'
+            }`}
+          >
+            <span>Upload File</span>
+            <input 
+              type="file" 
+              accept={accept} 
+              onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+              className="hidden" 
+            />
+          </label>
+        </div>
+      </div>
+      {value && value.startsWith('data:') && (
+        <span className="text-[9px] font-mono text-brand-green block">✓ File uploaded successfully (Base64 encoded)</span>
+      )}
+    </div>
+  );
+};
 
 export default function CMSPanel({ 
   isOpen = false, 
@@ -32,7 +94,9 @@ export default function CMSPanel({
     saveHeroConfig, saveStatsConfig, resetAllData
   } = useCMS();
 
-  const [activeTab, setActiveTab] = useState<TabType>('reports');
+  const [activeTab, setActiveTab] = useState<TabType>('publications');
+  const [selectedPubType, setSelectedPubType] = useState<'report' | 'weekly' | 'announcement'>('report');
+  const [pubFilter, setPubFilter] = useState<'all' | 'report' | 'weekly' | 'announcement'>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [diaryCategory, setDiaryCategory] = useState<'national' | 'local' | 'africa' | 'other'>('national');
   
@@ -84,7 +148,7 @@ export default function CMSPanel({
   
   // 1. Report Form
   const [reportForm, setReportForm] = useState<Partial<Report>>({
-    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: []
+    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: ''
   });
 
   // 2. Diary Form
@@ -95,7 +159,7 @@ export default function CMSPanel({
   // 3. Weekly Issue Form
   const [weeklyForm, setWeeklyForm] = useState<Partial<WeeklyIssue>>({
     id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-    author: 'Athena Observatory', readingTime: '4 min read', sections: []
+    author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
   });
 
   // 4. Event Form
@@ -105,7 +169,7 @@ export default function CMSPanel({
 
   // Announcement Form
   const [announcementForm, setAnnouncementForm] = useState<Partial<AnnouncementItem>>({
-    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press'
+    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: ''
   });
 
   // 5. Team Member Form
@@ -155,12 +219,16 @@ export default function CMSPanel({
       size: reportForm.size || '1.0 MB',
       sections: reportForm.sections && reportForm.sections.length > 0 
         ? reportForm.sections 
-        : [{ title: 'Overview', content: reportForm.summary }]
+        : [{ title: 'Overview', content: reportForm.summary }],
+      author: reportForm.author || '',
+      authorsList: reportForm.authorsList || '',
+      image: reportForm.image || '',
+      pdfUrl: reportForm.pdfUrl || ''
     };
 
     saveReport(finalReport);
     setEditingId(null);
-    setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [] });
+    setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '' });
     showStatus(`Report "${finalReport.title}" saved successfully!`);
   };
 
@@ -208,14 +276,16 @@ export default function CMSPanel({
         : [
             { title: 'Core Assessment', text: weeklyForm.summary },
             { title: 'Logistics Breakdown', text: 'This represents a live, custom edited observation sub-paragraph.' }
-          ]
+          ],
+      image: weeklyForm.image || '',
+      pdfUrl: weeklyForm.pdfUrl || ''
     };
 
     saveWeeklyIssue(finalIssue);
     setEditingId(null);
     setWeeklyForm({
       id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-      author: 'Athena Observatory', readingTime: '4 min read', sections: []
+      author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
     });
     showStatus(`Weekly briefing "${finalIssue.title}" saved!`);
   };
@@ -260,12 +330,16 @@ export default function CMSPanel({
       title: announcementForm.title,
       summary: announcementForm.summary || '',
       content: announcementForm.content || '',
-      category: announcementForm.category || 'press'
+      category: announcementForm.category || 'press',
+      author: announcementForm.author || '',
+      authorsList: announcementForm.authorsList || '',
+      image: announcementForm.image || '',
+      pdfUrl: announcementForm.pdfUrl || ''
     };
 
     saveAnnouncement(finalAnnouncement);
     setEditingId(null);
-    setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press' });
+    setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '' });
     showStatus(`Announcement "${finalAnnouncement.title}" saved!`);
   };
 
@@ -406,22 +480,13 @@ export default function CMSPanel({
         {/* Tab Selection */}
         <div className="bg-paper border-b border-line px-6 py-2 flex items-center gap-1.5 overflow-x-auto">
           <button
-            onClick={() => { setActiveTab('reports'); setEditingId(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'reports' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
+            onClick={() => { setActiveTab('publications'); setEditingId(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border border-brand-purple/25 ${
+              activeTab === 'publications' ? 'bg-navy text-white font-bold' : 'hover:bg-line text-ink2'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Audit Reports ({reports.length})</span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('weekly'); setEditingId(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'weekly' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Weekly Briefings ({weekly.length})</span>
+            <FileText className="w-3.5 h-3.5 text-brand-purple" />
+            <span>Publications ({reports.length + weekly.length + announcements.length})</span>
           </button>
           <button
             onClick={() => { setActiveTab('diary'); setEditingId(null); }}
@@ -440,15 +505,6 @@ export default function CMSPanel({
           >
             <MapPin className="w-3.5 h-3.5" />
             <span>Events ({events.length})</span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('announcements'); setEditingId(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'announcements' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
-            }`}
-          >
-            <Bell className="w-3.5 h-3.5" />
-            <span>Announcements ({announcements.length})</span>
           </button>
           <button
             onClick={() => { setActiveTab('team'); setEditingId(null); }}
@@ -482,367 +538,579 @@ export default function CMSPanel({
         {/* Tab Contents Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
-          {/* REPORTS TAB */}
-          {activeTab === 'reports' && (
+          {/* PUBLICATIONS TAB (Unified Point for all publications) */}
+          {activeTab === 'publications' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
-              {/* Report Editor Form */}
+              {/* Publication Editor Form */}
               <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                    <Plus className="w-4.5 h-4.5 text-brand-blue" />
-                    <span>{editingId ? 'Edit Audit Report' : 'Create Audit Report'}</span>
-                  </h3>
-                  {editingId && (
-                    <button 
-                      onClick={() => {
-                        setEditingId(null);
-                        setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [] });
-                      }}
-                      className="text-xs text-red-600 hover:underline font-semibold font-mono"
+                
+                {/* Header with Type selector */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
+                      <Plus className="w-4.5 h-4.5 text-brand-blue" />
+                      <span>
+                        {editingId 
+                          ? `Edit ${selectedPubType === 'report' ? 'Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}` 
+                          : `Create ${selectedPubType === 'report' ? 'Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}`
+                        }
+                      </span>
+                    </h3>
+                    {editingId && (
+                      <button 
+                        onClick={() => {
+                          setEditingId(null);
+                          setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '' });
+                          setWeeklyForm({ id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis', author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: '' });
+                          setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '' });
+                        }}
+                        className="text-xs text-red-600 hover:underline font-semibold font-mono"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Single Unified Selector for Publication Type */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publication Category / Type</label>
+                    <select 
+                      disabled={!!editingId}
+                      value={selectedPubType} 
+                      onChange={(e) => setSelectedPubType(e.target.value as any)}
+                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold font-mono focus:outline-none focus:border-brand-blue"
                     >
-                      Cancel Edit
-                    </button>
-                  )}
+                      <option value="report">Post-Election Audit / Technology Assessment Report</option>
+                      <option value="weekly">AEO Weekly Digest Bulletin</option>
+                      <option value="announcement">Official Announcement / Press Bulletin</option>
+                    </select>
+                    {editingId && (
+                      <span className="text-[9px] font-mono text-mut block mt-1">* Publication type cannot be changed while editing an existing item.</span>
+                    )}
+                  </div>
                 </div>
 
-                <form onSubmit={handleSaveReport} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Report Tag Label</label>
-                      <input 
-                        type="text" 
-                        value={reportForm.tag} 
-                        onChange={(e) => setReportForm({ ...reportForm, tag: e.target.value })}
-                        placeholder="E.g., OSUN AUDIT"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Tag Type Classification</label>
-                      <select 
-                        value={reportForm.tagType} 
-                        onChange={(e) => setReportForm({ ...reportForm, tagType: e.target.value as 'analysis' | 'tech' })}
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      >
-                        <option value="analysis">Election Analysis (Purple theme)</option>
-                        <option value="tech">Technology Assessment (Green theme)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publication Date String</label>
-                      <input 
-                        type="text" 
-                        value={reportForm.date} 
-                        onChange={(e) => setReportForm({ ...reportForm, date: e.target.value })}
-                        placeholder="E.g., Aug 2026"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">File Size Metric</label>
-                      <input 
-                        type="text" 
-                        value={reportForm.size} 
-                        onChange={(e) => setReportForm({ ...reportForm, size: e.target.value })}
-                        placeholder="E.g., 2.4 MB"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Document Title</label>
-                    <input 
-                      type="text" 
-                      value={reportForm.title} 
-                      onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
-                      placeholder="Enter specific forensic title..."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Brief Card Summary Teaser</label>
-                    <textarea 
-                      value={reportForm.summary} 
-                      onChange={(e) => setReportForm({ ...reportForm, summary: e.target.value })}
-                      placeholder="Summarize key findings to display on home feed grid cards..."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none"
-                    />
-                  </div>
-
-                  {/* Document Sections Builder */}
-                  <div className="border-t border-line pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-[11px] font-mono uppercase font-bold text-ink">Extended Article Content ({reportForm.sections?.length || 0} Chapters)</h4>
-                      <button 
-                        type="button" 
-                        onClick={addReportSection}
-                        className="text-[10px] font-mono font-bold bg-navy text-white px-2 py-1 rounded hover:bg-navy-dark cursor-pointer flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" /> Add Chapter
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
-                      {reportForm.sections?.map((sec, sIdx) => (
-                        <div key={sIdx} className="bg-white border border-line rounded-xl p-3 space-y-2 relative">
-                          <button 
-                            type="button" 
-                            onClick={() => removeReportSection(sIdx)}
-                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-mono"
-                          >
-                            Remove
-                          </button>
+                {/* Sub-form based on selection */}
+                <div className="border-t border-line pt-4">
+                  {selectedPubType === 'report' && (
+                    <form onSubmit={handleSaveReport} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Report Tag Label</label>
                           <input 
                             type="text" 
-                            value={sec.title} 
-                            onChange={(e) => updateReportSection(sIdx, 'title', e.target.value)}
-                            placeholder={`Chapter ${sIdx+1} Title`}
-                            className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
-                          />
-                          <textarea 
-                            value={sec.content} 
-                            onChange={(e) => updateReportSection(sIdx, 'content', e.target.value)}
-                            placeholder="Enter detailed forensic paragraphs here..."
-                            className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                            value={reportForm.tag} 
+                            onChange={(e) => setReportForm({ ...reportForm, tag: e.target.value })}
+                            placeholder="E.g., OSUN AUDIT"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue"
                           />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Report</span>
-                  </button>
-
-                </form>
-              </div>
-
-              {/* Reports Directory List */}
-              <div className="lg:col-span-5 space-y-3">
-                <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Reports Catalog</h3>
-                <div className="space-y-2">
-                  {reports.map(r => (
-                    <div key={r.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs">
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-mono text-brand-blue font-bold tracking-wider uppercase block">{r.tag}</span>
-                        <h4 className="font-semibold text-xs text-ink leading-snug">{r.title}</h4>
-                        <span className="text-[10px] text-mut font-mono">{r.date} · {r.size}</span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditingId(r.id);
-                            setReportForm(r);
-                          }}
-                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete report "${r.title}"?`)) deleteReport(r.id);
-                          }}
-                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* WEEKLY BRIEFINGS TAB */}
-          {activeTab === 'weekly' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Weekly Form */}
-              <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                    <Plus className="w-4.5 h-4.5 text-brand-purple" />
-                    <span>{editingId ? 'Edit Weekly Briefing' : 'Create Weekly Briefing'}</span>
-                  </h3>
-                  {editingId && (
-                    <button 
-                      onClick={() => {
-                        setEditingId(null);
-                        setWeeklyForm({
-                          id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-                          author: 'Athena Observatory', readingTime: '4 min read', sections: []
-                        });
-                      }}
-                      className="text-xs text-red-600 hover:underline font-semibold font-mono"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                </div>
-
-                <form onSubmit={handleSaveWeekly} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Newsletter Tag</label>
-                      <input 
-                        type="text" 
-                        value={weeklyForm.tag} 
-                        onChange={(e) => setWeeklyForm({ ...weeklyForm, tag: e.target.value })}
-                        placeholder="E.g., Analysis Bulletin"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publication Month</label>
-                      <input 
-                        type="text" 
-                        value={weeklyForm.date} 
-                        onChange={(e) => setWeeklyForm({ ...weeklyForm, date: e.target.value })}
-                        placeholder="E.g., July 2026"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Author / Department</label>
-                      <input 
-                        type="text" 
-                        value={weeklyForm.author} 
-                        onChange={(e) => setWeeklyForm({ ...weeklyForm, author: e.target.value })}
-                        placeholder="E.g., Athena Secretariat"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Reading Time Estimate</label>
-                      <input 
-                        type="text" 
-                        value={weeklyForm.readingTime} 
-                        onChange={(e) => setWeeklyForm({ ...weeklyForm, readingTime: e.target.value })}
-                        placeholder="E.g., 5 min read"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Article Heading Title</label>
-                    <input 
-                      type="text" 
-                      value={weeklyForm.title} 
-                      onChange={(e) => setWeeklyForm({ ...weeklyForm, title: e.target.value })}
-                      placeholder="E.g., Systemic Audit of Osun uploads..."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Summary Teaser text</label>
-                    <textarea 
-                      value={weeklyForm.summary} 
-                      onChange={(e) => setWeeklyForm({ ...weeklyForm, summary: e.target.value })}
-                      placeholder="Brief card teaser displayed on the weekly briefings list grid..."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none"
-                    />
-                  </div>
-
-                  {/* Weekly Sections Builder */}
-                  <div className="border-t border-line pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-[11px] font-mono uppercase font-bold text-ink">Dedicated Page Content Chapters ({weeklyForm.sections?.length || 0})</h4>
-                      <button 
-                        type="button" 
-                        onClick={addWeeklySection}
-                        className="text-[10px] font-mono font-bold bg-navy text-white px-2 py-1 rounded hover:bg-navy-dark cursor-pointer flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" /> Add Paragraph Block
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
-                      {weeklyForm.sections?.map((sec, sIdx) => (
-                        <div key={sIdx} className="bg-white border border-line rounded-xl p-3 space-y-2 relative">
-                          <button 
-                            type="button" 
-                            onClick={() => removeWeeklySection(sIdx)}
-                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-mono"
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Tag Type Classification</label>
+                          <select 
+                            value={reportForm.tagType} 
+                            onChange={(e) => setReportForm({ ...reportForm, tagType: e.target.value as 'analysis' | 'tech' })}
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
                           >
-                            Remove
-                          </button>
+                            <option value="analysis">Election Analysis (Purple theme)</option>
+                            <option value="tech">Technology Security (Orange theme)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publishing Date/Month</label>
                           <input 
                             type="text" 
-                            value={sec.title} 
-                            onChange={(e) => updateWeeklySection(sIdx, 'title', e.target.value)}
-                            placeholder={`Section ${sIdx+1} Heading (E.g. 1. Technical Audit)`}
-                            className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
-                          />
-                          <textarea 
-                            value={sec.text} 
-                            onChange={(e) => updateWeeklySection(sIdx, 'text', e.target.value)}
-                            placeholder="Enter detailed editorial paragraphs..."
-                            className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                            value={reportForm.date} 
+                            onChange={(e) => setReportForm({ ...reportForm, date: e.target.value })}
+                            placeholder="E.g., July 2026"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
                           />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">PDF Document Size</label>
+                          <input 
+                            type="text" 
+                            value={reportForm.size} 
+                            onChange={(e) => setReportForm({ ...reportForm, size: e.target.value })}
+                            placeholder="E.g., 1.2 MB"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
+                          />
+                        </div>
+                      </div>
 
-                  <button
-                    type="submit"
-                    className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Briefing</span>
-                  </button>
-                </form>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Report Title</label>
+                        <input 
+                          type="text" 
+                          value={reportForm.title} 
+                          onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
+                          placeholder="E.g., Osun 2026: Post-Election Audit on Live Collation Uploads"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Short Synopsis / Executive Summary</label>
+                        <textarea 
+                          value={reportForm.summary} 
+                          onChange={(e) => setReportForm({ ...reportForm, summary: e.target.value })}
+                          placeholder="E.g., In-depth assessment of transmission pipelines and ad-hoc response compliance across 30 LGAs..."
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Lead Author</label>
+                          <input 
+                            type="text" 
+                            value={reportForm.author || ''} 
+                            onChange={(e) => setReportForm({ ...reportForm, author: e.target.value })}
+                            placeholder="E.g. Chinaza Igwe"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Authors List</label>
+                          <input 
+                            type="text" 
+                            value={reportForm.authorsList || ''} 
+                            onChange={(e) => setReportForm({ ...reportForm, authorsList: e.target.value })}
+                            placeholder="E.g. Chinaza Igwe and Uchenna Mgbechi"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <FileUploadField 
+                        label="Publication Thumbnail Image" 
+                        accept="image/*" 
+                        value={reportForm.image} 
+                        onChange={(val) => setReportForm({ ...reportForm, image: val })} 
+                      />
+
+                      <FileUploadField 
+                        label="Publication PDF Document (Downloadable)" 
+                        accept="application/pdf" 
+                        value={reportForm.pdfUrl} 
+                        onChange={(val) => setReportForm({ ...reportForm, pdfUrl: val })} 
+                      />
+
+                      {/* Document Sections Builder */}
+                      <div className="border-t border-line pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[11px] font-mono uppercase font-bold text-ink">Extended Article Content ({reportForm.sections?.length || 0} Chapters)</h4>
+                          <button 
+                            type="button" 
+                            onClick={addReportSection}
+                            className="text-[10px] font-mono font-bold bg-navy text-white px-2 py-1 rounded hover:bg-navy-dark cursor-pointer flex items-center gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Chapter
+                          </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                          {reportForm.sections?.map((sec, sIdx) => (
+                            <div key={sIdx} className="bg-white border border-line rounded-xl p-3 space-y-2 relative">
+                              <button 
+                                type="button" 
+                                onClick={() => removeReportSection(sIdx)}
+                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-mono"
+                              >
+                                Remove
+                              </button>
+                              <input 
+                                type="text" 
+                                value={sec.title} 
+                                onChange={(e) => updateReportSection(sIdx, 'title', e.target.value)}
+                                placeholder={`Chapter ${sIdx+1} Title`}
+                                className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
+                              />
+                              <textarea 
+                                value={sec.content} 
+                                onChange={(e) => updateReportSection(sIdx, 'content', e.target.value)}
+                                placeholder="Enter detailed forensic paragraphs here..."
+                                className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save Report</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {selectedPubType === 'weekly' && (
+                    <form onSubmit={handleSaveWeekly} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Newsletter Tag</label>
+                          <input 
+                            type="text" 
+                            value={weeklyForm.tag} 
+                            onChange={(e) => setWeeklyForm({ ...weeklyForm, tag: e.target.value })}
+                            placeholder="E.g., Analysis Bulletin"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publication Month</label>
+                          <input 
+                            type="text" 
+                            value={weeklyForm.date} 
+                            onChange={(e) => setWeeklyForm({ ...weeklyForm, date: e.target.value })}
+                            placeholder="E.g., July 2026"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Weekly Digest Title</label>
+                        <input 
+                          type="text" 
+                          value={weeklyForm.title} 
+                          onChange={(e) => setWeeklyForm({ ...weeklyForm, title: e.target.value })}
+                          placeholder="E.g., The Osun Trajectory: Accreditation Auditing Metrology"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Lead Author</label>
+                          <input 
+                            type="text" 
+                            value={weeklyForm.author} 
+                            onChange={(e) => setWeeklyForm({ ...weeklyForm, author: e.target.value })}
+                            placeholder="E.g. Athena Observatory"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold focus:outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Estimated Reading Time</label>
+                          <input 
+                            type="text" 
+                            value={weeklyForm.readingTime} 
+                            onChange={(e) => setWeeklyForm({ ...weeklyForm, readingTime: e.target.value })}
+                            placeholder="E.g., 4 min read"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Teaser Summary / Synopsis</label>
+                        <textarea 
+                          value={weeklyForm.summary} 
+                          onChange={(e) => setWeeklyForm({ ...weeklyForm, summary: e.target.value })}
+                          placeholder="E.g., A comprehensive breakdown of pre-election ad-hoc team layouts and operational protocols..."
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <FileUploadField 
+                        label="Newsletter Thumbnail Image" 
+                        accept="image/*" 
+                        value={weeklyForm.image} 
+                        onChange={(val) => setWeeklyForm({ ...weeklyForm, image: val })} 
+                      />
+
+                      <FileUploadField 
+                        label="Newsletter PDF Document (Downloadable)" 
+                        accept="application/pdf" 
+                        value={weeklyForm.pdfUrl} 
+                        onChange={(val) => setWeeklyForm({ ...weeklyForm, pdfUrl: val })} 
+                      />
+
+                      {/* Weekly Sections Builder */}
+                      <div className="border-t border-line pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[11px] font-mono uppercase font-bold text-ink">Newsletter Article Sections ({weeklyForm.sections?.length || 0} Blocks)</h4>
+                          <button 
+                            type="button" 
+                            onClick={addWeeklySection}
+                            className="text-[10px] font-mono font-bold bg-navy text-white px-2 py-1 rounded hover:bg-navy-dark cursor-pointer flex items-center gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Block
+                          </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                          {weeklyForm.sections?.map((sec, sIdx) => (
+                            <div key={sIdx} className="bg-white border border-line rounded-xl p-3 space-y-2 relative">
+                              <button 
+                                type="button" 
+                                onClick={() => removeWeeklySection(sIdx)}
+                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-[10px] font-mono"
+                              >
+                                Remove
+                              </button>
+                              <input 
+                                type="text" 
+                                value={sec.title} 
+                                onChange={(e) => updateWeeklySection(sIdx, 'title', e.target.value)}
+                                placeholder={`Section ${sIdx+1} Title`}
+                                className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
+                              />
+                              <textarea 
+                                value={sec.text} 
+                                onChange={(e) => updateWeeklySection(sIdx, 'text', e.target.value)}
+                                placeholder="Enter section article text body paragraphs here..."
+                                className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save Weekly Issue</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {selectedPubType === 'announcement' && (
+                    <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Month string</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.month} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, month: e.target.value })}
+                            placeholder="E.g., JUL"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono focus:outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Day string</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.day} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, day: e.target.value })}
+                            placeholder="E.g., 15"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Category</label>
+                          <select
+                            value={announcementForm.category}
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, category: e.target.value as any })}
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
+                          >
+                            <option value="press">Press Release</option>
+                            <option value="bulletin">Official Bulletin</option>
+                            <option value="statement">Public Statement</option>
+                            <option value="alert">Security/Audit Alert</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
+                        <input 
+                          type="text" 
+                          value={announcementForm.date} 
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                          placeholder="E.g., 15 July 2026"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Announcement Title</label>
+                        <input 
+                          type="text" 
+                          value={announcementForm.title} 
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                          placeholder="E.g., Official Statement on Osun Result Portal Upload Integrity"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Summary / Teaser</label>
+                        <textarea 
+                          value={announcementForm.summary} 
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
+                          placeholder="E.g., AEO outlines the 4 critical protocols needed to guarantee live transmission audits."
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none focus:outline-none focus:border-brand-blue"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Author Name</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.author || ''} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, author: e.target.value })}
+                            placeholder="E.g., Athena Secretariat"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Authors List</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.authorsList || ''} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, authorsList: e.target.value })}
+                            placeholder="E.g., Athena Secretariat"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <FileUploadField 
+                        label="Announcement Header Image" 
+                        accept="image/*" 
+                        value={announcementForm.image} 
+                        onChange={(val) => setAnnouncementForm({ ...announcementForm, image: val })} 
+                      />
+
+                      <FileUploadField 
+                        label="Announcement PDF Document (Downloadable)" 
+                        accept="application/pdf" 
+                        value={announcementForm.pdfUrl} 
+                        onChange={(val) => setAnnouncementForm({ ...announcementForm, pdfUrl: val })} 
+                      />
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Optional Markdown/Text)</label>
+                        <textarea 
+                          value={announcementForm.content} 
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                          placeholder="E.g., Full detailed text of the announcement or statement."
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-32 resize-y font-mono focus:outline-none"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save Announcement</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
               </div>
 
-              {/* Weekly Catalog */}
+              {/* Unified Publications Catalog Directory */}
               <div className="lg:col-span-5 space-y-3">
-                <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Briefings Catalog</h3>
-                <div className="space-y-2">
-                  {weekly.map(w => (
-                    <div key={w.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs">
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-mono text-brand-purple font-bold tracking-wider uppercase block">{w.tag}</span>
-                        <h4 className="font-semibold text-xs text-ink leading-snug">{w.title}</h4>
-                        <span className="text-[10px] text-mut font-mono">{w.date}</span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditingId(w.id);
-                            setWeeklyForm(w);
-                          }}
-                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete weekly issue "${w.title}"?`)) deleteWeeklyIssue(w.id);
-                          }}
-                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Publications Catalog</h3>
+                
+                {/* Interactive filter toggle bar */}
+                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
+                  {(['all', 'report', 'weekly', 'announcement'] as const).map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setPubFilter(f)}
+                      className={`flex-1 text-center py-1.5 rounded-md text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                        pubFilter === f
+                          ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                          : 'text-mut hover:text-ink'
+                      }`}
+                    >
+                      {f === 'all' ? 'All' : f === 'report' ? 'Reports' : f === 'weekly' ? 'Weekly' : 'Announcements'}
+                    </button>
                   ))}
+                </div>
+
+                {/* Combined list of publications filtered */}
+                <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+                  {(() => {
+                    const filtered = [
+                      ...reports.map(r => ({ ...r, unifiedType: 'report' as const, tagColor: r.tagType === 'tech' ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-brand-purple bg-purple-50 border-purple-100' })),
+                      ...weekly.map(w => ({ ...w, unifiedType: 'weekly' as const, tagColor: 'text-brand-blue bg-blue-50 border-blue-100' })),
+                      ...announcements.map(a => ({ ...a, unifiedType: 'announcement' as const, tagColor: 'text-emerald-600 bg-emerald-50 border-emerald-100' }))
+                    ].filter(item => pubFilter === 'all' || item.unifiedType === pubFilter);
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="p-8 border border-dashed border-line rounded-xl text-center">
+                          <p className="text-xs text-mut font-mono">No publications found.</p>
+                        </div>
+                      );
+                    }
+
+                    return filtered.map(item => (
+                      <div key={item.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs hover:border-slate-300 transition-colors">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border ${item.tagColor}`}>
+                              {item.unifiedType === 'report' ? (item as any).tag : item.unifiedType === 'weekly' ? 'Weekly Digest' : `Announcement (${(item as any).category})`}
+                            </span>
+                            {item.pdfUrl && (
+                              <span className="text-[9px] font-mono font-bold text-brand-green bg-green-50 border border-green-100 px-1.5 py-0.5 rounded">
+                                PDF Attached
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-xs text-ink leading-snug truncate">{item.title}</h4>
+                          <span className="text-[10px] text-mut font-mono block">
+                            {item.date} · {item.unifiedType === 'report' ? (item as any).size : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingId(item.id);
+                              setSelectedPubType(item.unifiedType);
+                              if (item.unifiedType === 'report') {
+                                setReportForm(item);
+                              } else if (item.unifiedType === 'weekly') {
+                                setWeeklyForm(item);
+                              } else if (item.unifiedType === 'announcement') {
+                                setAnnouncementForm(item);
+                              }
+                            }}
+                            title="Edit Publication"
+                            className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete publication "${item.title}"?`)) {
+                                if (item.unifiedType === 'report') {
+                                  deleteReport(item.id);
+                                } else if (item.unifiedType === 'weekly') {
+                                  deleteWeeklyIssue(item.id);
+                                } else if (item.unifiedType === 'announcement') {
+                                  deleteAnnouncement(item.id);
+                                }
+                                showStatus(`Publication deleted.`);
+                              }
+                            }}
+                            title="Delete Publication"
+                            className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -1110,152 +1378,6 @@ export default function CMSPanel({
                     </div>
                   ))}
                 </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* ANNOUNCEMENTS TAB */}
-          {activeTab === 'announcements' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Announcement Editor */}
-              <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                  <Plus className="w-4.5 h-4.5 text-brand-blue" />
-                  <span>{editingId ? 'Edit Announcement' : 'Create Announcement'}</span>
-                </h3>
-
-                <form onSubmit={handleSaveAnnouncement} className="space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Month string</label>
-                      <input 
-                        type="text" 
-                        value={announcementForm.month} 
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, month: e.target.value })}
-                        placeholder="E.g., JUL"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Day string</label>
-                      <input 
-                        type="text" 
-                        value={announcementForm.day} 
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, day: e.target.value })}
-                        placeholder="E.g., 15"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Category</label>
-                      <select
-                        value={announcementForm.category}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, category: e.target.value as any })}
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                      >
-                        <option value="press">Press Release</option>
-                        <option value="bulletin">Official Bulletin</option>
-                        <option value="statement">Public Statement</option>
-                        <option value="alert">Security/Audit Alert</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
-                    <input 
-                      type="text" 
-                      value={announcementForm.date} 
-                      onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
-                      placeholder="E.g., 15 July 2026"
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Announcement Title</label>
-                    <input 
-                      type="text" 
-                      value={announcementForm.title} 
-                      onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
-                      placeholder="E.g., Official Statement on Osun Result Portal Upload Integrity"
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Summary / Teaser</label>
-                    <textarea 
-                      value={announcementForm.summary} 
-                      onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
-                      placeholder="E.g., AEO outlines the 4 critical protocols needed to guarantee live transmission audits."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Optional Markdown/Text)</label>
-                    <textarea 
-                      value={announcementForm.content} 
-                      onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
-                      placeholder="E.g., Full detailed text of the announcement or statement."
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-32 resize-y font-mono"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Announcement</span>
-                  </button>
-                </form>
-              </div>
-
-              {/* Announcement Catalog */}
-              <div className="lg:col-span-5 space-y-3">
-                <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Announcements Catalog</h3>
-                {announcements.length === 0 ? (
-                  <div className="p-6 border border-dashed border-line rounded-xl text-center">
-                    <p className="text-xs text-mut font-mono">No announcements configured yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {announcements.map(ann => (
-                      <div key={ann.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs">
-                        <div>
-                          <span className="text-[10px] font-mono text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase font-bold inline-block mb-1">
-                            {ann.category}
-                          </span>
-                          <span className="text-[10px] font-mono text-mut block">{ann.date}</span>
-                          <h4 className="font-semibold text-xs text-ink leading-snug mt-1">{ann.title}</h4>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => {
-                              setEditingId(ann.id);
-                              setAnnouncementForm(ann);
-                            }}
-                            className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Delete announcement "${ann.title}"?`)) deleteAnnouncement(ann.id);
-                            }}
-                            className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
             </div>

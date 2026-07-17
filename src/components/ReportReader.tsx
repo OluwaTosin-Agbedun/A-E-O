@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Download, CheckCircle2, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
+import { triggerPdfDownload } from './PublicationsPage';
+import { formatReportDate } from '../utils/date';
 
 interface ReportReaderProps {
   reportId: string | null;
@@ -31,22 +33,30 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
     setDownloadProgress(0);
     setDownloadSuccess(false);
 
+    let currentProgress = 0;
     const interval = setInterval(() => {
-      setDownloadProgress((prev) => {
-        if (prev === null) {
-          clearInterval(interval);
-          return null;
-        }
-        if (prev >= 100) {
-          clearInterval(interval);
-          setDownloadSuccess(true);
-          setTimeout(() => {
-            setDownloadProgress(null);
-          }, 2500);
-          return 100;
-        }
-        return prev + 10;
-      });
+      currentProgress += 10;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setDownloadProgress(100);
+        setDownloadSuccess(true);
+        
+        // Trigger the actual file download safely outside state updater
+        triggerPdfDownload(
+          report.title,
+          report.summary,
+          report.authorsList || report.author || 'AEO Research Team',
+          report.date,
+          report.pdfUrl,
+          report.sections.map((s, idx) => `Chapter ${idx + 1}: ${s.title}\n${s.content}`).join('\n\n')
+        );
+
+        setTimeout(() => {
+          setDownloadProgress(null);
+        }, 2500);
+      } else {
+        setDownloadProgress(currentProgress);
+      }
     }, 150);
   };
 
@@ -106,21 +116,15 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             }`}>
               {report.tag}
             </span>
-            <span className="text-xs font-mono font-medium text-mut">
-              Published: {report.date}
-            </span>
           </div>
 
           <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink leading-tight tracking-tight">
             {report.title}
           </h1>
 
-          <p className="text-xs font-mono text-mut flex items-center gap-1.5 bg-paper p-2.5 rounded-lg border border-line inline-block">
-            <FileText className="w-4 h-4 text-brand-blue" />
-            <span>Document Reference ID: AEO-AUD-{report.id.toUpperCase()}-2026-X</span>
-            <span className="text-slate-300">|</span>
-            <span>File Size: {report.size}</span>
-          </p>
+          <div className="text-sm font-medium text-mut font-sans mt-2">
+            {formatReportDate(report.date)}
+          </div>
         </div>
 
         {/* Dynamic Section Contents */}
@@ -128,7 +132,6 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
           {report.sections.map((section, idx) => (
             <section key={idx} className="space-y-3">
               <h2 className="font-display font-bold text-xl sm:text-2xl text-ink flex items-center gap-2">
-                <span className="text-brand-blue text-xs font-mono">0{idx + 1}.</span>
                 {section.title}
               </h2>
               <p className="text-ink2 pl-0 sm:pl-5">
@@ -148,24 +151,6 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             </div>
           </div>
         )}
-
-        {/* Document Footer Navigation */}
-        <div className="border-t border-line mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <button 
-            onClick={handleDownloadPDF}
-            className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4.5 py-2.5 rounded-lg transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download forensic report PDF</span>
-          </button>
-
-          <button 
-            onClick={onClose}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink2 hover:text-brand-blue transition-colors cursor-pointer"
-          >
-            ← Back to all audit reports
-          </button>
-        </div>
 
       </article>
 

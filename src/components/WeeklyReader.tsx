@@ -1,8 +1,10 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText, Download } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { triggerPdfDownload } from './PublicationsPage';
+import { formatReportDate } from '../utils/date';
 
 interface WeeklyReaderProps {
   weeklyId: string | null;
@@ -156,6 +158,20 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => triggerPdfDownload(
+                issue.title,
+                issue.summary,
+                articleDetails.author,
+                formatReportDate(issue.date),
+                issue.pdfUrl,
+                articleDetails.sections.map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+              )}
+              className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF</span>
+            </button>
+            <button
               onClick={handleShare}
               className="inline-flex items-center gap-1.5 bg-paper hover:bg-line border border-line text-ink text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
@@ -202,7 +218,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                 <span>{articleDetails.readingTime}</span>
               </div>
               <span className="text-slate-300">|</span>
-              <span>Published: {issue.date}</span>
+              <span>Published: {formatReportDate(issue.date)}</span>
             </div>
           </div>
 

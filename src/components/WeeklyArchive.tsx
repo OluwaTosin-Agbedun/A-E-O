@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import Header from './Header';
-import Footer from './Footer';
+import { formatReportDate } from '../utils/date';
 
 export default function WeeklyArchive() {
   const { weekly } = useCMS();
@@ -34,22 +33,19 @@ export default function WeeklyArchive() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-panel text-ink antialiased">
-      <Header />
-
-      <main className="flex-grow py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Breadcrumb / Back button */}
-          <div className="mb-8">
-            <button 
-              onClick={() => navigateTo('/')}
-              className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-purple hover:text-brand-purple/80 transition-colors cursor-pointer uppercase"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Overview
-            </button>
-          </div>
+    <div className="py-12 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Breadcrumb / Back button */}
+        <div className="mb-8">
+          <button 
+            onClick={() => navigateTo('/')}
+            className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-purple hover:text-brand-purple/80 transition-colors cursor-pointer uppercase"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </button>
+        </div>
 
           {/* Page Header */}
           <div className="max-w-3xl mb-12">
@@ -136,7 +132,7 @@ export default function WeeklyArchive() {
                         {issue.tag}
                       </span>
                       <span className="text-xs font-mono font-semibold text-mut">
-                        {issue.date}
+                        {formatReportDate(issue.date)}
                       </span>
                     </div>
 
@@ -172,10 +168,7 @@ export default function WeeklyArchive() {
             </div>
           )}
 
-        </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 }

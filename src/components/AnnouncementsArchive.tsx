@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Calendar, Tag, ArrowUpRight, ArrowLeft, Bell, FileText, AlertTriangle } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
+import { formatReportDate } from '../utils/date';
 
 export default function AnnouncementsArchive() {
   const { announcements } = useCMS();
@@ -53,7 +54,7 @@ export default function AnnouncementsArchive() {
             className="flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-blue-100 hover:text-white transition-colors uppercase cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Portal</span>
+            <span>Back to Home</span>
           </button>
           <div className="text-[10px] uppercase font-mono tracking-widest text-brand-purple font-bold">
             Athena Election Observatory
@@ -181,7 +182,7 @@ export default function AnnouncementsArchive() {
                     </span>
                     <span className="text-xs text-mut font-mono flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {ann.date}
+                      {formatReportDate(ann.date)}
                     </span>
                   </div>
 

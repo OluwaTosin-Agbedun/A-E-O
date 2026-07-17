@@ -22,6 +22,9 @@ import ReportsArchive from './components/ReportsArchive';
 import WeeklyArchive from './components/WeeklyArchive';
 import EventsArchive from './components/EventsArchive';
 import AnnouncementsArchive from './components/AnnouncementsArchive';
+import EhiiIndex from './components/EhiiIndex';
+import DiaryPage from './components/DiaryPage';
+import PublicationsPage from './components/PublicationsPage';
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
@@ -79,59 +82,46 @@ export default function App() {
     );
   }
 
-  if (path === '/reports-archive') {
-    return (
-      <CMSProvider>
-        <ReportsArchive />
-      </CMSProvider>
-    );
-  }
+  let content = null;
 
-  if (path === '/weekly-archive') {
-    return (
-      <CMSProvider>
-        <WeeklyArchive />
-      </CMSProvider>
-    );
-  }
-
-  if (path === '/press-bulletins') {
-    return (
-      <CMSProvider>
-        <AnnouncementsArchive />
-      </CMSProvider>
-    );
-  }
-
-  if (path === '/events') {
-    return (
-      <CMSProvider>
-        <EventsArchive />
-      </CMSProvider>
-    );
-  }
-
-  if (path.startsWith('/report/')) {
+  if (
+    path === '/publications' ||
+    path === '/post-election-audits' ||
+    path === '/political-landscape-monitor' ||
+    path === '/aeo-weekly-digest' ||
+    path === '/announcements'
+  ) {
+    content = <PublicationsPage />;
+  } else if (path === '/reports-archive') {
+    content = <ReportsArchive />;
+  } else if (path === '/weekly-archive') {
+    content = <WeeklyArchive />;
+  } else if (path === '/press-bulletins') {
+    content = <AnnouncementsArchive />;
+  } else if (path === '/events') {
+    content = <EventsArchive />;
+  } else if (path === '/ehii') {
+    content = <EhiiIndex />;
+  } else if (path === '/diary') {
+    content = <DiaryPage />;
+  } else if (path.startsWith('/report/')) {
     const reportId = path.substring('/report/'.length);
-    return (
-      <CMSProvider>
-        <ReportReader 
-          reportId={reportId} 
-          onClose={() => navigate('/')} 
-        />
-      </CMSProvider>
-    );
-  }
-
-  if (path.startsWith('/weekly/')) {
+    content = <ReportReader reportId={reportId} onClose={() => navigate('/')} />;
+  } else if (path.startsWith('/weekly/')) {
     const weeklyId = path.substring('/weekly/'.length);
-    return (
-      <CMSProvider>
-        <WeeklyReader 
-          weeklyId={weeklyId} 
-          onClose={() => navigate('/')} 
+    content = <WeeklyReader weeklyId={weeklyId} onClose={() => navigate('/')} />;
+  } else {
+    content = (
+      <>
+        <Hero />
+        <LiveDashboard />
+        <AuditReports 
+          onOpenReport={(id) => navigate(`/report/${id}`)} 
+          onOpenWeekly={(id) => navigate(`/weekly/${id}`)} 
         />
-      </CMSProvider>
+        <Events />
+        <Subscribe />
+      </>
     );
   }
 
@@ -140,15 +130,7 @@ export default function App() {
       <div className="min-h-screen flex flex-col bg-panel text-ink antialiased selection:bg-brand-blue/20">
         <Header />
         <main className="flex-grow">
-          <Hero />
-          <Stats />
-          <LiveDashboard />
-          <AuditReports onOpenReport={(id) => navigate(`/report/${id}`)} />
-          <AeoWeekly onSelectIssue={(id) => navigate(`/weekly/${id}`)} />
-          <Diary />
-          <Events />
-          <Team />
-          <Subscribe />
+          {content}
         </main>
         <Footer />
       </div>

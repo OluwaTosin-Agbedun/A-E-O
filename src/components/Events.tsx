@@ -9,56 +9,62 @@ export default function Events() {
         
         {/* Section Header */}
         <div className="max-w-3xl mb-12">
-          <span className="eyebrow text-brand-blue font-semibold">Observatory Engagements</span>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl text-ink mt-2 mb-4 leading-tight">
-            Events — where to find us
-          </h2>
-          <p className="text-ink2 text-base">
-            Participate in our live methodological briefings, post-election consensus forums, and comparative data workshops with key democratic partners.
-          </p>
+          <span className="eyebrow text-brand-blue font-semibold">upcoming events</span>
         </div>
 
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((evt) => (
+        <div className="w-full flex justify-center">
+          {events.slice(0, 1).map((evt) => (
             <div 
               key={evt.id}
-              className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-md transition-all flex items-start gap-5 relative group"
+              className="bg-white border border-line rounded-2xl p-8 sm:p-10 shadow-custom hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center gap-8 relative group max-w-full"
+              style={{ width: '1000px', minHeight: '310px' }}
             >
               {/* Date Box */}
-              <div className="flex-shrink-0 w-16 text-center border border-line rounded-xl overflow-hidden bg-white shadow-sm">
-                <div className="bg-navy text-white text-[10px] font-mono py-1 font-bold tracking-wider uppercase">
+              <div className="flex-shrink-0 w-40 sm:w-48 text-center border border-line/80 rounded-2xl overflow-hidden bg-white shadow-xl group-hover:shadow-2xl transition-all duration-300">
+                <div 
+                  className="bg-navy text-white font-mono py-4 font-bold tracking-wider uppercase text-center"
+                  style={{ fontSize: '28px' }}
+                >
                   {evt.month}
                 </div>
-                <div className="font-display font-bold text-2xl py-2 text-ink">
+                <div className="font-display font-bold text-6xl sm:text-7xl py-8 text-ink">
                   {evt.day}
                 </div>
               </div>
 
               {/* Event Content */}
-              <div className="space-y-2 flex-1">
-                <h4 className="font-display font-bold text-base sm:text-lg text-ink group-hover:text-brand-blue transition-colors">
+              <div className="space-y-4 flex-1">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold font-mono text-brand-blue bg-brand-blue/5 rounded-full uppercase tracking-wider">
+                    Featured Event
+                  </span>
+                </div>
+                <h4 
+                  className="font-display font-bold text-ink group-hover:text-brand-blue transition-colors leading-tight"
+                  style={{ fontSize: '48px' }}
+                >
                   {evt.title}
                 </h4>
-                <p className="text-xs text-ink2 leading-relaxed">
+                <p className="text-sm sm:text-base text-ink2 leading-relaxed max-w-4xl">
                   {evt.description}
                 </p>
 
                 {/* Meta location & type */}
-                <div className="pt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-mono font-medium text-mut border-t border-line/60">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-brand-blue" />
+                <div className="pt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm font-mono font-medium text-mut border-t border-line/60">
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-brand-blue" />
                     {evt.location}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Tag className="w-3.5 h-3.5 text-brand-purple" />
+                  <span className="flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-brand-purple" />
                     {evt.type}
                   </span>
                 </div>
               </div>
 
-              <div className="absolute top-4 right-4 text-mut group-hover:text-brand-blue transition-colors">
-                <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-6 right-6 text-mut group-hover:text-brand-blue transition-colors">
+                <ArrowUpRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           ))}

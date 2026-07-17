@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Tag, Calendar, Search, AlertCircle } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import Header from './Header';
-import Footer from './Footer';
 
 export default function EventsArchive() {
   const { events } = useCMS();
@@ -29,22 +27,19 @@ export default function EventsArchive() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-panel text-ink antialiased">
-      <Header />
-
-      <main className="flex-grow py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Breadcrumb */}
-          <div className="mb-8">
-            <button 
-              onClick={() => navigateTo('/')}
-              className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Overview
-            </button>
-          </div>
+    <div className="py-12 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Breadcrumb */}
+        <div className="mb-8">
+          <button 
+            onClick={() => navigateTo('/')}
+            className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </button>
+        </div>
 
           {/* Page Header */}
           <div className="max-w-3xl mb-12">
@@ -175,10 +170,7 @@ export default function EventsArchive() {
             </div>
           )}
 
-        </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 }

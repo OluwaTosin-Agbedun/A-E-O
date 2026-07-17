@@ -1,5 +1,6 @@
 import { Mail, ArrowRight } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
+import { formatReportDate } from '../utils/date';
 
 interface AeoWeeklyProps {
   onSelectIssue?: (id: string) => void;
@@ -44,7 +45,7 @@ export default function AeoWeekly({ onSelectIssue }: AeoWeeklyProps) {
                       {issue.tag}
                     </span>
                     <span className="text-xs font-mono font-semibold text-mut">
-                      {issue.date}
+                      {formatReportDate(issue.date)}
                     </span>
                   </div>
 

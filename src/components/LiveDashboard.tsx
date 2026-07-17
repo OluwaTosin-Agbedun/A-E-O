@@ -1,9 +1,7 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  MapPin, Info, ArrowRight, Activity, Users, AlertCircle, 
-  Map, Upload, Trash2, Image as ImageIcon, Save, Check 
+  ArrowRight, Users, AlertCircle 
 } from 'lucide-react';
-import NigeriaMap from './NigeriaMap';
 
 interface StateMonitor {
   code: string;
@@ -87,87 +85,13 @@ export default function LiveDashboard() {
   });
 
   const [selectedStateIndex, setSelectedStateIndex] = useState(0);
-  const [activeMode, setActiveMode] = useState<'map' | 'upload'>('map');
-  const [isDragging, setIsDragging] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const curState = states[selectedStateIndex] || states[0];
-
-  // Local form states for the currently selected state
-  const [formData, setFormData] = useState<Partial<StateMonitor>>({});
-
-  // Sync form data whenever the selected state or activeMode changes
-  useEffect(() => {
-    if (curState) {
-      setFormData({
-        status: curState.status,
-        date: curState.date,
-        voters: curState.voters,
-        pollingUnits: curState.pollingUnits,
-        reconciledRate: curState.reconciledRate,
-        summary: curState.summary,
-        customImage: curState.customImage
-      });
-    }
-  }, [selectedStateIndex, curState]);
 
   // Persist states array to localStorage
   useEffect(() => {
     localStorage.setItem('aeo_monitored_states_list', JSON.stringify(states));
   }, [states]);
-
-  const handleImageFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file (PNG, JPG, or SVG).');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setFormData(prev => ({
-          ...prev,
-          customImage: e.target?.result as string
-        }));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFormSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    
-    setStates(prevStates => {
-      return prevStates.map((st, idx) => {
-        if (idx === selectedStateIndex) {
-          const colorClass = formData.status === 'Upcoming' 
-            ? 'text-amber-500 border-amber-500 bg-amber-50' 
-            : 'text-green-600 border-green-600 bg-green-50';
-
-          const bgGradient = formData.status === 'Upcoming'
-            ? 'from-amber-100 to-amber-200/50 border-amber-200'
-            : 'from-emerald-50 to-emerald-100/50 border-emerald-200';
-
-          return {
-            ...st,
-            status: formData.status || st.status,
-            date: formData.date || st.date,
-            voters: formData.voters || st.voters,
-            pollingUnits: formData.pollingUnits || st.pollingUnits,
-            reconciledRate: formData.reconciledRate || st.reconciledRate,
-            summary: formData.summary || st.summary,
-            customImage: formData.customImage,
-            colorClass,
-            bgGradient
-          };
-        }
-        return st;
-      });
-    });
-
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
 
   return (
     <section className="py-16 bg-paper border-b border-line" id="monitoring">
@@ -175,260 +99,14 @@ export default function LiveDashboard() {
         
         {/* Section Header */}
         <div className="max-w-3xl mb-12">
-          <span className="eyebrow text-brand-green font-semibold">Live Dashboard</span>
           <h2 className="font-display font-bold text-3xl sm:text-4xl text-ink mt-2 mb-4 leading-tight">
-            What we are monitoring now
+            Live Election
           </h2>
-          <p className="text-ink2 text-base sm:text-lg">
-            Real-time observation, coverage tracking, and forensic auditing across critical Nigerian states with detailed sub-regional analysis.
-          </p>
         </div>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
-          {/* Left Panel: Map or Upload Mode Container */}
-          <div className="lg:col-span-5 flex flex-col justify-between bg-white border border-line rounded-2xl p-6 shadow-custom relative overflow-hidden">
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setActiveMode('map')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold font-sans transition-all cursor-pointer ${
-                      activeMode === 'map'
-                        ? 'bg-white text-navy shadow-sm border border-slate-200/50'
-                        : 'text-mut hover:text-ink'
-                    }`}
-                  >
-                    <Map className="w-3.5 h-3.5" />
-                    Interactive Map
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMode('upload')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold font-sans transition-all cursor-pointer ${
-                      activeMode === 'upload'
-                        ? 'bg-white text-navy shadow-sm border border-slate-200/50'
-                        : 'text-mut hover:text-ink'
-                    }`}
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    Upload &amp; Edit Data
-                  </button>
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-xs text-brand-blue font-bold shrink-0">
-                  <Activity className="w-3.5 h-3.5 animate-pulse" />
-                  Live Feedback
-                </span>
-              </div>
-
-              {activeMode === 'map' ? (
-                /* State SVG Map Display */
-                <div className="w-full rounded-2xl border border-line p-1 flex flex-col justify-between relative bg-gradient-to-b from-slate-50/50 to-white/30 transition-all duration-300">
-                  <NigeriaMap 
-                    selectedStateCode={curState.code}
-                    onSelectState={(code) => {
-                      const idx = states.findIndex(s => s.code === code);
-                      if (idx !== -1) setSelectedStateIndex(idx);
-                    }}
-                    statesMeta={states.map(s => ({
-                      code: s.code,
-                      name: s.name,
-                      status: s.status,
-                      voters: s.voters,
-                      pollingUnits: s.pollingUnits,
-                      reconciledRate: s.reconciledRate
-                    }))}
-                  />
-                </div>
-              ) : (
-                /* Edit State Data and Upload Image Form */
-                <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
-                  <div className="flex items-center justify-between border-b border-line pb-2 mb-2">
-                    <span className="text-sm font-bold text-ink">
-                      Editing {curState.name} State ({curState.code})
-                    </span>
-                    <span className="text-[10px] font-mono text-mut uppercase">
-                      Region: {curState.region}
-                    </span>
-                  </div>
-
-                  {/* Drag-and-drop Image Upload Zone */}
-                  <div className="space-y-1">
-                    <label className="block font-mono text-[10px] uppercase font-bold text-mut">
-                      State Overview / Map Image
-                    </label>
-                    
-                    {formData.customImage ? (
-                      <div className="relative rounded-xl overflow-hidden border border-line h-32 bg-slate-50 flex items-center justify-center">
-                        <img 
-                          src={formData.customImage} 
-                          alt="Uploaded state overview" 
-                          className="w-full h-full object-cover" 
-                          referrerPolicy="no-referrer"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, customImage: undefined }))}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white text-rose-600 shadow-md transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDragging(true);
-                        }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setIsDragging(false);
-                          const file = e.dataTransfer.files?.[0];
-                          if (file) handleImageFile(file);
-                        }}
-                        className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all ${
-                          isDragging 
-                            ? 'border-brand-blue bg-blue-50/50' 
-                            : 'border-line hover:border-slate-400 bg-slate-50'
-                        }`}
-                      >
-                        <input
-                          type="file"
-                          id="state-image-file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageFile(file);
-                          }}
-                        />
-                        <label htmlFor="state-image-file" className="cursor-pointer flex flex-col items-center w-full">
-                          <ImageIcon className="w-6 h-6 text-slate-400 mb-1" />
-                          <span className="font-semibold text-slate-600 hover:text-brand-blue transition-colors">
-                            Click to upload state image
-                          </span>
-                          <span className="text-[10px] text-mut mt-0.5">
-                            or drag &amp; drop PNG, JPG, SVG
-                          </span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Form fields row 1 */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                        Status
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                        className="w-full p-2 border border-line rounded-lg bg-white text-ink font-semibold focus:outline-none focus:border-brand-blue"
-                      >
-                        <option value="Upcoming">Upcoming</option>
-                        <option value="Concluded">Concluded</option>
-                        <option value="Audit phase">Audit phase</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                        Election Date
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.date || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                        className="w-full p-2 border border-line rounded-lg bg-white text-ink font-semibold focus:outline-none focus:border-brand-blue"
-                        placeholder="e.g. Saturday, 15 August 2026"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Form fields row 2 */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                        Voters
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.voters || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, voters: e.target.value }))}
-                        className="w-full p-2 border border-line rounded-lg bg-white text-ink font-mono font-bold focus:outline-none focus:border-brand-blue"
-                        placeholder="e.g. 1,955,657"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                        Polling Units
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.pollingUnits || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, pollingUnits: e.target.value }))}
-                        className="w-full p-2 border border-line rounded-lg bg-white text-ink font-mono font-bold focus:outline-none focus:border-brand-blue"
-                        placeholder="e.g. 3,763"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                        Reconciliation Rate
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.reconciledRate || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, reconciledRate: e.target.value }))}
-                        className="w-full p-2 border border-line rounded-lg bg-white text-ink font-mono font-bold focus:outline-none focus:border-brand-blue"
-                        placeholder="e.g. 95%"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Summary / Observatory Briefing */}
-                  <div>
-                    <label className="block font-mono text-[10px] uppercase font-bold text-mut mb-1">
-                      Observatory Briefing / Summary
-                    </label>
-                    <textarea
-                      value={formData.summary || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
-                      rows={2}
-                      className="w-full p-2 border border-line rounded-lg bg-white text-ink leading-normal focus:outline-none focus:border-brand-blue resize-none"
-                      placeholder="Enter a brief summary statement about the election / audit..."
-                    />
-                  </div>
-
-                  {/* Save button and status feedback */}
-                  <div className="flex items-center gap-2 justify-between pt-1">
-                    {saveSuccess ? (
-                      <span className="text-[10px] font-semibold text-brand-green flex items-center gap-1 animate-pulse">
-                        <Check className="w-3.5 h-3.5" /> Saved Successfully!
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-mut">
-                        *Changes persist in your local browser session.
-                      </span>
-                    )}
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1 px-4 py-2 bg-navy text-white text-xs font-bold rounded-lg hover:bg-navy-dark transition-all cursor-pointer shadow-sm"
-                    >
-                      <Save className="w-3.5 h-3.5" />
-                      Save State Data
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-            
-          </div>
-
-          {/* Interactive State Control Panel */}
-          <div className="lg:col-span-7 flex flex-col justify-between">
+        {/* State Selection & Control Panel */}
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col justify-between">
             <div className="space-y-4">
               
               {/* State Pills Selection List */}

@@ -8,7 +8,8 @@ import {
   DIARY_OTHER as initialDiaryOth, 
   EVENTS as initialEvents, 
   TEAM as initialTeam, 
-  WEEKLY_ISSUES as initialWeekly 
+  WEEKLY_ISSUES as initialWeekly,
+  ANNOUNCEMENTS as initialAnnouncements
 } from '../data';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
@@ -192,7 +193,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
 
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(() => {
     const saved = localStorage.getItem('aeo_announcements');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : initialAnnouncements;
   });
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
@@ -381,7 +382,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     setDiaryAfr(initialDiaryAfr);
     setDiaryOth(initialDiaryOth);
     setEvents(initialEvents);
-    setAnnouncements([]);
+    setAnnouncements(initialAnnouncements);
     setTeam(initialTeam);
     setWeekly(initialWeekly);
     setHeroConfig(INITIAL_HERO_CONFIG);

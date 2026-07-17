@@ -91,7 +91,10 @@ export default function Hero() {
             
             <div className="flex flex-wrap gap-4 pt-2">
               <button 
-                onClick={() => handleScroll('ehii')}
+                onClick={() => {
+                  window.history.pushState({}, '', '/ehii');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
                 className="inline-flex items-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white font-semibold text-sm px-6 py-3 rounded-lg transition-colors cursor-pointer shadow-lg shadow-brand-blue/25"
               >
                 {heroConfig.exploreButtonText}

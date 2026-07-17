@@ -14,6 +14,11 @@ export interface Report {
   title: string;
   summary: string;
   sections: ReportSection[];
+  author?: string;
+  authorsList?: string;
+  image?: string;
+  researchArea?: string;
+  pdfUrl?: string;
 }
 
 export interface DiaryItem {
@@ -54,8 +59,11 @@ export interface WeeklyIssue {
   summary: string;
   linkText: string;
   author?: string;
+  authorsList?: string;
   readingTime?: string;
   sections?: WeeklySection[];
+  image?: string;
+  pdfUrl?: string;
 }
 
 export interface HeroConfig {
@@ -122,5 +130,9 @@ export interface AnnouncementItem {
   summary: string;
   content?: string;
   category: 'press' | 'bulletin' | 'statement' | 'alert';
+  author?: string;
+  authorsList?: string;
+  image?: string;
+  pdfUrl?: string;
 }
 

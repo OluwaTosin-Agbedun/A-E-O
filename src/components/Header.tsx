@@ -34,10 +34,10 @@ export default function Header() {
     }
   };
 
-  const navigateTo = (to: string) => {
+  const navigateTo = (to: string, state: any = {}) => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
-    window.history.pushState({}, '', to);
+    window.history.pushState(state, '', to);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
@@ -62,22 +62,24 @@ export default function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-6">
               <a 
-                href="#about" 
-                onClick={(e) => { e.preventDefault(); handleScroll('about'); }}
-                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
-              >
-                About
-              </a>
-              <a 
                 href="#monitoring" 
                 onClick={(e) => { e.preventDefault(); handleScroll('monitoring'); }}
                 className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
               >
-                Dashboard
+                Live Election
               </a>
+
               <a 
-                href="#diary" 
-                onClick={(e) => { e.preventDefault(); handleScroll('diary'); }}
+                href="/ehii" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/ehii'); }}
+                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
+              >
+                EHII Index
+              </a>
+
+              <a 
+                href="/diary" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/diary'); }}
                 className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
               >
                 Diary of Election
@@ -89,51 +91,62 @@ export default function Header() {
                 onMouseEnter={() => setDropdownOpen(true)}
                 onMouseLeave={() => setDropdownOpen(false)}
               >
-                <button 
-                  className="flex items-center gap-1 text-sm font-medium text-blue-100 hover:text-white py-2 focus:outline-none transition-colors"
+                <a 
+                  href="/publications"
+                  onClick={(e) => { e.preventDefault(); navigateTo('/publications'); }}
+                  className="flex items-center gap-1 text-sm font-medium text-blue-100 hover:text-white py-2 focus:outline-none transition-colors cursor-pointer"
                 >
                   <span>Publications</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
+                </a>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-0 w-80 bg-white text-ink border border-line rounded-xl shadow-custom p-2 animate-fade-in z-50">
+                  <div className="absolute right-0 mt-0 w-[30rem] bg-white text-ink border border-line rounded-xl shadow-custom p-3 animate-fade-in z-50">
                     <a 
-                      href="/reports-archive" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/reports-archive'); }}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
+                      href="/post-election-audits" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
                     >
-                      <FileText className="w-5 h-5 text-brand-blue mt-0.5" />
+                      <FileText className="w-6 h-6 text-brand-purple mt-1 flex-shrink-0" />
                       <div>
-                        <span className="block text-xs font-bold font-mono text-brand-blue uppercase tracking-wider">Audit</span>
-                        <span className="block text-sm font-semibold">Audit Reports</span>
-                        <span className="block text-xs text-mut font-normal mt-0.5">Forensic analyses on PV and results.</span>
+                        <span className="block text-base font-bold text-brand-purple leading-snug">Post-election audit reports</span>
+                        <span className="block text-xs sm:text-sm text-mut font-normal mt-1">Forensic analyses on PV and results.</span>
                       </div>
                     </a>
 
                     <a 
-                      href="/weekly-archive" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/weekly-archive'); }}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
+                      href="/political-landscape-monitor" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/political-landscape-monitor'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
                     >
-                      <Mail className="w-5 h-5 text-brand-green mt-0.5" />
+                      <BookOpen className="w-6 h-6 text-brand-blue mt-1 flex-shrink-0" />
                       <div>
-                        <span className="block text-xs font-bold font-mono text-brand-green uppercase tracking-wider">Insights</span>
-                        <span className="block text-sm font-semibold">AEO Weekly Digest</span>
-                        <span className="block text-xs text-mut font-normal mt-0.5">Our analytical briefs & newsletters.</span>
+                        <span className="block text-base font-bold text-brand-blue leading-snug">Political landscape monitor</span>
+                        <span className="block text-xs sm:text-sm text-mut font-normal mt-1">Sub-national landscape & technology assessments.</span>
                       </div>
                     </a>
 
                     <a 
-                      href="/press-bulletins" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/press-bulletins'); }}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-paper hover:text-brand-blue transition-all"
+                      href="/aeo-weekly-digest" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/aeo-weekly-digest'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
                     >
-                      <Bell className="w-5 h-5 text-amber-500 mt-0.5" />
+                      <Mail className="w-6 h-6 text-brand-green mt-1 flex-shrink-0" />
                       <div>
-                        <span className="block text-xs font-bold font-mono text-amber-500 uppercase tracking-wider">Announcements</span>
-                        <span className="block text-sm font-semibold">Press & Bulletins</span>
-                        <span className="block text-xs text-mut font-normal mt-0.5">Upcoming statements, announcements, and alerts.</span>
+                        <span className="block text-base font-bold text-brand-green leading-snug">AEO weekly digest</span>
+                        <span className="block text-xs sm:text-sm text-mut font-normal mt-1">Our analytical briefs & newsletters.</span>
+                      </div>
+                    </a>
+
+                    <a 
+                      href="/announcements" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/announcements'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
+                    >
+                      <Bell className="w-6 h-6 text-amber-500 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="block text-base font-bold text-amber-500 leading-snug">Announcements</span>
+                        <span className="block text-xs sm:text-sm text-mut font-normal mt-1">Upcoming statements, announcements, and alerts.</span>
                       </div>
                     </a>
                   </div>
@@ -174,51 +187,61 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-white/10 bg-navy px-4 pt-2 pb-6 space-y-2">
             <a 
-              href="#about" 
-              onClick={(e) => { e.preventDefault(); handleScroll('about'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
-            >
-              About
-            </a>
-            <a 
               href="#monitoring" 
               onClick={(e) => { e.preventDefault(); handleScroll('monitoring'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
-              Dashboard
+              Live Election
             </a>
             <a 
-              href="#diary" 
-              onClick={(e) => { e.preventDefault(); handleScroll('diary'); }}
+              href="/ehii" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/ehii'); }}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+            >
+              EHII Index
+            </a>
+            <a 
+              href="/diary" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/diary'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
               Diary of Election
             </a>
+            <div className="pt-2 pb-1 px-3">
+              <span className="text-[10px] font-bold font-mono tracking-wider text-white/40 uppercase">Publications</span>
+            </div>
             <a 
-              href="/reports-archive" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/reports-archive'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+              href="/post-election-audits" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
-              Audit Reports
+              Post-election audit reports
             </a>
             <a 
-              href="/weekly-archive" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/weekly-archive'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+              href="/political-landscape-monitor" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/political-landscape-monitor'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
-              AEO Weekly Digest
+              Political landscape monitor
             </a>
             <a 
-              href="/press-bulletins" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/press-bulletins'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+              href="/aeo-weekly-digest" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/aeo-weekly-digest'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
-              Press &amp; Bulletins
+              AEO weekly digest
+            </a>
+            <a 
+              href="/announcements" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/announcements'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
+            >
+              Announcements
             </a>
             <a 
               href="/events" 
               onClick={(e) => { e.preventDefault(); navigateTo('/events'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark pt-4 border-t border-white/5"
             >
               Events
             </a>
