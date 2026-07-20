@@ -23,9 +23,14 @@ export default function EhiiIndex() {
 
         {/* Heading */}
         <div className="text-center sm:text-left mb-12">
-          <span className="eyebrow text-brand-purple font-semibold uppercase tracking-widest text-xs">
-            Electoral Honor &amp; Integrity Index
-          </span>
+          <div className="flex flex-wrap items-center gap-3 mb-2 justify-center sm:justify-start">
+            <span className="eyebrow text-brand-purple font-semibold uppercase tracking-widest text-xs">
+              Electoral Honor &amp; Integrity Index
+            </span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold font-mono tracking-wider bg-amber-50 text-amber-800 border border-amber-200 uppercase animate-pulse">
+              Coming Soon
+            </span>
+          </div>
           <h1 className="font-display font-bold text-4xl sm:text-5xl text-ink mt-3 mb-6 leading-tight">
             EHII Index
           </h1>
@@ -35,7 +40,10 @@ export default function EhiiIndex() {
         </div>
 
         {/* Empty state / Under construction info */}
-        <div className="bg-white border border-line rounded-2xl p-8 sm:p-12 shadow-custom text-center sm:text-left">
+        <div className="bg-white border border-line rounded-2xl p-8 sm:p-12 shadow-custom text-center sm:text-left relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-amber-500 text-white font-mono text-[10px] font-bold px-4 py-1 rounded-bl uppercase tracking-wider">
+            Coming Soon
+          </div>
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             <div className="w-14 h-14 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
               <Award className="w-7 h-7 text-brand-purple" />

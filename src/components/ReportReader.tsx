@@ -61,10 +61,10 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-y-auto animate-fade-in font-sans">
+    <div className="bg-white min-h-screen font-sans animate-fade-in">
       
-      {/* Sticky Reader Navigation Bar */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-line shadow-sm">
+      {/* Reader Navigation Bar */}
+      <div className="bg-white/95 border-b border-line shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <button 
             onClick={onClose}

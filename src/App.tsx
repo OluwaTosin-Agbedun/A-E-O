@@ -27,14 +27,33 @@ import DiaryPage from './components/DiaryPage';
 import PublicationsPage from './components/PublicationsPage';
 
 export default function App() {
-  const [path, setPath] = useState(window.location.pathname);
+  const getInitialPath = () => {
+    // 1. Support hash routing (e.g. #/admin or #/weekly/issue-1)
+    if (window.location.hash) {
+      const hashPath = window.location.hash.substring(1);
+      if (hashPath.startsWith('/')) return hashPath;
+    }
+    // 2. Support search query routing (e.g. ?path=/admin)
+    const params = new URLSearchParams(window.location.search);
+    const queryPath = params.get('path');
+    if (queryPath && queryPath.startsWith('/')) return queryPath;
+
+    // 3. Default to standard pathname
+    return window.location.pathname;
+  };
+
+  const [path, setPath] = useState(getInitialPath());
 
   useEffect(() => {
-    const handlePopState = () => {
-      setPath(window.location.pathname);
+    const handleNavigation = () => {
+      setPath(getInitialPath());
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('hashchange', handleNavigation);
+    return () => {
+      window.removeEventListener('popstate', handleNavigation);
+      window.removeEventListener('hashchange', handleNavigation);
+    };
   }, []);
 
   const [user, setUser] = useState<User | null>(null);
@@ -49,7 +68,11 @@ export default function App() {
   }, []);
 
   const navigate = (to: string) => {
-    window.history.pushState({}, '', to);
+    if (window.location.hash) {
+      window.location.hash = to;
+    } else {
+      window.history.pushState({}, '', to);
+    }
     setPath(to);
     window.scrollTo(0, 0);
   };
