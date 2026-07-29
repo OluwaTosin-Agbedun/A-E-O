@@ -6,7 +6,7 @@ import { formatReportDate } from '../utils/date';
 export default function ReportsArchive() {
   const { reports } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<'all' | 'analysis' | 'tech'>('all');
+  const [selectedTag, setSelectedTag] = useState<'all' | 'analysis' | 'tech' | 'dci'>('all');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -22,8 +22,8 @@ export default function ReportsArchive() {
 
   const filteredReports = reports.filter((report) => {
     const matchesSearch = 
-      report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      (report.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (report.summary || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     if (selectedTag === 'all') return matchesSearch;
     return matchesSearch && report.tagType === selectedTag;
@@ -90,6 +90,16 @@ export default function ReportsArchive() {
               >
                 Technology Assessment ({reports.filter(r => r.tagType === 'tech').length})
               </button>
+              <button
+                onClick={() => setSelectedTag('dci')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedTag === 'dci' 
+                    ? 'bg-brand-blue text-white' 
+                    : 'bg-paper text-ink2 hover:bg-line border border-line'
+                }`}
+              >
+                Democracy Competitive Index ({reports.filter(r => r.tagType === 'dci').length})
+              </button>
             </div>
 
             {/* Search Box */}
@@ -122,6 +132,8 @@ export default function ReportsArchive() {
                       <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
                         report.tagType === 'analysis' 
                           ? 'bg-purple-50 text-brand-purple border border-purple-100' 
+                          : report.tagType === 'dci'
+                          ? 'bg-blue-50 text-brand-blue border border-blue-100'
                           : 'bg-green-50 text-brand-green border border-green-100'
                       }`}>
                         {report.tag}

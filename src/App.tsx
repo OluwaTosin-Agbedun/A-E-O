@@ -25,6 +25,8 @@ import AnnouncementsArchive from './components/AnnouncementsArchive';
 import EhiiIndex from './components/EhiiIndex';
 import DiaryPage from './components/DiaryPage';
 import PublicationsPage from './components/PublicationsPage';
+import EventReader from './components/EventReader';
+import ElectionDetails from './components/ElectionDetails';
 
 export default function App() {
   const getInitialPath = () => {
@@ -111,6 +113,7 @@ export default function App() {
     path === '/publications' ||
     path === '/post-election-audits' ||
     path === '/political-landscape-monitor' ||
+    path === '/democracy-competitive-index' ||
     path === '/aeo-weekly-digest' ||
     path === '/announcements'
   ) {
@@ -123,6 +126,18 @@ export default function App() {
     content = <AnnouncementsArchive />;
   } else if (path === '/events') {
     content = <EventsArchive />;
+  } else if (path === '/elections') {
+    content = <LiveDashboard isPreview={false} />;
+  } else if (path.startsWith('/election/')) {
+    const electionCode = path.substring('/election/'.length);
+    content = (
+      <ElectionDetails 
+        electionCode={electionCode}
+        onBack={() => navigate('/elections')}
+        onOpenReport={(id) => navigate(`/report/${id}`)}
+        onOpenWeekly={(id) => navigate(`/weekly/${id}`)}
+      />
+    );
   } else if (path === '/ehii') {
     content = <EhiiIndex />;
   } else if (path === '/diary') {
@@ -133,11 +148,14 @@ export default function App() {
   } else if (path.startsWith('/weekly/')) {
     const weeklyId = path.substring('/weekly/'.length);
     content = <WeeklyReader weeklyId={weeklyId} onClose={() => navigate('/')} />;
+  } else if (path.startsWith('/event/')) {
+    const eventId = path.substring('/event/'.length);
+    content = <EventReader eventId={eventId} onClose={() => navigate('/')} />;
   } else {
     content = (
       <>
         <Hero />
-        <LiveDashboard />
+        <LiveDashboard isPreview={true} />
         <AuditReports 
           onOpenReport={(id) => navigate(`/report/${id}`)} 
           onOpenWeekly={(id) => navigate(`/weekly/${id}`)} 

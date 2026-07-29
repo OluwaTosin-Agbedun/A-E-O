@@ -11,6 +11,7 @@ import {
   WEEKLY_ISSUES as initialWeekly,
   ANNOUNCEMENTS as initialAnnouncements
 } from '../data';
+import { getItem, setItem, clearDB } from '../utils/db';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -19,12 +20,12 @@ const INITIAL_HERO_CONFIG: HeroConfig = {
   exploreButtonText: "Explore the EHII Index",
   auditButtonText: "Audit Reports",
   spotlightBadgeText: "Next election in view",
-  spotlightStatusText: "Off-Cycle",
+  spotlightStatusText: "IREV Data",
   spotlightTitle: "Osun State Governorship",
   spotlightDateText: "Saturday, 15 August 2026 · INEC Monitored",
   spotlightTargetDate: "2026-08-15T08:00:00+01:00",
   lgasCount: "30 LGAs + Area Office",
-  registeredVoters: "1,955,657 voters",
+  registeredVoters: "2,339,233 voters",
   pollingUnits: "3,763 PUs",
   spotlightBottomText: "Athena is deploying 1,200 trained field observers to map BVAS compliance and upload forms EC8A to our independent verification pipeline.",
   diaryLinkText: "Open the Diary of Election",
@@ -161,6 +162,7 @@ interface CMSContextType {
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 export function CMSProvider({ children }: { children: ReactNode }) {
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [reports, setReports] = useState<Report[]>(() => {
     const saved = localStorage.getItem('aeo_reports');
     return saved ? JSON.parse(saved) : initialReports;
@@ -208,7 +210,17 @@ export function CMSProvider({ children }: { children: ReactNode }) {
 
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(() => {
     const saved = localStorage.getItem('aeo_hero');
-    return saved ? JSON.parse(saved) : INITIAL_HERO_CONFIG;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.spotlightStatusText === 'Off-Cycle') {
+        parsed.spotlightStatusText = 'IREV Data';
+      }
+      if (parsed.registeredVoters === '1,955,657 voters' || parsed.registeredVoters === '1,955,657') {
+        parsed.registeredVoters = '2,339,233 voters';
+      }
+      return parsed;
+    }
+    return INITIAL_HERO_CONFIG;
   });
 
   const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(() => {
@@ -216,50 +228,169 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : INITIAL_STATS_CONFIG;
   });
 
-  // Sync to localStorage
+  // Load data asynchronously from IndexedDB on mount
   useEffect(() => {
-    localStorage.setItem('aeo_reports', JSON.stringify(reports));
-  }, [reports]);
+    const loadAllData = async () => {
+      try {
+        const savedReports = await getItem<Report[]>('aeo_reports');
+        if (savedReports) setReports(savedReports);
+
+        const savedDiaryNat = await getItem<DiaryItem[]>('aeo_diary_nat');
+        if (savedDiaryNat) setDiaryNat(savedDiaryNat);
+
+        const savedDiaryLoc = await getItem<DiaryItem[]>('aeo_diary_loc');
+        if (savedDiaryLoc) setDiaryLoc(savedDiaryLoc);
+
+        const savedDiaryAfr = await getItem<DiaryItem[]>('aeo_diary_afr');
+        if (savedDiaryAfr) setDiaryAfr(savedDiaryAfr);
+
+        const savedDiaryOth = await getItem<DiaryItem[]>('aeo_diary_oth');
+        if (savedDiaryOth) setDiaryOth(savedDiaryOth);
+
+        const savedEvents = await getItem<EventItem[]>('aeo_events');
+        if (savedEvents) setEvents(savedEvents);
+
+        const savedAnnouncements = await getItem<AnnouncementItem[]>('aeo_announcements');
+        if (savedAnnouncements) setAnnouncements(savedAnnouncements);
+
+        const savedTeam = await getItem<TeamMember[]>('aeo_team');
+        if (savedTeam) setTeam(savedTeam);
+
+        const savedWeekly = await getItem<WeeklyIssue[]>('aeo_weekly');
+        if (savedWeekly) setWeekly(savedWeekly);
+
+        const savedHero = await getItem<HeroConfig>('aeo_hero');
+        if (savedHero) {
+          if (savedHero.spotlightStatusText === 'Off-Cycle') {
+            savedHero.spotlightStatusText = 'IREV Data';
+          }
+          if (savedHero.registeredVoters === '1,955,657 voters' || savedHero.registeredVoters === '1,955,657') {
+            savedHero.registeredVoters = '2,339,233 voters';
+          }
+          setHeroConfig(savedHero);
+        }
+
+        const savedStats = await getItem<StatItemConfig[]>('aeo_stats');
+        if (savedStats) setStatsConfig(savedStats);
+      } catch (err) {
+        console.error('Error loading initial data from IndexedDB:', err);
+      } finally {
+        setDataLoaded(true);
+      }
+    };
+    loadAllData();
+  }, []);
+
+  // Sync to Storage (IndexedDB + fallback to localStorage)
+  useEffect(() => {
+    if (!dataLoaded) return;
+    setItem('aeo_reports', reports).catch(e => console.error('IndexedDB reports error:', e));
+    try {
+      localStorage.setItem('aeo_reports', JSON.stringify(reports));
+    } catch (e) {
+      console.warn('aeo_reports localStorage failed (relying on IndexedDB):', e);
+    }
+  }, [reports, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_hero', JSON.stringify(heroConfig));
-  }, [heroConfig]);
+    if (!dataLoaded) return;
+    setItem('aeo_hero', heroConfig).catch(e => console.error('IndexedDB hero error:', e));
+    try {
+      localStorage.setItem('aeo_hero', JSON.stringify(heroConfig));
+    } catch (e) {
+      console.warn('aeo_hero localStorage failed:', e);
+    }
+  }, [heroConfig, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_stats', JSON.stringify(statsConfig));
-  }, [statsConfig]);
+    if (!dataLoaded) return;
+    setItem('aeo_stats', statsConfig).catch(e => console.error('IndexedDB stats error:', e));
+    try {
+      localStorage.setItem('aeo_stats', JSON.stringify(statsConfig));
+    } catch (e) {
+      console.warn('aeo_stats localStorage failed:', e);
+    }
+  }, [statsConfig, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_diary_nat', JSON.stringify(diaryNat));
-  }, [diaryNat]);
+    if (!dataLoaded) return;
+    setItem('aeo_diary_nat', diaryNat).catch(e => console.error('IndexedDB diary_nat error:', e));
+    try {
+      localStorage.setItem('aeo_diary_nat', JSON.stringify(diaryNat));
+    } catch (e) {
+      console.warn('aeo_diary_nat localStorage failed:', e);
+    }
+  }, [diaryNat, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_diary_loc', JSON.stringify(diaryLoc));
-  }, [diaryLoc]);
+    if (!dataLoaded) return;
+    setItem('aeo_diary_loc', diaryLoc).catch(e => console.error('IndexedDB diary_loc error:', e));
+    try {
+      localStorage.setItem('aeo_diary_loc', JSON.stringify(diaryLoc));
+    } catch (e) {
+      console.warn('aeo_diary_loc localStorage failed:', e);
+    }
+  }, [diaryLoc, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_diary_afr', JSON.stringify(diaryAfr));
-  }, [diaryAfr]);
+    if (!dataLoaded) return;
+    setItem('aeo_diary_afr', diaryAfr).catch(e => console.error('IndexedDB diary_afr error:', e));
+    try {
+      localStorage.setItem('aeo_diary_afr', JSON.stringify(diaryAfr));
+    } catch (e) {
+      console.warn('aeo_diary_afr localStorage failed:', e);
+    }
+  }, [diaryAfr, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_diary_oth', JSON.stringify(diaryOth));
-  }, [diaryOth]);
+    if (!dataLoaded) return;
+    setItem('aeo_diary_oth', diaryOth).catch(e => console.error('IndexedDB diary_oth error:', e));
+    try {
+      localStorage.setItem('aeo_diary_oth', JSON.stringify(diaryOth));
+    } catch (e) {
+      console.warn('aeo_diary_oth localStorage failed:', e);
+    }
+  }, [diaryOth, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_events', JSON.stringify(events));
-  }, [events]);
+    if (!dataLoaded) return;
+    setItem('aeo_events', events).catch(e => console.error('IndexedDB events error:', e));
+    try {
+      localStorage.setItem('aeo_events', JSON.stringify(events));
+    } catch (e) {
+      console.warn('aeo_events localStorage failed:', e);
+    }
+  }, [events, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_announcements', JSON.stringify(announcements));
-  }, [announcements]);
+    if (!dataLoaded) return;
+    setItem('aeo_announcements', announcements).catch(e => console.error('IndexedDB announcements error:', e));
+    try {
+      localStorage.setItem('aeo_announcements', JSON.stringify(announcements));
+    } catch (e) {
+      console.warn('aeo_announcements localStorage failed (relying on IndexedDB):', e);
+    }
+  }, [announcements, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_team', JSON.stringify(team));
-  }, [team]);
+    if (!dataLoaded) return;
+    setItem('aeo_team', team).catch(e => console.error('IndexedDB team error:', e));
+    try {
+      localStorage.setItem('aeo_team', JSON.stringify(team));
+    } catch (e) {
+      console.warn('aeo_team localStorage failed:', e);
+    }
+  }, [team, dataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('aeo_weekly', JSON.stringify(weekly));
-  }, [weekly]);
+    if (!dataLoaded) return;
+    setItem('aeo_weekly', weekly).catch(e => console.error('IndexedDB weekly error:', e));
+    try {
+      localStorage.setItem('aeo_weekly', JSON.stringify(weekly));
+    } catch (e) {
+      console.warn('aeo_weekly localStorage failed (relying on IndexedDB):', e);
+    }
+  }, [weekly, dataLoaded]);
 
   // Handler Actions
   const saveReport = (report: Report) => {
@@ -364,6 +495,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   };
 
   const resetAllData = () => {
+    clearDB().catch(e => console.error('Failed to clear IndexedDB:', e));
     localStorage.removeItem('aeo_reports');
     localStorage.removeItem('aeo_diary_nat');
     localStorage.removeItem('aeo_diary_loc');

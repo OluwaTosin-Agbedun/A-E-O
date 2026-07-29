@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download } from 'lucide-react';
+import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download, Award } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { formatReportDate } from '../utils/date';
 
@@ -49,7 +49,7 @@ Verification pipeline: AEO-SECURE-2026-X.
 
 interface UnifiedPublication {
   id: string;
-  type: 'audit' | 'assessment' | 'weekly' | 'announcement';
+  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci';
   typeName: string;
   category: string;
   title: string;
@@ -76,6 +76,7 @@ export default function PublicationsPage() {
   const publicationTypes = [
     { value: 'audit', label: 'Post-Election Audits' },
     { value: 'assessment', label: 'Political Landscape Monitor' },
+    { value: 'dci', label: 'Democracy Competitive Index (DCI) Report' },
     { value: 'weekly', label: 'AEO Weekly Digest' },
     { value: 'announcement', label: 'Announcements' }
   ];
@@ -94,9 +95,10 @@ export default function PublicationsPage() {
 
   // Determine current path to set mode
   const currentPath = window.location.pathname;
-  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' = 'all';
+  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' = 'all';
   if (currentPath === '/post-election-audits') pageMode = 'audit';
   else if (currentPath === '/political-landscape-monitor') pageMode = 'assessment';
+  else if (currentPath === '/democracy-competitive-index') pageMode = 'dci';
   else if (currentPath === '/aeo-weekly-digest') pageMode = 'weekly';
   else if (currentPath === '/announcements') pageMode = 'announcement';
 
@@ -139,6 +141,25 @@ export default function PublicationsPage() {
       authorsList: r.authorsList || 'AEO Technology Audit Panel',
       date: formatReportDate(r.date),
       image: r.image || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800',
+      readTimeOrSize: r.size,
+      originalItem: r,
+      pdfUrl: r.pdfUrl
+    });
+  });
+
+  // 2.5 DCI reports (tagType === 'dci')
+  reports.filter(r => r.tagType === 'dci').forEach(r => {
+    unifiedPublications.push({
+      id: r.id,
+      type: 'dci',
+      typeName: 'Democracy Competitive Index (DCI) Report',
+      category: r.tag || 'DCI REPORT',
+      title: r.title,
+      summary: r.summary,
+      author: r.author || 'AEO Research Team',
+      authorsList: r.authorsList || 'Athena Election Observatory Research Team',
+      date: formatReportDate(r.date),
+      image: r.image || 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=800',
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl
@@ -200,6 +221,7 @@ export default function PublicationsPage() {
 
   // Extract year helper
   const getYearFromDate = (dateStr: string) => {
+    if (!dateStr || typeof dateStr !== 'string') return 'Other';
     const yearMatch = dateStr.match(/\b(202\d)\b/);
     return yearMatch ? yearMatch[1] : 'Other';
   };
@@ -212,10 +234,13 @@ export default function PublicationsPage() {
 
   // Filter scoped publications based on selection
   const filteredPublications = sortedPublications.filter(p => {
+    const titleText = p.title || '';
+    const summaryText = p.summary || '';
+    const authorsText = p.authorsList || '';
     const matchesSearch = 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.authorsList.toLowerCase().includes(searchQuery.toLowerCase());
+      titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      summaryText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      authorsText.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesAuthor = selectedAuthor === 'all' || p.author === selectedAuthor;
     
@@ -245,7 +270,7 @@ export default function PublicationsPage() {
   };
 
   const handleItemClick = (pub: UnifiedPublication) => {
-    if (pub.type === 'audit' || pub.type === 'assessment') {
+    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci') {
       navigateTo(`/report/${pub.id}`);
     } else if (pub.type === 'weekly') {
       navigateTo(`/weekly/${pub.id}`);
@@ -268,6 +293,12 @@ export default function PublicationsPage() {
           title: "Political Landscape Monitor",
           description: "Sub-national assessments, tech reviews, and governance research briefs analyzing democratic compliance.",
           icon: <BookOpen className="w-8 h-8 text-brand-blue" />
+        };
+      case 'dci':
+        return {
+          title: "Democracy Competitive Index (DCI) Reports",
+          description: "Rigorous research and data metrics scoring electoral competitiveness, political participation, and administrative compliance across jurisdictions.",
+          icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'weekly':
         return {

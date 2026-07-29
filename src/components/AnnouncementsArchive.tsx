@@ -9,10 +9,13 @@ export default function AnnouncementsArchive() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'press' | 'bulletin' | 'statement' | 'alert'>('all');
 
   const filteredAnnouncements = announcements.filter((ann) => {
+    const titleText = ann.title || '';
+    const summaryText = ann.summary || '';
+    const contentText = ann.content || '';
     const matchesSearch = 
-      ann.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ann.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (ann.content && ann.content.toLowerCase().includes(searchQuery.toLowerCase()));
+      titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      summaryText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contentText.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = selectedCategory === 'all' || ann.category === selectedCategory;
 

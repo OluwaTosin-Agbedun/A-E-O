@@ -8,7 +8,7 @@ interface AuditReportsProps {
   onOpenWeekly: (id: string) => void;
 }
 
-type PubType = 'audit' | 'monitor' | 'weekly' | 'announcements';
+type PubType = 'audit' | 'monitor' | 'dci' | 'weekly' | 'announcements';
 
 export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReportsProps) {
   const { reports, weekly, announcements } = useCMS();
@@ -21,34 +21,43 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
     const query = searchQuery.toLowerCase();
     
     if (selectedTag === 'audit') {
-      const audits = reports.filter(r => r.tagType === 'analysis');
+      const audits = reports.filter(r => r && r.tagType === 'analysis');
       return audits.filter(r => 
-        r.title.toLowerCase().includes(query) || 
-        r.summary.toLowerCase().includes(query)
+        (r.title || '').toLowerCase().includes(query) || 
+        (r.summary || '').toLowerCase().includes(query)
       );
     }
     
     if (selectedTag === 'monitor') {
-      const monitors = reports.filter(r => r.tagType === 'tech');
+      const monitors = reports.filter(r => r && r.tagType === 'tech');
       return monitors.filter(r => 
-        r.title.toLowerCase().includes(query) || 
-        r.summary.toLowerCase().includes(query)
+        (r.title || '').toLowerCase().includes(query) || 
+        (r.summary || '').toLowerCase().includes(query)
+      );
+    }
+
+    if (selectedTag === 'dci') {
+      const dcis = reports.filter(r => r && r.tagType === 'dci');
+      return dcis.filter(r => 
+        (r.title || '').toLowerCase().includes(query) || 
+        (r.summary || '').toLowerCase().includes(query)
       );
     }
     
     if (selectedTag === 'weekly') {
       return weekly.filter(w => 
-        w.title.toLowerCase().includes(query) || 
-        w.summary.toLowerCase().includes(query) || 
-        w.tag.toLowerCase().includes(query)
+        (w.title || '').toLowerCase().includes(query) || 
+        (w.summary || '').toLowerCase().includes(query) || 
+        (w.tag || '').toLowerCase().includes(query)
       );
     }
     
     if (selectedTag === 'announcements') {
       return announcements.filter(a => 
-        a.title.toLowerCase().includes(query) || 
-        a.summary.toLowerCase().includes(query) ||
-        (a.content && a.content.toLowerCase().includes(query))
+        (a.title || '').toLowerCase().includes(query) || 
+        (a.summary || '').toLowerCase().includes(query) ||
+        (a.category || '').toLowerCase().includes(query) ||
+        (a.content || '').toLowerCase().includes(query)
       );
     }
     
@@ -56,6 +65,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
   };
 
   const filteredItems = getFilteredItems();
+  const displayedItems = filteredItems.slice(0, 3);
 
   const getCategoryLabel = (cat: string) => {
     switch (cat) {
@@ -80,12 +90,14 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
   // Archive buttons depending on tab
   const handleArchiveNavigation = () => {
     let path = '/reports-archive';
-    if (selectedTag === 'weekly') {
+    if (selectedTag === 'dci') {
+      path = '/democracy-competitive-index';
+    } else if (selectedTag === 'weekly') {
       path = '/weekly-archive';
     } else if (selectedTag === 'announcements') {
       path = '/press-bulletins';
     }
-    window.history.pushState({}, '', path);
+    window.history.pushState({ tag: selectedTag }, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
@@ -135,6 +147,16 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
               Political landscape monitor
             </button>
             <button
+              onClick={() => { setSelectedTag('dci'); setSearchQuery(''); }}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
+                selectedTag === 'dci' 
+                  ? 'bg-navy text-white' 
+                  : 'bg-paper text-ink2 hover:bg-line border border-line'
+              }`}
+            >
+              Democracy Competitive Index
+            </button>
+            <button
               onClick={() => { setSelectedTag('weekly'); setSearchQuery(''); }}
               className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
                 selectedTag === 'weekly' 
@@ -173,137 +195,181 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
         </div>
 
         {/* Dynamic Display Grid */}
-        {filteredItems.length > 0 ? (
+        {displayedItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {/* AUDIT & MONITORING REPORTS CARD RENDER */}
-            {(selectedTag === 'audit' || selectedTag === 'monitor') && (
-              filteredItems.map((report) => (
-                <div 
-                  key={report.id}
-                  onClick={() => onOpenReport(report.id)}
-                  className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
-                        report.tagType === 'analysis' 
-                          ? 'bg-purple-50 text-brand-purple border border-purple-100' 
-                          : 'bg-green-50 text-brand-green border border-green-100'
-                      }`}>
-                        {report.tag}
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-mut">
-                        {formatReportDate(report.date)}
-                      </span>
+            {/* AUDIT, MONITORING & DCI REPORTS CARD RENDER */}
+            {(selectedTag === 'audit' || selectedTag === 'monitor' || selectedTag === 'dci') && (
+              displayedItems.map((report) => {
+                const imageUrl = report.image || (selectedTag === 'monitor' ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800' : 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=800');
+                return (
+                  <div 
+                    key={report.id}
+                    onClick={() => onOpenReport(report.id)}
+                    className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group overflow-hidden"
+                  >
+                    <div>
+                      {imageUrl && (
+                        <div className="h-40 w-full overflow-hidden bg-slate-100 relative">
+                          <img 
+                            src={imageUrl} 
+                            alt={report.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
+                            report.tagType === 'analysis' 
+                              ? 'bg-purple-50 text-brand-purple border border-purple-100' 
+                              : report.tagType === 'dci'
+                              ? 'bg-blue-50 text-brand-blue border border-blue-100'
+                              : 'bg-green-50 text-brand-green border border-green-100'
+                          }`}>
+                            {report.tag}
+                          </span>
+                          <span className="text-xs font-mono font-semibold text-mut">
+                            {formatReportDate(report.date)}
+                          </span>
+                        </div>
+
+                        <h3 className="font-display font-bold text-base text-ink mb-2 group-hover:text-brand-blue transition-colors line-clamp-2">
+                          {report.title}
+                        </h3>
+                        
+                        <p className="text-xs text-ink2 mb-4 leading-relaxed line-clamp-3">
+                          {report.summary}
+                        </p>
+                      </div>
                     </div>
 
-                    <h3 className="font-display font-bold text-lg text-ink mb-2 group-hover:text-brand-blue transition-colors">
-                      {report.title}
-                    </h3>
-                    
-                    <p className="text-xs text-ink2 mb-6 leading-relaxed">
-                      {report.summary}
-                    </p>
-                  </div>
-
-                  <div className="border-t border-line pt-4 mt-auto">
-                    <div className="flex items-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
-                        Read more
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
+                    <div className="px-5 pb-5 pt-0 mt-auto">
+                      <div className="border-t border-line pt-3">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
+                          Read more
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
 
             {/* WEEKLY DIGESTS CARD RENDER */}
             {selectedTag === 'weekly' && (
-              filteredItems.map((issue) => (
-                <div 
-                  key={issue.id}
-                  onClick={() => onOpenWeekly(issue.id)}
-                  className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="bg-emerald-50 text-brand-green border border-emerald-100 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase">
-                        {issue.tag}
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-mut">
-                        {formatReportDate(issue.date)}
-                      </span>
+              displayedItems.map((issue) => {
+                const imageUrl = issue.image || 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=800';
+                return (
+                  <div 
+                    key={issue.id}
+                    onClick={() => onOpenWeekly(issue.id)}
+                    className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group overflow-hidden"
+                  >
+                    <div>
+                      {imageUrl && (
+                        <div className="h-40 w-full overflow-hidden bg-slate-100 relative">
+                          <img 
+                            src={imageUrl} 
+                            alt={issue.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="bg-emerald-50 text-brand-green border border-emerald-100 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase">
+                            {issue.tag}
+                          </span>
+                          <span className="text-xs font-mono font-semibold text-mut">
+                            {formatReportDate(issue.date)}
+                          </span>
+                        </div>
+
+                        <h3 className="font-display font-bold text-base text-ink mb-2 group-hover:text-brand-blue transition-colors line-clamp-2">
+                          {issue.title}
+                        </h3>
+                        
+                        <p className="text-xs text-ink2 mb-4 leading-relaxed line-clamp-3">
+                          {issue.summary}
+                        </p>
+                      </div>
                     </div>
 
-                    <h3 className="font-display font-bold text-lg text-ink mb-2 group-hover:text-brand-blue transition-colors">
-                      {issue.title}
-                    </h3>
-                    
-                    <p className="text-xs text-ink2 mb-6 leading-relaxed">
-                      {issue.summary}
-                    </p>
-                  </div>
-
-                  <div className="border-t border-line pt-4 mt-auto">
-                    <div className="flex items-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
-                        Read issue
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
+                    <div className="px-5 pb-5 pt-0 mt-auto">
+                      <div className="border-t border-line pt-3">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
+                          Read issue
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
 
             {/* ANNOUNCEMENTS CARD RENDER */}
             {selectedTag === 'announcements' && (
-              filteredItems.map((ann) => (
-                <div 
-                  key={ann.id}
-                  onClick={() => {
-                    setExpandedAnn(expandedAnn === ann.id ? null : ann.id);
-                  }}
-                  className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group relative"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getCategoryColor(ann.category)}`}>
-                        {getCategoryLabel(ann.category)}
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-mut flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {formatReportDate(ann.date)}
-                      </span>
-                    </div>
+              displayedItems.map((ann) => {
+                const imageUrl = ann.image || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800';
+                return (
+                  <div 
+                    key={ann.id}
+                    onClick={() => {
+                      setExpandedAnn(expandedAnn === ann.id ? null : ann.id);
+                    }}
+                    className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                  >
+                    <div>
+                      {imageUrl && (
+                        <div className="h-40 w-full overflow-hidden bg-slate-100 relative">
+                          <img 
+                            src={imageUrl} 
+                            alt={ann.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getCategoryColor(ann.category)}`}>
+                            {getCategoryLabel(ann.category)}
+                          </span>
+                          <span className="text-xs font-mono font-semibold text-mut flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatReportDate(ann.date)}
+                          </span>
+                        </div>
 
-                    <h3 className="font-display font-bold text-lg text-ink mb-2 group-hover:text-brand-blue transition-colors leading-tight">
-                      {ann.title}
-                    </h3>
-                    
-                    <p className="text-xs text-ink2 leading-relaxed mb-4">
-                      {ann.summary}
-                    </p>
+                        <h3 className="font-display font-bold text-base text-ink mb-2 group-hover:text-brand-blue transition-colors leading-tight line-clamp-2">
+                          {ann.title}
+                        </h3>
+                        
+                        <p className="text-xs text-ink2 leading-relaxed mb-3 line-clamp-3">
+                          {ann.summary}
+                        </p>
 
-                    {expandedAnn === ann.id && ann.content && (
-                      <div className="mt-3 p-3 bg-panel border border-line/60 rounded-lg font-mono text-[10px] text-ink2 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                        {ann.content}
+                        {expandedAnn === ann.id && ann.content && (
+                          <div className="mt-3 p-3 bg-panel border border-line/60 rounded-lg font-mono text-[10px] text-ink2 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                            {ann.content}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="border-t border-line pt-4 mt-4">
-                    <div className="flex items-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono">
-                        {expandedAnn === ann.id ? 'Collapse' : 'Read details'}
-                        <ArrowRight className={`w-3.5 h-3.5 transition-transform ${expandedAnn === ann.id ? 'rotate-90' : ''}`} />
-                      </span>
+                    <div className="px-5 pb-5 pt-0 mt-auto">
+                      <div className="border-t border-line pt-3">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono">
+                          {expandedAnn === ann.id ? 'Collapse' : 'Read details'}
+                          <ArrowRight className={`w-3.5 h-3.5 transition-transform ${expandedAnn === ann.id ? 'rotate-90' : ''}`} />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
 
           </div>

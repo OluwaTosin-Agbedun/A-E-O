@@ -48,7 +48,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
           report.authorsList || report.author || 'AEO Research Team',
           report.date,
           report.pdfUrl,
-          report.sections.map((s, idx) => `Chapter ${idx + 1}: ${s.title}\n${s.content}`).join('\n\n')
+          (report.sections || []).map((s, idx) => `Chapter ${idx + 1}: ${s.title}\n${s.content}`).join('\n\n')
         );
 
         setTimeout(() => {
@@ -112,6 +112,8 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
               report.tagType === 'analysis' 
                 ? 'bg-purple-50 text-brand-purple border border-purple-100' 
+                : report.tagType === 'dci'
+                ? 'bg-blue-50 text-brand-blue border border-blue-100'
                 : 'bg-green-50 text-brand-green border border-green-100'
             }`}>
               {report.tag}
@@ -129,7 +131,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
 
         {/* Dynamic Section Contents */}
         <div className="space-y-8 text-ink text-sm sm:text-base leading-relaxed">
-          {report.sections.map((section, idx) => (
+          {(report.sections || []).map((section, idx) => (
             <section key={idx} className="space-y-3">
               <h2 className="font-display font-bold text-xl sm:text-2xl text-ink flex items-center gap-2">
                 {section.title}

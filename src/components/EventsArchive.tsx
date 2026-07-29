@@ -146,11 +146,20 @@ export default function EventsArchive() {
                     </p>
 
                     {/* Meta location & type */}
-                    <div className="pt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-mono font-medium text-mut border-t border-line/60 mt-2">
+                    <div className="pt-3 flex items-center justify-between gap-x-4 gap-y-1.5 text-xs font-mono font-medium text-mut border-t border-line/60 mt-2">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-brand-blue" />
                         {evt.location}
                       </span>
+                      <button
+                        onClick={() => {
+                          window.history.pushState({}, '', `/event/${evt.id}`);
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }}
+                        className="text-[10px] font-bold font-mono text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase tracking-wider"
+                      >
+                        Learn More →
+                      </button>
                     </div>
                   </div>
                 </div>

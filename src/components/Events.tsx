@@ -51,15 +51,26 @@ export default function Events() {
                 </p>
 
                 {/* Meta location & type */}
-                <div className="pt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm font-mono font-medium text-mut border-t border-line/60">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-brand-blue" />
-                    {evt.location}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-brand-purple" />
-                    {evt.type}
-                  </span>
+                <div className="pt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm font-mono font-medium text-mut border-t border-line/60 items-center justify-between">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-brand-blue" />
+                      {evt.location}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="w-4 h-4 text-brand-purple" />
+                      {evt.type}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      window.history.pushState({}, '', `/event/${evt.id}`);
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="px-4 py-2 bg-navy hover:bg-navy-dark text-white font-semibold font-mono tracking-wider text-xs rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 group-hover:scale-[1.02] active:scale-95 shadow-sm"
+                  >
+                    Learn More <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 

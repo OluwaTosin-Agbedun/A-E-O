@@ -1,8 +1,16 @@
-import { Mail } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Check } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 
 export default function Team() {
   const { team } = useCMS();
+  const [contactedMemberId, setContactedMemberId] = useState<string | null>(null);
+
+  const handleContact = (memberId: string) => {
+    setContactedMemberId(memberId);
+    setTimeout(() => setContactedMemberId(null), 3000);
+  };
+
   return (
     <section className="py-16 bg-white border-b border-line" id="team">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,13 +48,19 @@ export default function Team() {
 
               {/* Mock interactive Social icons */}
               <div className="flex items-center justify-center gap-3 pt-2 border-t border-line/60">
-                <button 
-                  onClick={() => alert(`Contacting ${member.name} via AEO workspace secure mail.`)}
-                  className="p-1.5 bg-white rounded-lg text-mut hover:text-brand-blue hover:bg-white shadow-sm border border-line transition-colors cursor-pointer"
-                  title="Secure Mail"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                </button>
+                {contactedMemberId === member.id ? (
+                  <span className="text-[10px] font-mono font-semibold text-brand-green flex items-center gap-1 py-1 px-2 bg-green-50 border border-green-100 rounded-lg animate-fade-in">
+                    <Check className="w-3 h-3" /> Mail sent
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => handleContact(member.id)}
+                    className="p-1.5 bg-white rounded-lg text-mut hover:text-brand-blue hover:bg-white shadow-sm border border-line transition-colors cursor-pointer"
+                    title="Secure Mail"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

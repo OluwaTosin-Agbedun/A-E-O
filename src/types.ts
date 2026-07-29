@@ -3,7 +3,7 @@ export interface ReportSection {
   content: string;
 }
 
-export type TagType = 'analysis' | 'tech' | 'announcement' | 'newsletter';
+export type TagType = 'analysis' | 'tech' | 'dci' | 'announcement' | 'newsletter';
 
 export interface Report {
   id: string;
@@ -21,12 +21,48 @@ export interface Report {
   pdfUrl?: string;
 }
 
+export interface CandidateParticipant {
+  name: string;
+  party: string;
+  role?: string;
+  platform?: string;
+}
+
+export interface SittingExecutive {
+  name: string;
+  title: string;
+  party: string;
+  termInfo?: string;
+  assumedOffice?: string;
+  notes?: string;
+}
+
 export interface DiaryItem {
   id: string;
   date: string;
   title: string;
   subtitle: string;
   status: 'In view' | 'Scheduled' | 'Provisional' | 'Tracking' | 'Concluded';
+  region?: 'nigeria' | 'africa' | 'other';
+  type?: 'presidential' | 'governorship' | 'local_government' | 'other';
+  country?: string;
+  location?: string;
+  electoralBody?: string;
+  registeredVoters?: string;
+  pollingUnits?: string;
+  lgasCount?: string;
+  description?: string;
+  stateCode?: string;
+  sittingExecutive?: SittingExecutive;
+  participants?: CandidateParticipant[];
+  keyIssues?: string[];
+  monitoringMission?: string;
+}
+
+export interface EventLink {
+  label: string;
+  url: string;
+  external?: boolean;
 }
 
 export interface EventItem {
@@ -37,6 +73,9 @@ export interface EventItem {
   description: string;
   location: string;
   type: string;
+  imageUrl?: string;
+  externalLink?: string;
+  links?: EventLink[];
 }
 
 export interface TeamMember {

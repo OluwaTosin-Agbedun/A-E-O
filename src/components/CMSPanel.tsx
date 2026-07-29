@@ -6,7 +6,8 @@ import {
 import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
-import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem } from '../types';
+import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
+import { PartyLogo } from './PartyLogo';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -15,7 +16,7 @@ interface CMSPanelProps {
   onNavigateHome?: () => void;
 }
 
-type TabType = 'publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers';
+type TabType = 'publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections';
 
 const FileUploadField = ({ 
   label, 
@@ -29,8 +30,16 @@ const FileUploadField = ({
   onChange: (base64OrUrl: string) => void;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   
   const handleFile = (file: File) => {
+    const sizeInMB = file.size / (1024 * 1024);
+    if (sizeInMB > 15.0) {
+      setFileError(`File is too large (${sizeInMB.toFixed(1)}MB). The maximum allowed size for direct uploads is 15.0MB. Please upload a smaller file.`);
+      return;
+    }
+    
+    setFileError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
@@ -48,7 +57,10 @@ const FileUploadField = ({
           <input 
             type="text" 
             value={value || ''} 
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              setFileError(null);
+              onChange(e.target.value);
+            }}
             placeholder="Paste URL or drag file →"
             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
           />
@@ -72,7 +84,12 @@ const FileUploadField = ({
           </label>
         </div>
       </div>
-      {value && value.startsWith('data:') && (
+      {fileError && (
+        <span className="text-[10px] font-mono text-red-600 block bg-red-50 border border-red-100 p-2.5 rounded-lg mt-1 font-bold">
+          ⚠️ {fileError}
+        </span>
+      )}
+      {value && value.startsWith('data:') && !fileError && (
         <span className="text-[9px] font-mono text-brand-green block">✓ File uploaded successfully (Base64 encoded)</span>
       )}
     </div>
@@ -110,6 +127,209 @@ export default function CMSPanel({
   const [subLoading, setSubLoading] = useState(false);
   const [subSearch, setSubSearch] = useState('');
 
+  // ----------------------------------------------------
+  // Elections & Parties CMS States
+  // ----------------------------------------------------
+  const [partyLogos, setPartyLogos] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('aeo_custom_party_logos_v2');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [partyCodeForm, setPartyCodeForm] = useState('');
+  const [partyLogoForm, setPartyLogoForm] = useState('');
+
+  const [statesList, setStatesList] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('aeo_monitored_states_list_v8');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return [
+      {
+        code: 'OS',
+        name: 'Osun',
+        region: 'South West',
+        election: 'Governorship',
+        status: 'Upcoming',
+        date: 'Saturday, 15 August 2026',
+        voters: '2,339,233',
+        pollingUnits: '3,763',
+        numLgas: 30,
+        numWards: 332,
+        reconciledRate: '0%',
+        summary: 'Preparing 1,200 ad-hoc observers. Observer accreditation and mapping of local collation center routes are underway.',
+        colorClass: 'text-amber-500 border-amber-500 bg-amber-50',
+        bgGradient: 'from-amber-100 to-amber-200/50 border-amber-200',
+        topParties: [
+          { name: 'APC', fullName: 'All Progressives Congress', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
+          { name: 'PDP', fullName: "People's Democratic Party", votes: 'Pending', percentage: 0, color: 'bg-red-600' },
+          { name: 'LP', fullName: 'Labour Party', votes: 'Pending', percentage: 0, color: 'bg-rose-500' },
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
+          { name: 'SDP', fullName: 'Social Democratic Party', votes: 'Pending', percentage: 0, color: 'bg-blue-600' },
+          { name: 'YPP', fullName: 'Young Progressives Party', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
+          { name: 'ADC', fullName: 'African Democratic Congress', votes: 'Pending', percentage: 0, color: 'bg-blue-500' }
+        ]
+      },
+      {
+        code: 'EK',
+        name: 'Ekiti',
+        region: 'South West',
+        election: 'Governorship',
+        status: 'Concluded',
+        date: 'June 2024',
+        voters: '988,923',
+        accreditedVoters: 345100,
+        pollingUnits: '2,445',
+        numLgas: 16,
+        numWards: 177,
+        reconciledRate: '98.2%',
+        summary: 'Full audits concluded. High IReV upload fidelity recorded with minor ad-hoc administrative delays in Ekiti East LGA.',
+        colorClass: 'text-green-600 border-green-600 bg-green-50',
+        bgGradient: 'from-emerald-50 to-emerald-100/50 border-emerald-200',
+        topParties: [
+          { name: 'APC', fullName: 'All Progressives Congress', votes: '187,057 votes', percentage: 52.3, color: 'bg-emerald-600' },
+          { name: 'SDP', fullName: 'Social Democratic Party', votes: '82,211 votes', percentage: 23.0, color: 'bg-amber-600' },
+          { name: 'PDP', fullName: "People's Democratic Party", votes: '67,454 votes', percentage: 18.9, color: 'bg-red-600' },
+          { name: 'LP', fullName: 'Labour Party', votes: '11,450 votes', percentage: 3.2, color: 'bg-rose-500' },
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '5,120 votes', percentage: 1.4, color: 'bg-indigo-600' },
+          { name: 'YPP', fullName: 'Young Progressives Party', votes: '3,100 votes', percentage: 0.9, color: 'bg-emerald-800' },
+          { name: 'ADC', fullName: 'African Democratic Congress', votes: '1,050 votes', percentage: 0.3, color: 'bg-blue-500' }
+        ],
+        lgaStandings: []
+      },
+      {
+        code: 'AN',
+        name: 'Anambra',
+        region: 'South East',
+        election: 'Governorship',
+        status: 'Concluded',
+        date: 'November 2025',
+        voters: '2,533,722',
+        accreditedVoters: 195500,
+        pollingUnits: '5,720',
+        numLgas: 21,
+        numWards: 326,
+        reconciledRate: '100%',
+        summary: 'Comprehensive audit report published. Verified 5,720 PUs with specific legal findings on over-accreditation patterns.',
+        colorClass: 'text-green-600 border-green-600 bg-green-50',
+        bgGradient: 'from-blue-50 to-blue-100/50 border-blue-200',
+        topParties: [
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '112,229 votes', percentage: 56.7, color: 'bg-indigo-600' },
+          { name: 'APC', fullName: 'All Progressives Congress', votes: '43,285 votes', percentage: 21.9, color: 'bg-emerald-600' },
+          { name: 'PDP', fullName: "People's Democratic Party", votes: '33,074 votes', percentage: 16.7, color: 'bg-red-600' },
+          { name: 'YPP', fullName: 'Young Progressives Party', votes: '4,285 votes', percentage: 2.1, color: 'bg-emerald-800' },
+          { name: 'LP', fullName: 'Labour Party', votes: '2,110 votes', percentage: 1.1, color: 'bg-rose-500' },
+          { name: 'SDP', fullName: 'Social Democratic Party', votes: '1,020 votes', percentage: 0.5, color: 'bg-blue-600' },
+          { name: 'ADC', fullName: 'African Democratic Congress', votes: '950 votes', percentage: 0.5, color: 'bg-blue-500' }
+        ],
+        lgaStandings: []
+      },
+      {
+        code: 'OD',
+        name: 'Ondo',
+        region: 'South West',
+        election: 'Off-cycle Gov.',
+        status: 'Concluded',
+        date: 'November 2024',
+        voters: '2,053,061',
+        accreditedVoters: 495800,
+        pollingUnits: '3,933',
+        numLgas: 18,
+        numWards: 203,
+        reconciledRate: '99.4%',
+        summary: 'All polling unit results parsed. Concluded that results declared reflect the true distribution of primary ballots.',
+        colorClass: 'text-green-600 border-green-600 bg-green-50',
+        bgGradient: 'from-indigo-50 to-indigo-100/50 border-indigo-200',
+        topParties: [
+          { name: 'APC', fullName: 'All Progressives Congress', votes: '366,612 votes', percentage: 74.8, color: 'bg-emerald-600' },
+          { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 24.1, color: 'bg-red-600' },
+          { name: 'LP', fullName: 'Labour Party', votes: '4,743 votes', percentage: 1.0, color: 'bg-rose-500' },
+          { name: 'SDP', fullName: 'Social Democratic Party', votes: '3,210 votes', percentage: 0.7, color: 'bg-blue-600' },
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '1,500 votes', percentage: 0.3, color: 'bg-indigo-600' },
+          { name: 'YPP', fullName: 'Young Progressives Party', votes: '1,100 votes', percentage: 0.2, color: 'bg-emerald-800' },
+          { name: 'ADC', fullName: 'African Democratic Congress', votes: '900 votes', percentage: 0.2, color: 'bg-blue-500' }
+        ],
+        lgaStandings: []
+      }
+    ];
+  });
+
+  const [selectedStateCode, setSelectedStateCode] = useState('OS');
+  
+  const activeCMSState = statesList.find(s => s.code === selectedStateCode) || statesList[0];
+
+  const handleSavePartyLogo = (e: any) => {
+    e.preventDefault();
+    if (!partyCodeForm) {
+      showStatus('Please enter a party acronym (e.g., APC, PDP, APGA).', 'error');
+      return;
+    }
+    if (!partyLogoForm) {
+      showStatus('Please upload an image file or paste an image URL.', 'error');
+      return;
+    }
+
+    const updatedLogos = {
+      ...partyLogos,
+      [partyCodeForm.toUpperCase().trim()]: partyLogoForm
+    };
+    
+    setPartyLogos(updatedLogos);
+    try {
+      localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updatedLogos));
+    } catch (e) {
+      console.warn('Failed to save party logo to localStorage:', e);
+      showStatus('Storage full! Custom logo is saved in memory but could not be saved to local storage.', 'error');
+    }
+    
+    setPartyCodeForm('');
+    setPartyLogoForm('');
+    showStatus(`Custom logo for ${partyCodeForm.toUpperCase()} saved successfully!`);
+  };
+
+  const handleDeletePartyLogo = (partyName: string) => {
+    const updated = { ...partyLogos };
+    delete updated[partyName.toUpperCase().trim()];
+    setPartyLogos(updated);
+    try {
+      localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to delete party logo from localStorage:', e);
+    }
+    showStatus(`Logo for ${partyName} deleted. Restored to vector default.`);
+  };
+
+  const handleSaveStateCMS = (e: any) => {
+    e.preventDefault();
+    
+    const updatedStatesList = statesList.map(s => {
+      if (s.code === selectedStateCode) {
+        return {
+          ...s,
+          ...activeCMSState
+        };
+      }
+      return s;
+    });
+
+    setStatesList(updatedStatesList);
+    try {
+      localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(updatedStatesList));
+    } catch (e) {
+      console.warn('Failed to save states list to localStorage:', e);
+      showStatus('Storage full! State modifications are saved in memory but could not be saved to local storage.', 'error');
+    }
+    showStatus(`Standings and stats for ${activeCMSState.name} State updated successfully!`);
+  };
+
   // Sync local states if the context gets reset or updated
   useEffect(() => {
     setLocalHero(heroConfig);
@@ -141,6 +361,7 @@ export default function CMSPanel({
 
   // Flash status messages
   const [statusMsg, setStatusMsg] = useState('');
+  const [statusType, setStatusType] = useState<'success' | 'error'>('success');
   const [confirmDialog, setConfirmDialog] = useState<{
     message: string;
     onConfirm: () => void;
@@ -172,7 +393,7 @@ export default function CMSPanel({
 
   // 4. Event Form
   const [eventForm, setEventForm] = useState<Partial<EventItem>>({
-    id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing'
+    id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: ''
   });
 
   // Announcement Form
@@ -187,10 +408,23 @@ export default function CMSPanel({
 
   if (!isStandalone && !isOpen) return null;
 
-  const showStatus = (msg: string) => {
+  const showStatus = (msg: string, type: 'success' | 'error' = 'success') => {
     setStatusMsg(msg);
-    setTimeout(() => setStatusMsg(''), 3000);
+    setStatusType(type);
+    setTimeout(() => setStatusMsg(''), 4000);
   };
+
+  useEffect(() => {
+    const handleStorageError = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const message = customEvent.detail?.message || 'Storage quota exceeded.';
+      showStatus(message, 'error');
+    };
+    window.addEventListener('aeo_storage_error', handleStorageError);
+    return () => {
+      window.removeEventListener('aeo_storage_error', handleStorageError);
+    };
+  }, []);
 
   const handleResetData = () => {
     triggerConfirm('Are you sure you want to reset all site content back to the default illustrative templates? Any custom entries will be lost.', () => {
@@ -212,7 +446,7 @@ export default function CMSPanel({
   const handleSaveReport = (e: FormEvent) => {
     e.preventDefault();
     if (!reportForm.title || !reportForm.summary) {
-      alert('Please fill out the Title and Summary.');
+      showStatus('Please fill out the Title and Summary.', 'error');
       return;
     }
 
@@ -222,7 +456,7 @@ export default function CMSPanel({
       title: reportForm.title,
       summary: reportForm.summary,
       tag: reportForm.tag || 'ELECTION AUDIT',
-      tagType: (reportForm.tagType as 'analysis' | 'tech') || 'analysis',
+      tagType: (reportForm.tagType as TagType) || 'analysis',
       date: reportForm.date || 'July 2026',
       size: reportForm.size || '1.0 MB',
       sections: reportForm.sections && reportForm.sections.length > 0 
@@ -243,7 +477,7 @@ export default function CMSPanel({
   const handleSaveDiary = (e: FormEvent) => {
     e.preventDefault();
     if (!diaryForm.title || !diaryForm.date) {
-      alert('Please enter Title and Date.');
+      showStatus('Please enter Title and Date.', 'error');
       return;
     }
 
@@ -265,7 +499,7 @@ export default function CMSPanel({
   const handleSaveWeekly = (e: FormEvent) => {
     e.preventDefault();
     if (!weeklyForm.title || !weeklyForm.summary) {
-      alert('Please fill out Title and Summary.');
+      showStatus('Please fill out Title and Summary.', 'error');
       return;
     }
 
@@ -301,7 +535,7 @@ export default function CMSPanel({
   const handleSaveEvent = (e: FormEvent) => {
     e.preventDefault();
     if (!eventForm.title || !eventForm.month || !eventForm.day) {
-      alert('Please fill out Title, Month, and Day.');
+      showStatus('Please fill out Title, Month, and Day.', 'error');
       return;
     }
 
@@ -313,19 +547,25 @@ export default function CMSPanel({
       title: eventForm.title,
       description: eventForm.description || '',
       location: eventForm.location || 'Online',
-      type: eventForm.type || 'Briefing'
+      type: eventForm.type || 'Briefing',
+      imageUrl: eventForm.imageUrl || '',
+      externalLink: eventForm.externalLink || '',
+      links: (eventForm.links && eventForm.links.length > 0) ? eventForm.links : [
+        { label: 'View Our Publications', url: '/publications', external: false },
+        { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+      ]
     };
 
     saveEvent(finalEvent);
     setEditingId(null);
-    setEventForm({ id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing' });
+    setEventForm({ id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: '', links: [] });
     showStatus(`Event "${finalEvent.title}" saved!`);
   };
 
   const handleSaveAnnouncement = (e: FormEvent) => {
     e.preventDefault();
     if (!announcementForm.title || !announcementForm.month || !announcementForm.day) {
-      alert('Please fill out Title, Month, and Day.');
+      showStatus('Please fill out Title, Month, and Day.', 'error');
       return;
     }
 
@@ -354,7 +594,7 @@ export default function CMSPanel({
   const handleSaveTeam = (e: FormEvent) => {
     e.preventDefault();
     if (!teamForm.name || !teamForm.role) {
-      alert('Please fill out Member Name and Role.');
+      showStatus('Please fill out Member Name and Role.', 'error');
       return;
     }
 
@@ -479,8 +719,16 @@ export default function CMSPanel({
 
         {/* Floating toast notification */}
         {statusMsg && (
-          <div className="bg-green-50 border-y border-green-200 px-6 py-2.5 text-xs text-green-800 font-mono flex items-center gap-2 animate-fade-in shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-brand-green" />
+          <div className={`border-y px-6 py-2.5 text-xs font-mono flex items-center gap-2 animate-fade-in shrink-0 ${
+            statusType === 'error' 
+              ? 'bg-red-50 border-red-200 text-red-800' 
+              : 'bg-green-50 border-green-200 text-green-800'
+          }`}>
+            {statusType === 'error' ? (
+              <X className="w-4 h-4 text-red-600 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-brand-green shrink-0" />
+            )}
             <span>{statusMsg}</span>
           </div>
         )}
@@ -540,6 +788,15 @@ export default function CMSPanel({
           >
             <Users className="w-3.5 h-3.5 text-brand-blue" />
             <span className="font-bold">Subscribers ({subscribers.length})</span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('elections'); setEditingId(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border border-indigo-200 ${
+              activeTab === 'elections' ? 'bg-indigo-600 text-white' : 'hover:bg-line text-indigo-600'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="font-bold">Elections & Parties</span>
           </button>
         </div>
 
@@ -618,11 +875,12 @@ export default function CMSPanel({
                           <label className="block text-[10px] font-mono uppercase font-bold text-mut">Tag Type Classification</label>
                           <select 
                             value={reportForm.tagType} 
-                            onChange={(e) => setReportForm({ ...reportForm, tagType: e.target.value as 'analysis' | 'tech' })}
+                            onChange={(e) => setReportForm({ ...reportForm, tagType: e.target.value as TagType })}
                             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
                           >
                             <option value="analysis">Election Analysis (Purple theme)</option>
                             <option value="tech">Technology Security (Orange theme)</option>
+                            <option value="dci">Democracy Competitive Index (DCI) Report (Blue/Green theme)</option>
                           </select>
                         </div>
                       </div>
@@ -1048,7 +1306,7 @@ export default function CMSPanel({
                 <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
                   {(() => {
                     const filtered = [
-                      ...reports.map(r => ({ ...r, unifiedType: 'report' as const, tagColor: r.tagType === 'tech' ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-brand-purple bg-purple-50 border-purple-100' })),
+                      ...reports.map(r => ({ ...r, unifiedType: 'report' as const, tagColor: r.tagType === 'tech' ? 'text-amber-600 bg-amber-50 border-amber-100' : r.tagType === 'dci' ? 'text-brand-blue bg-blue-50 border-blue-100' : 'text-brand-purple bg-purple-50 border-purple-100' })),
                       ...weekly.map(w => ({ ...w, unifiedType: 'weekly' as const, tagColor: 'text-brand-blue bg-blue-50 border-blue-100' })),
                       ...announcements.map(a => ({ ...a, unifiedType: 'announcement' as const, tagColor: 'text-emerald-600 bg-emerald-50 border-emerald-100' }))
                     ].filter(item => pubFilter === 'all' || item.unifiedType === pubFilter);
@@ -1087,7 +1345,56 @@ export default function CMSPanel({
                               if (item.unifiedType === 'report') {
                                 setReportForm(item);
                               } else if (item.unifiedType === 'weekly') {
-                                setWeeklyForm(item);
+                                const weeklyItem = { ...item };
+                                if (!weeklyItem.sections || weeklyItem.sections.length === 0) {
+                                  if (weeklyItem.id === 'wk-1') {
+                                    weeklyItem.sections = [
+                                      {
+                                        title: "1. The Forensic Evidence from Ekiti uploads",
+                                        text: "With the concluding declarations in Ekiti, our data forensics team isolated three significant takeaways from the IReV uploads: first, the speed of form submission increased by 14% compared to the previous cycle; second, over 94% of submitted forms were fully legible; third, a critical lag in collation validation was recorded in 2 central LGAs. Here is what we must demand from ad-hoc training before Osun."
+                                      },
+                                      {
+                                        title: "2. The Accreditation-to-Transmission Chain",
+                                        text: "Our monitoring of the 2,445 polling units in Ekiti State shows that the BVAS authentication system achieved 98.2% accuracy. However, in the transmission of the primary EC8A result sheets, there were noticeable latency issues. In several remote units, observers reported that the network signals were insufficient, leading to physical transit of the device before successful uploading."
+                                      },
+                                      {
+                                        title: "3. Recommendations to INEC and Civil Society",
+                                        text: "To bridge these transparency loopholes before the critical Osun off-cycle election in August 2026, we outline three priority administrative recommendations: Firstly, optimize the IReV portal server capacity to prevent high-traffic timeout buffers. Secondly, ensure standard battery backup packs are deployed to all 3,763 Osun polling units. Lastly, enforce strict public posting of the physical EC8A sheet immediately after counts are reconciled."
+                                      }
+                                    ];
+                                  } else if (weeklyItem.id === 'wk-2') {
+                                    weeklyItem.sections = [
+                                      {
+                                        title: "1. The Structural Deficit of Internal Party Systems",
+                                        text: "Without programmatic party definitions and stable funding metrics, democratic structures struggle to hold collation processes accountable. This analytical commentary dissects the legal framework of political party internal democracy and suggests structural reforms to protect general electoral integrity."
+                                      },
+                                      {
+                                        title: "2. Pre-election Litigation as an Administrative Burden",
+                                        text: "The sheer volume of court challenges preceding general contestations threatens to paralyze electoral preparations. Administrative timelines are consistently interrupted by sudden judicial mandates, which redirect logistics staff and confuse registered voters regarding valid candidate slots. There is an urgent need to expedite these judicial reviews."
+                                      },
+                                      {
+                                        title: "3. Reclaiming Public Spaces for Fair Contest",
+                                        text: "A healthy democracy thrives on competitive balance. When opposition parties face systemic barriers in reserving civic venues, distributing flyers, or obtaining local media visibility, the integrity of the vote is already compromised before the first ballot is cast. Regulatory bodies must protect parity in access to the public square."
+                                      }
+                                    ];
+                                  } else if (weeklyItem.id === 'wk-3') {
+                                    weeklyItem.sections = [
+                                      {
+                                        title: "Official Press Bulletin: Urging Procedural Integrity",
+                                        text: "Abuja, Nigeria. The Athena Election Observatory issues a formal statement addressing the delays in polling-unit data synchronization. We urge the Independent National Electoral Commission (INEC) to address server latency concerns to maintain public confidence before the Osun off-cycle election."
+                                      },
+                                      {
+                                        title: "Establishing Technical Contingencies",
+                                        text: "Delays in publishing results on public-facing viewing portals are the primary breeding ground for electoral conspiracy theories. To safeguard institutional trust, INEC must provide clear, live status updates on technical hurdles. General silence is almost always interpreted as active interference."
+                                      },
+                                      {
+                                        title: "Formal Call to Action",
+                                        text: "We call upon all democratic stakeholders—including regional monitors, international delegations, and political parties—to demand a transparent technical simulation of the result management pipeline at least 14 days before the Osun state polls. This rehearsal must be publicly verifiable."
+                                      }
+                                    ];
+                                  }
+                                }
+                                setWeeklyForm(weeklyItem);
                               } else if (item.unifiedType === 'announcement') {
                                 setAnnouncementForm(item);
                               }
@@ -1325,6 +1632,29 @@ export default function CMSPanel({
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Event Image URL</label>
+                      <input 
+                        type="text" 
+                        value={eventForm.imageUrl || ''} 
+                        onChange={(e) => setEventForm({ ...eventForm, imageUrl: e.target.value })}
+                        placeholder="E.g., https://images.unsplash.com/photo-..."
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Registration Form Link / External URL</label>
+                      <input 
+                        type="text" 
+                        value={eventForm.externalLink || ''} 
+                        onChange={(e) => setEventForm({ ...eventForm, externalLink: e.target.value })}
+                        placeholder="E.g., https://forms.google.com/... or Zoom link"
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="block text-[10px] font-mono uppercase font-bold text-mut">Conference Title</label>
                     <input 
@@ -1344,6 +1674,105 @@ export default function CMSPanel({
                       placeholder="E.g., Live presentation of IReV discrepancy metrics and voter accreditation ratios."
                       className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-20 resize-none"
                     />
+                  </div>
+
+                  {/* Official Links & Resources Manager */}
+                  <div className="space-y-2 pt-3 border-t border-line">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Official Links &amp; Resources</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentLinks = eventForm.links || [
+                            { label: 'View Our Publications', url: '/publications', external: false },
+                            { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                          ];
+                          setEventForm({
+                            ...eventForm,
+                            links: [...currentLinks, { label: '', url: '', external: false }]
+                          });
+                        }}
+                        className="text-[10px] font-mono font-bold text-brand-blue hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add Link</span>
+                      </button>
+                    </div>
+
+                    {((eventForm.links && eventForm.links.length > 0) ? eventForm.links : [
+                      { label: 'View Our Publications', url: '/publications', external: false },
+                      { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                    ]).map((link, lIdx) => (
+                      <div key={lIdx} className="p-2.5 bg-slate-50 border border-line rounded-lg space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9px] font-mono uppercase text-mut">Link Label</label>
+                            <input
+                              type="text"
+                              value={link.label}
+                              onChange={(e) => {
+                                const currentLinks = [...(eventForm.links || [
+                                  { label: 'View Our Publications', url: '/publications', external: false },
+                                  { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                                ])];
+                                currentLinks[lIdx] = { ...currentLinks[lIdx], label: e.target.value };
+                                setEventForm({ ...eventForm, links: currentLinks });
+                              }}
+                              placeholder="E.g., View Our Publications"
+                              className="w-full text-xs p-1.5 border border-line rounded bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-mono uppercase text-mut">URL / Route / Mailto</label>
+                            <input
+                              type="text"
+                              value={link.url}
+                              onChange={(e) => {
+                                const currentLinks = [...(eventForm.links || [
+                                  { label: 'View Our Publications', url: '/publications', external: false },
+                                  { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                                ])];
+                                currentLinks[lIdx] = { ...currentLinks[lIdx], url: e.target.value };
+                                setEventForm({ ...eventForm, links: currentLinks });
+                              }}
+                              placeholder="E.g., /publications or mailto:aeo@athenacentre.org"
+                              className="w-full text-xs p-1.5 border border-line rounded bg-white font-mono"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs pt-1">
+                          <label className="inline-flex items-center gap-1.5 text-[10px] font-mono text-ink2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!link.external}
+                              onChange={(e) => {
+                                const currentLinks = [...(eventForm.links || [
+                                  { label: 'View Our Publications', url: '/publications', external: false },
+                                  { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                                ])];
+                                currentLinks[lIdx] = { ...currentLinks[lIdx], external: e.target.checked };
+                                setEventForm({ ...eventForm, links: currentLinks });
+                              }}
+                              className="rounded text-brand-blue"
+                            />
+                            <span>External / New Tab</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentLinks = (eventForm.links || [
+                                { label: 'View Our Publications', url: '/publications', external: false },
+                                { label: 'Submit Partner Cooperation Request', url: 'mailto:aeo@athenacentre.org', external: true }
+                              ]).filter((_, i) => i !== lIdx);
+                              setEventForm({ ...eventForm, links: currentLinks });
+                            }}
+                            className="text-[10px] font-mono font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
+                          >
+                            Remove Link
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   <button
@@ -1753,26 +2182,7 @@ export default function CMSPanel({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1">
-                        <label className="block text-[10px] font-mono text-blue-300 uppercase tracking-wider font-bold">Primary Button Text</label>
-                        <input 
-                          type="text"
-                          value={localHero.exploreButtonText}
-                          onChange={(e) => setLocalHero({ ...localHero, exploreButtonText: e.target.value })}
-                          className="w-full bg-brand-blue border border-transparent focus:border-white/20 outline-none px-3.5 py-2 rounded-xl text-xs font-bold text-white text-center"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-[10px] font-mono text-blue-300 uppercase tracking-wider font-bold">Secondary Button Text</label>
-                        <input 
-                          type="text"
-                          value={localHero.auditButtonText}
-                          onChange={(e) => setLocalHero({ ...localHero, auditButtonText: e.target.value })}
-                          className="w-full bg-white/5 border border-white/15 focus:border-white/20 outline-none px-3.5 py-2 rounded-xl text-xs font-bold text-white text-center"
-                        />
-                      </div>
-                    </div>
+
                   </div>
 
                   {/* Right Spotlight Card Form */}
@@ -2378,6 +2788,342 @@ export default function CMSPanel({
                     </table>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'elections' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-ink mb-1">Elections & Party Logos</h3>
+                <p className="text-xs text-mut">Manage active participating political parties, upload brand logos, and customize electoral standings or accredited voter counts across states.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* 1. Party Logos Management */}
+                <div className="lg:col-span-5 bg-paper p-5 border border-line rounded-xl space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-line">
+                    <Database className="w-4 h-4 text-indigo-600" />
+                    <h4 className="text-xs font-bold font-mono uppercase text-ink">Party Logo Configuration</h4>
+                  </div>
+
+                  <form onSubmit={handleSavePartyLogo} className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Party Acronym</label>
+                      <input 
+                        type="text" 
+                        value={partyCodeForm}
+                        onChange={(e) => setPartyCodeForm(e.target.value)}
+                        placeholder="e.g. APC, PDP, LP, APGA, SDP, YPP, ADC"
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono font-bold"
+                        required
+                      />
+                    </div>
+
+                    <FileUploadField 
+                      label="Upload Party Logo or Image" 
+                      accept="image/*"
+                      value={partyLogoForm}
+                      onChange={(val) => setPartyLogoForm(val)}
+                    />
+
+                    <button 
+                      type="submit" 
+                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold uppercase text-[10px] rounded-lg tracking-wider transition-colors cursor-pointer"
+                    >
+                      Save Custom Logo
+                    </button>
+                  </form>
+
+                  <div className="space-y-2 pt-2">
+                    <span className="block text-[10px] font-mono uppercase font-bold text-mut">Registered Parties List</span>
+                    <div className="border border-line rounded-lg divide-y divide-line overflow-hidden max-h-[300px] overflow-y-auto">
+                      {['APC', 'PDP', 'LP', 'APGA', 'SDP', 'YPP', 'ADC'].map(party => {
+                        const hasCustom = !!partyLogos[party];
+                        return (
+                          <div key={party} className="p-2.5 flex items-center justify-between text-xs bg-white">
+                            <div className="flex items-center gap-2">
+                              <PartyLogo name={party} className="w-8 h-8 rounded border border-line" />
+                              <div>
+                                <span className="font-bold font-mono">{party}</span>
+                                <span className="block text-[9px] text-mut">
+                                  {hasCustom ? '✓ Custom Logo Active' : 'Default Vector Icon'}
+                                </span>
+                              </div>
+                            </div>
+                            {hasCustom && (
+                              <button 
+                                onClick={() => handleDeletePartyLogo(party)}
+                                className="text-[10px] text-rose-600 font-mono font-semibold hover:underline"
+                              >
+                                Restore
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Electoral Standings & Core State Stats */}
+                <div className="lg:col-span-7 bg-paper p-5 border border-line rounded-xl space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-line">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-600" />
+                      <h4 className="text-xs font-bold font-mono uppercase text-ink">Electoral Standings & Key Metrics</h4>
+                    </div>
+                    <div>
+                      <select 
+                        value={selectedStateCode}
+                        onChange={(e) => setSelectedStateCode(e.target.value)}
+                        className="text-xs p-1.5 border border-line rounded bg-white font-semibold font-mono"
+                      >
+                        {statesList.map(s => (
+                          <option key={s.code} value={s.code}>{s.name} State</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSaveStateCMS} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Election Title</label>
+                        <input 
+                          type="text" 
+                          value={activeCMSState.election || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, election: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Status</label>
+                        <select 
+                          value={activeCMSState.status || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, status: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        >
+                          <option value="Upcoming">Upcoming (Live)</option>
+                          <option value="Concluded">Concluded (Past)</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date / Period</label>
+                        <input 
+                          type="text" 
+                          value={activeCMSState.date || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, date: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Total Registered Voters</label>
+                        <input 
+                          type="text" 
+                          value={activeCMSState.voters || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, voters: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">No. of accredited voters</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.accreditedVoters || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, accreditedVoters: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          placeholder="Only for Concluded"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Polling Units</label>
+                        <input 
+                          type="text" 
+                          value={activeCMSState.pollingUnits || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, pollingUnits: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">No. of LGAs</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.numLgas || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, numLgas: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">No. of Wards</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.numWards || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, numWards: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Valid Votes</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.validVotes || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, validVotes: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Rejected Votes</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.rejectedVotes || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, rejectedVotes: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Total Votes</label>
+                        <input 
+                          type="number" 
+                          value={activeCMSState.totalVotes || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, totalVotes: Number(e.target.value) } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1 col-span-2">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Reconciliation / Audit Rate</label>
+                        <input 
+                          type="text" 
+                          value={activeCMSState.reconciledRate || ''}
+                          onChange={(e) => {
+                            const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, reconciledRate: e.target.value } : s);
+                            setStatesList(updated);
+                          }}
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Audit / Election Summary</label>
+                      <textarea 
+                        value={activeCMSState.summary || ''}
+                        onChange={(e) => {
+                          const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, summary: e.target.value } : s);
+                          setStatesList(updated);
+                        }}
+                        rows={3}
+                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                      />
+                    </div>
+
+                    {/* Parties details inside the state */}
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="block text-[10px] font-mono uppercase font-bold text-mut">Political Party Standings</span>
+                        <span className="text-[9px] text-mut italic">Ensure percentages sum cleanly</span>
+                      </div>
+                      <div className="border border-line rounded-lg overflow-hidden divide-y divide-line">
+                        {activeCMSState.topParties && activeCMSState.topParties.map((p: any, idx: number) => (
+                          <div key={idx} className="p-3 bg-white grid grid-cols-12 gap-2 items-center text-xs">
+                            <div className="col-span-2 flex items-center gap-1.5 font-mono font-bold">
+                              <PartyLogo name={p.name} className="w-5 h-5" />
+                              <span>{p.name}</span>
+                            </div>
+                            <div className="col-span-4">
+                              <input 
+                                type="text"
+                                value={p.fullName || ''}
+                                onChange={(e) => {
+                                  const updatedParties = [...activeCMSState.topParties];
+                                  updatedParties[idx] = { ...p, fullName: e.target.value };
+                                  const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+                                  setStatesList(updated);
+                                }}
+                                className="w-full text-[11px] p-1 border border-line rounded bg-slate-50 font-sans"
+                                placeholder="Full Name"
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <input 
+                                type="text"
+                                value={p.votes || ''}
+                                onChange={(e) => {
+                                  const updatedParties = [...activeCMSState.topParties];
+                                  updatedParties[idx] = { ...p, votes: e.target.value };
+                                  const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+                                  setStatesList(updated);
+                                }}
+                                className="w-full text-[11px] p-1 border border-line rounded bg-slate-50 font-mono"
+                                placeholder="e.g. Registered or 12,345 votes"
+                              />
+                            </div>
+                            <div className="col-span-3 flex items-center gap-1 font-mono">
+                              <input 
+                                type="number"
+                                step="0.1"
+                                value={p.percentage || 0}
+                                onChange={(e) => {
+                                  const updatedParties = [...activeCMSState.topParties];
+                                  updatedParties[idx] = { ...p, percentage: parseFloat(e.target.value) || 0 };
+                                  const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+                                  setStatesList(updated);
+                                }}
+                                className="w-16 text-[11px] p-1 border border-line rounded bg-slate-50 text-right"
+                              />
+                              <span>%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button 
+                        type="submit" 
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold uppercase text-[10px] rounded-lg tracking-wider transition-all shadow cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        Save State Standings & Stats
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
               </div>
             </div>
           )}

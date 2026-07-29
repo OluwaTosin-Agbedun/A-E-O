@@ -17,6 +17,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   const [subEmail, setSubEmail] = useState('');
   const [subError, setSubError] = useState('');
   const [hasShared, setHasShared] = useState(false);
+  const [fieldReportStatus, setFieldReportStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (weeklyId) {
@@ -25,6 +26,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       setSubEmail('');
       setSubError('');
       setHasShared(false);
+      setFieldReportStatus(null);
     }
   }, [weeklyId]);
 
@@ -164,7 +166,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                 articleDetails.author,
                 formatReportDate(issue.date),
                 issue.pdfUrl,
-                articleDetails.sections.map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+                (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
               )}
               className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
             >
@@ -191,13 +193,13 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
           {/* Metadata heading */}
           <div className="space-y-4 border-b border-line pb-6">
             <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase inline-block ${
-              issue.tag.includes('Newsletter') 
+              (issue.tag || '').includes('Newsletter') 
                 ? 'bg-blue-50 text-brand-blue border border-blue-100' 
-                : issue.tag.includes('Analysis')
+                : (issue.tag || '').includes('Analysis')
                 ? 'bg-purple-50 text-brand-purple border border-purple-100'
                 : 'bg-amber-50 text-amber-700 border border-amber-100'
             }`}>
-              {issue.tag}
+              {issue.tag || 'Weekly Issue'}
             </span>
 
             <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink leading-tight">
@@ -224,7 +226,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
           {/* Render Sections */}
           <div className="space-y-8 text-ink2 text-sm sm:text-base leading-relaxed">
-            {articleDetails.sections.map((sec, idx) => (
+            {(articleDetails.sections || []).map((sec, idx) => (
               <div key={idx} className="space-y-3">
                 <h2 className="font-display font-bold text-lg sm:text-xl text-ink">
                   {sec.title}
@@ -246,12 +248,18 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
               <p className="text-xs text-mut mb-3">
                 Do you have local observations regarding this issue? Post secure reports to the Athena Centre.
               </p>
-              <button 
-                onClick={() => alert("Connecting to the Secure Field Observer Submission pipeline...")}
-                className="inline-flex items-center justify-center bg-navy hover:bg-navy-dark text-white text-xs font-semibold font-mono tracking-wider uppercase px-4 py-2 rounded-lg cursor-pointer"
-              >
-                Submit field report
-              </button>
+              {fieldReportStatus ? (
+                <div className="text-xs font-semibold font-mono text-brand-green py-2 animate-fade-in">
+                  ✓ {fieldReportStatus}
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setFieldReportStatus("Connecting to the Secure Field Observer Submission pipeline...")}
+                  className="inline-flex items-center justify-center bg-navy hover:bg-navy-dark text-white text-xs font-semibold font-mono tracking-wider uppercase px-4 py-2 rounded-lg cursor-pointer"
+                >
+                  Submit field report
+                </button>
+              )}
             </div>
           </div>
 

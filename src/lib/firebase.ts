@@ -13,5 +13,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, "ai-studio-athenaelectionob-f9fd98b2-b5fa-4c58-95e8-8d4d87819146");
+
+let firestoreDb;
+try {
+  firestoreDb = getFirestore(app, "ai-studio-athenaelectionob-f9fd98b2-b5fa-4c58-95e8-8d4d87819146");
+} catch (e) {
+  console.warn("Failed to initialize with custom database ID, falling back to default database:", e);
+  firestoreDb = getFirestore(app);
+}
+
+export const db = firestoreDb;
 export const googleProvider = new GoogleAuthProvider();

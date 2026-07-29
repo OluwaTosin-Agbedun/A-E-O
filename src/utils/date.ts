@@ -1,5 +1,30 @@
-export function formatReportDate(dateStr: string): string {
+export function formatReportDate(dateStr: any): string {
   if (!dateStr) return '';
+  
+  let str = '';
+  if (typeof dateStr === 'string') {
+    str = dateStr;
+  } else if (dateStr instanceof Date) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${dateStr.getDate()} ${months[dateStr.getMonth()]} ${dateStr.getFullYear()}`;
+  } else if (typeof dateStr === 'object') {
+    if (typeof dateStr.seconds === 'number') {
+      const d = new Date(dateStr.seconds * 1000);
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    if (typeof dateStr.toDate === 'function') {
+      try {
+        const d = dateStr.toDate();
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      } catch (e) {}
+    }
+    str = String(dateStr);
+  } else {
+    str = String(dateStr);
+  }
+
   const monthMap: Record<string, string> = {
     jan: 'January', january: 'January',
     feb: 'February', february: 'February',
@@ -15,7 +40,7 @@ export function formatReportDate(dateStr: string): string {
     dec: 'December', december: 'December'
   };
 
-  const cleanStr = dateStr.trim().replace(/\s+/g, ' ');
+  const cleanStr = str.trim().replace(/\s+/g, ' ');
   
   // Pattern 1: "9 Feb 2026" or "09 Feb 2026" or "12 January, 2026"
   const dayMonthYearRegex = /^(\d{1,2})[\s,]+([a-zA-Z]+)[\s,]+(\d{4})$/;
@@ -39,7 +64,7 @@ export function formatReportDate(dateStr: string): string {
   }
 
   // General replacement fallback
-  let formatted = dateStr;
+  let formatted = str;
   Object.entries(monthMap).forEach(([abbr, full]) => {
     if (abbr.length === 3) {
       const regex = new RegExp(`\\b${abbr}\\b`, 'gi');
