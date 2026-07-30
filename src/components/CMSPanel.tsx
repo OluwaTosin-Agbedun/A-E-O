@@ -9,6 +9,7 @@ import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from '
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
 import { PartyLogo } from './PartyLogo';
 import { setItem } from '../utils/db';
+import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -33,7 +34,7 @@ const FileUploadField = ({
   const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     const sizeInMB = file.size / (1024 * 1024);
     if (sizeInMB > 15.0) {
       setFileError(`File is too large (${sizeInMB.toFixed(1)}MB). The maximum allowed size for direct uploads is 15.0MB. Please upload a smaller file.`);
@@ -41,13 +42,22 @@ const FileUploadField = ({
     }
     
     setFileError(null);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        onChange(e.target.result as string);
+    try {
+      if (file.type.startsWith('image/')) {
+        const compressed = await compressImageFile(file, 900, 900, 0.85);
+        onChange(compressed);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            onChange(e.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Error reading file:', err);
+    }
   };
 
   return (
@@ -318,8 +328,8 @@ export default function CMSPanel({
     }
 
     try {
-      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updatedLogos });
-      setDoc(doc(db, 'cms', `logo_${partyKey}`), { party: partyKey, logo: partyLogoForm });
+      saveAssetToFirestore('logo', partyKey, partyLogoForm);
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { keys: Object.keys(updatedLogos), updated: Date.now() });
     } catch (e) {
       console.error('Failed to sync party logos to Firestore:', e);
     }

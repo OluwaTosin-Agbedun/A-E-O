@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Paintbrush, Umbrella, Users, Bird, Shield, Leaf, HelpCircle, GraduationCap } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { loadAssetFromFirestore } from '../lib/firebaseAssets';
 
 export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string; className?: string }) {
   const party = (name || "").toUpperCase().trim();
@@ -28,8 +29,8 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
       // ignore
     }
 
-    // 2. Global party logos map snapshot
-    const unsubMap = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
+    // 2. Global party logos map snapshot (manifest or map)
+    const unsubMap = onSnapshot(doc(db, 'cms', 'custom_party_logos'), async snapshot => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.map) {
@@ -43,20 +44,38 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
             return merged;
           });
         }
+        if (data?.keys && Array.isArray(data.keys)) {
+          for (const k of data.keys) {
+            const logoData = await loadAssetFromFirestore('logo', k);
+            if (logoData) {
+              setCustomLogos(prev => {
+                const merged = { ...prev, [k]: logoData };
+                try {
+                  localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
+                } catch {}
+                return merged;
+              });
+            }
+          }
+        }
       }
     }, err => {
       console.warn("Firestore party logos fallback:", err);
     });
 
-    // 3. Individual party logo document fallback (for large base64 logos)
+    // 3. Individual party logo document fallback (for large or chunked base64 logos)
     let unsubSingle: (() => void) | undefined;
     if (party) {
-      unsubSingle = onSnapshot(doc(db, 'cms', `logo_${party}`), snapshot => {
+      unsubSingle = onSnapshot(doc(db, 'cms', `logo_${party}`), async snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.data();
-          if (data?.logo) {
+          let logoVal = data?.dataUrl || data?.logo;
+          if (!logoVal && data?.chunksCount) {
+            logoVal = await loadAssetFromFirestore('logo', party);
+          }
+          if (logoVal) {
             setCustomLogos(prev => {
-              const merged = { ...prev, [party]: data.logo };
+              const merged = { ...prev, [party]: logoVal };
               try {
                 localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
               } catch {

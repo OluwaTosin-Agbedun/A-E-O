@@ -13,7 +13,8 @@ import {
 } from '../data';
 import { getItem, setItem, clearDB } from '../utils/db';
 import { db } from '../lib/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore } from '../lib/firebaseAssets';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -163,8 +164,8 @@ interface CMSContextType {
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
-// Helper to merge local items and remote items so user uploads (PDFs, images) are never wiped
-function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string }>(
+// Helper to merge local items and remote items so user uploads (PDFs, images, synopses) are never wiped or overwritten
+function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string; summary?: string; title?: string; sections?: any }>(
   localItems: T[],
   remoteItems: T[]
 ): T[] {
@@ -177,15 +178,39 @@ function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string
   for (const remoteItem of remoteItems) {
     const localMatch = localItems.find(l => l.id === remoteItem.id);
     if (localMatch) {
+      // Determine effective PDF URL (prefer actual base64 or HTTP URL over reference placeholders)
+      const effectivePdfUrl = (localMatch.pdfUrl && localMatch.pdfUrl.length > 20 && !localMatch.pdfUrl.startsWith('ref:'))
+        ? localMatch.pdfUrl
+        : ((remoteItem.pdfUrl && !remoteItem.pdfUrl.startsWith('ref:')) ? remoteItem.pdfUrl : (localMatch.pdfUrl || ''));
+
+      // Determine effective Image
+      const effectiveImage = (localMatch.image && localMatch.image.length > 20 && !localMatch.image.startsWith('ref:'))
+        ? localMatch.image
+        : ((remoteItem.image && !remoteItem.image.startsWith('ref:')) ? remoteItem.image : (localMatch.image || ''));
+
+      // Determine effective Summary / Synopsis (keep local if non-empty and at least as long as remote)
+      const localSum = (localMatch.summary || '').trim();
+      const remoteSum = (remoteItem.summary || '').trim();
+      const effectiveSummary = (localSum.length >= remoteSum.length && localSum.length > 0)
+        ? localMatch.summary
+        : (remoteItem.summary || '');
+
+      const effectiveTitle = (localMatch.title && localMatch.title.trim() !== '')
+        ? localMatch.title
+        : (remoteItem.title || '');
+
+      const effectiveSections = (localMatch.sections && Array.isArray(localMatch.sections) && localMatch.sections.length > 0)
+        ? localMatch.sections
+        : (remoteItem.sections || []);
+
       merged.push({
-        ...localMatch,
         ...remoteItem,
-        pdfUrl: (remoteItem.pdfUrl && remoteItem.pdfUrl.trim() !== '') 
-          ? remoteItem.pdfUrl 
-          : (localMatch.pdfUrl || ''),
-        image: (remoteItem.image && remoteItem.image.trim() !== '') 
-          ? remoteItem.image 
-          : (localMatch.image || ''),
+        ...localMatch,
+        title: effectiveTitle,
+        summary: effectiveSummary,
+        pdfUrl: effectivePdfUrl,
+        image: effectiveImage,
+        sections: effectiveSections,
       });
     } else {
       merged.push(remoteItem);
@@ -202,24 +227,16 @@ function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string
   return merged;
 }
 
-// Helper to save Firestore document
+// Helper to save Firestore document cleanly with asset chunking
 const syncToFirestore = async (docName: string, data: any) => {
   try {
-    await setDoc(doc(db, 'cms', docName), data);
+    if (data && Array.isArray(data.items)) {
+      await sanitizeAndSyncItems(docName, data.items);
+    } else {
+      await setDoc(doc(db, 'cms', docName), data);
+    }
   } catch (err) {
     console.error(`Error syncing ${docName} to Firestore:`, err);
-  }
-};
-
-const syncItemPdfs = async (items: Array<{ id: string; pdfUrl?: string }>) => {
-  for (const item of items) {
-    if (item.id && item.pdfUrl && item.pdfUrl.startsWith('data:')) {
-      try {
-        await setDoc(doc(db, 'cms', `pdf_${item.id}`), { id: item.id, pdfUrl: item.pdfUrl });
-      } catch (e) {
-        console.warn(`Could not sync individual PDF ${item.id} to Firestore:`, e);
-      }
-    }
   }
 };
 
@@ -522,37 +539,83 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     }
   }, [weekly, dataLoaded]);
 
-  // Sync individual PDF documents from Firestore if main array didn't include pdfUrl
+  // Auto-sync current local state to Firestore on boot to ensure remote database has latest sanitized content
   useEffect(() => {
-    const allPdfItems = [
-      ...reports.map(r => ({ id: r.id, type: 'report' })),
-      ...weekly.map(w => ({ id: w.id, type: 'weekly' })),
-      ...announcements.map(a => ({ id: a.id, type: 'announcement' }))
-    ];
+    if (!dataLoaded) return;
+    if (reports.length > 0) syncToFirestore('reports', { items: reports });
+    if (weekly.length > 0) syncToFirestore('weekly', { items: weekly });
+    if (announcements.length > 0) syncToFirestore('announcements', { items: announcements });
+    if (events.length > 0) syncToFirestore('events', { items: events });
+    if (team.length > 0) syncToFirestore('team', { items: team });
+  }, [dataLoaded]);
 
-    const unsubs: (() => void)[] = [];
+  // Sync individual PDF and Image documents from Firestore if main array included reference placeholders or empty asset fields
+  useEffect(() => {
+    let cancelled = false;
 
-    for (const item of allPdfItems) {
-      if (!item.id) continue;
-      const unsub = onSnapshot(doc(db, 'cms', `pdf_${item.id}`), snapshot => {
-        if (snapshot.exists()) {
-          const pdfData = snapshot.data();
-          if (pdfData?.pdfUrl) {
-            if (item.type === 'report') {
-              setReports(prev => prev.map(r => r.id === item.id && (!r.pdfUrl || r.pdfUrl === '') ? { ...r, pdfUrl: pdfData.pdfUrl } : r));
-            } else if (item.type === 'weekly') {
-              setWeekly(prev => prev.map(w => w.id === item.id && (!w.pdfUrl || w.pdfUrl === '') ? { ...w, pdfUrl: pdfData.pdfUrl } : w));
-            } else if (item.type === 'announcement') {
-              setAnnouncements(prev => prev.map(a => a.id === item.id && (!a.pdfUrl || a.pdfUrl === '') ? { ...a, pdfUrl: pdfData.pdfUrl } : a));
-            }
+    const hydrateAssets = async () => {
+      // Hydrate Reports
+      for (const r of reports) {
+        if (cancelled) return;
+        if (r.id && (!r.pdfUrl || r.pdfUrl.startsWith('ref:'))) {
+          const fullPdf = await loadAssetFromFirestore('pdf', r.id);
+          if (fullPdf && !cancelled) {
+            setReports(prev => prev.map(item => item.id === r.id ? { ...item, pdfUrl: fullPdf } : item));
           }
         }
-      }, () => {});
-      unsubs.push(unsub);
-    }
+        if (r.id && (!r.image || r.image.startsWith('ref:'))) {
+          const fullImg = await loadAssetFromFirestore('img', r.id);
+          if (fullImg && !cancelled) {
+            setReports(prev => prev.map(item => item.id === r.id ? { ...item, image: fullImg } : item));
+          }
+        }
+      }
 
-    return () => unsubs.forEach(u => u());
-  }, [reports.map(r => r.id).join(','), weekly.map(w => w.id).join(','), announcements.map(a => a.id).join(',')]);
+      // Hydrate Weekly Issues
+      for (const w of weekly) {
+        if (cancelled) return;
+        if (w.id && (!w.pdfUrl || w.pdfUrl.startsWith('ref:'))) {
+          const fullPdf = await loadAssetFromFirestore('pdf', w.id);
+          if (fullPdf && !cancelled) {
+            setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, pdfUrl: fullPdf } : item));
+          }
+        }
+        if (w.id && (!w.image || w.image.startsWith('ref:'))) {
+          const fullImg = await loadAssetFromFirestore('img', w.id);
+          if (fullImg && !cancelled) {
+            setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, image: fullImg } : item));
+          }
+        }
+      }
+
+      // Hydrate Announcements
+      for (const a of announcements) {
+        if (cancelled) return;
+        if (a.id && (!a.pdfUrl || a.pdfUrl.startsWith('ref:'))) {
+          const fullPdf = await loadAssetFromFirestore('pdf', a.id);
+          if (fullPdf && !cancelled) {
+            setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, pdfUrl: fullPdf } : item));
+          }
+        }
+        if (a.id && (!a.image || a.image.startsWith('ref:'))) {
+          const fullImg = await loadAssetFromFirestore('img', a.id);
+          if (fullImg && !cancelled) {
+            setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, image: fullImg } : item));
+          }
+        }
+      }
+    };
+
+    hydrateAssets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    reports.map(r => r.id + (r.pdfUrl ? r.pdfUrl.substring(0, 8) : '') + (r.image ? r.image.substring(0, 8) : '')).join(','),
+    weekly.map(w => w.id + (w.pdfUrl ? w.pdfUrl.substring(0, 8) : '') + (w.image ? w.image.substring(0, 8) : '')).join(','),
+    announcements.map(a => a.id + (a.pdfUrl ? a.pdfUrl.substring(0, 8) : '') + (a.image ? a.image.substring(0, 8) : '')).join(',')
+  ]);
 
   // Handler Actions
   const saveReport = (report: Report) => {
@@ -560,7 +623,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       const exists = prev.some(r => r.id === report.id);
       const next = exists ? prev.map(r => r.id === report.id ? report : r) : [...prev, report];
       syncToFirestore('reports', { items: next });
-      syncItemPdfs([report]);
       return next;
     });
   };
@@ -622,7 +684,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       const exists = prev.some(a => a.id === announcement.id);
       const next = exists ? prev.map(a => a.id === announcement.id ? announcement : a) : [...prev, announcement];
       syncToFirestore('announcements', { items: next });
-      syncItemPdfs([announcement]);
       return next;
     });
   };
@@ -657,7 +718,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       const exists = prev.some(w => w.id === issue.id);
       const next = exists ? prev.map(w => w.id === issue.id ? issue : w) : [...prev, issue];
       syncToFirestore('weekly', { items: next });
-      syncItemPdfs([issue]);
       return next;
     });
   };
