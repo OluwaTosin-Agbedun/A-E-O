@@ -27,6 +27,7 @@ import DiaryPage from './components/DiaryPage';
 import PublicationsPage from './components/PublicationsPage';
 import EventReader from './components/EventReader';
 import ElectionDetails from './components/ElectionDetails';
+import PastElectionsArchive from './components/PastElectionsArchive';
 
 export default function App() {
   const getInitialPath = () => {
@@ -126,6 +127,8 @@ export default function App() {
     content = <AnnouncementsArchive />;
   } else if (path === '/events') {
     content = <EventsArchive />;
+  } else if (path === '/past-elections') {
+    content = <PastElectionsArchive />;
   } else if (path === '/elections') {
     content = <LiveDashboard isPreview={false} />;
   } else if (path.startsWith('/election/')) {

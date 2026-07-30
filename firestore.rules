@@ -34,5 +34,12 @@ service cloud.firestore {
       // Allow read and deletion only to signed-in admins
       allow read, delete: if isSignedIn();
     }
+
+    // CMS documents collection matching (for site content, uploads, hero, stats, reports, logos, states)
+    match /cms/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
+

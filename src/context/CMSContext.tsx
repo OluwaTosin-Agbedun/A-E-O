@@ -12,6 +12,8 @@ import {
   ANNOUNCEMENTS as initialAnnouncements
 } from '../data';
 import { getItem, setItem, clearDB } from '../utils/db';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -161,6 +163,15 @@ interface CMSContextType {
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
+// Helper to save Firestore document
+const syncToFirestore = async (docName: string, data: any) => {
+  try {
+    await setDoc(doc(db, 'cms', docName), data);
+  } catch (err) {
+    console.error(`Error syncing ${docName} to Firestore:`, err);
+  }
+};
+
 export function CMSProvider({ children }: { children: ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [reports, setReports] = useState<Report[]>(() => {
@@ -227,6 +238,105 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('aeo_stats');
     return saved ? JSON.parse(saved) : INITIAL_STATS_CONFIG;
   });
+
+  // 1. Subscribe to Firestore in Real-Time for global site sync
+  useEffect(() => {
+    const unsubscribes: (() => void)[] = [];
+
+    // Reports
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'reports'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setReports(data.items);
+      }
+    }));
+
+    // Diary National
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_nat'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setDiaryNat(data.items);
+      }
+    }));
+
+    // Diary Local
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_loc'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setDiaryLoc(data.items);
+      }
+    }));
+
+    // Diary Africa
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_afr'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setDiaryAfr(data.items);
+      }
+    }));
+
+    // Diary Other
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_oth'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setDiaryOth(data.items);
+      }
+    }));
+
+    // Events
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'events'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setEvents(data.items);
+      }
+    }));
+
+    // Announcements
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'announcements'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setAnnouncements(data.items);
+      }
+    }));
+
+    // Team
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'team'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setTeam(data.items);
+      }
+    }));
+
+    // Weekly
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'weekly'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setWeekly(data.items);
+      }
+    }));
+
+    // Hero
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'hero'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.config) setHeroConfig(data.config);
+      }
+    }));
+
+    // Stats
+    unsubscribes.push(onSnapshot(doc(db, 'cms', 'stats'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) setStatsConfig(data.items);
+      }
+    }));
+
+    setDataLoaded(true);
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
+  }, []);
 
   // Load data asynchronously from IndexedDB on mount
   useEffect(() => {
@@ -396,102 +506,123 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const saveReport = (report: Report) => {
     setReports(prev => {
       const exists = prev.some(r => r.id === report.id);
-      if (exists) {
-        return prev.map(r => r.id === report.id ? report : r);
-      }
-      return [...prev, report];
+      const next = exists ? prev.map(r => r.id === report.id ? report : r) : [...prev, report];
+      syncToFirestore('reports', { items: next });
+      return next;
     });
   };
 
   const deleteReport = (id: string) => {
-    setReports(prev => prev.filter(r => r.id !== id));
+    setReports(prev => {
+      const next = prev.filter(r => r.id !== id);
+      syncToFirestore('reports', { items: next });
+      return next;
+    });
   };
 
   const saveDiaryItem = (category: 'national' | 'local' | 'africa' | 'other', item: DiaryItem) => {
-    const setter = (prev: DiaryItem[]) => {
+    const updateAndSync = (prev: DiaryItem[], docKey: string) => {
       const exists = prev.some(d => d.id === item.id);
-      if (exists) {
-        return prev.map(d => d.id === item.id ? item : d);
-      }
-      return [...prev, item];
+      const next = exists ? prev.map(d => d.id === item.id ? item : d) : [...prev, item];
+      syncToFirestore(docKey, { items: next });
+      return next;
     };
 
-    if (category === 'national') setDiaryNat(setter);
-    else if (category === 'local') setDiaryLoc(setter);
-    else if (category === 'africa') setDiaryAfr(setter);
-    else if (category === 'other') setDiaryOth(setter);
+    if (category === 'national') setDiaryNat(prev => updateAndSync(prev, 'diary_nat'));
+    else if (category === 'local') setDiaryLoc(prev => updateAndSync(prev, 'diary_loc'));
+    else if (category === 'africa') setDiaryAfr(prev => updateAndSync(prev, 'diary_afr'));
+    else if (category === 'other') setDiaryOth(prev => updateAndSync(prev, 'diary_oth'));
   };
 
   const deleteDiaryItem = (category: 'national' | 'local' | 'africa' | 'other', id: string) => {
-    const filterFn = (prev: DiaryItem[]) => prev.filter(d => d.id !== id);
-    if (category === 'national') setDiaryNat(filterFn);
-    else if (category === 'local') setDiaryLoc(filterFn);
-    else if (category === 'africa') setDiaryAfr(filterFn);
-    else if (category === 'other') setDiaryOth(filterFn);
+    const filterAndSync = (prev: DiaryItem[], docKey: string) => {
+      const next = prev.filter(d => d.id !== id);
+      syncToFirestore(docKey, { items: next });
+      return next;
+    };
+
+    if (category === 'national') setDiaryNat(prev => filterAndSync(prev, 'diary_nat'));
+    else if (category === 'local') setDiaryLoc(prev => filterAndSync(prev, 'diary_loc'));
+    else if (category === 'africa') setDiaryAfr(prev => filterAndSync(prev, 'diary_afr'));
+    else if (category === 'other') setDiaryOth(prev => filterAndSync(prev, 'diary_oth'));
   };
 
   const saveEvent = (event: EventItem) => {
     setEvents(prev => {
       const exists = prev.some(e => e.id === event.id);
-      if (exists) {
-        return prev.map(e => e.id === event.id ? event : e);
-      }
-      return [...prev, event];
+      const next = exists ? prev.map(e => e.id === event.id ? event : e) : [...prev, event];
+      syncToFirestore('events', { items: next });
+      return next;
     });
   };
 
   const deleteEvent = (id: string) => {
-    setEvents(prev => prev.filter(e => e.id !== id));
+    setEvents(prev => {
+      const next = prev.filter(e => e.id !== id);
+      syncToFirestore('events', { items: next });
+      return next;
+    });
   };
 
   const saveAnnouncement = (announcement: AnnouncementItem) => {
     setAnnouncements(prev => {
       const exists = prev.some(a => a.id === announcement.id);
-      if (exists) {
-        return prev.map(a => a.id === announcement.id ? announcement : a);
-      }
-      return [...prev, announcement];
+      const next = exists ? prev.map(a => a.id === announcement.id ? announcement : a) : [...prev, announcement];
+      syncToFirestore('announcements', { items: next });
+      return next;
     });
   };
 
   const deleteAnnouncement = (id: string) => {
-    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    setAnnouncements(prev => {
+      const next = prev.filter(a => a.id !== id);
+      syncToFirestore('announcements', { items: next });
+      return next;
+    });
   };
 
   const saveTeamMember = (member: TeamMember) => {
     setTeam(prev => {
       const exists = prev.some(t => t.id === member.id);
-      if (exists) {
-        return prev.map(t => t.id === member.id ? member : t);
-      }
-      return [...prev, member];
+      const next = exists ? prev.map(t => t.id === member.id ? member : t) : [...prev, member];
+      syncToFirestore('team', { items: next });
+      return next;
     });
   };
 
   const deleteTeamMember = (id: string) => {
-    setTeam(prev => prev.filter(t => t.id !== id));
+    setTeam(prev => {
+      const next = prev.filter(t => t.id !== id);
+      syncToFirestore('team', { items: next });
+      return next;
+    });
   };
 
   const saveWeeklyIssue = (issue: WeeklyIssue) => {
     setWeekly(prev => {
       const exists = prev.some(w => w.id === issue.id);
-      if (exists) {
-        return prev.map(w => w.id === issue.id ? issue : w);
-      }
-      return [...prev, issue];
+      const next = exists ? prev.map(w => w.id === issue.id ? issue : w) : [...prev, issue];
+      syncToFirestore('weekly', { items: next });
+      return next;
     });
   };
 
   const deleteWeeklyIssue = (id: string) => {
-    setWeekly(prev => prev.filter(w => w.id !== id));
+    setWeekly(prev => {
+      const next = prev.filter(w => w.id !== id);
+      syncToFirestore('weekly', { items: next });
+      return next;
+    });
   };
 
   const saveHeroConfig = (config: HeroConfig) => {
     setHeroConfig(config);
+    syncToFirestore('hero', { config });
   };
 
   const saveStatsConfig = (config: StatItemConfig[]) => {
     setStatsConfig(config);
+    syncToFirestore('stats', { items: config });
   };
 
   const resetAllData = () => {

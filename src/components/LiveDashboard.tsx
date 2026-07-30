@@ -3,6 +3,8 @@ import {
   ArrowRight, ArrowLeft, Users, AlertCircle, Search, MapPin, CheckCircle2
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export interface PartyVote {
   name: string;
@@ -420,6 +422,28 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
   const [liveLgaSearch, setLiveLgaSearch] = useState('');
   const [pastLgaSearch, setPastLgaSearch] = useState('');
 
+  // Subscribe to monitored states from Firestore in real-time
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cms', 'monitored_states'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) {
+          const formatted = data.items.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
+          setStates(formatted);
+          try {
+            localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(formatted));
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+    }, err => {
+      console.warn("Firestore monitored states fallback:", err);
+    });
+
+    return () => unsub();
+  }, []);
+
   // Persist states array to localStorage
   useEffect(() => {
     try {
@@ -756,13 +780,13 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
               </p>
             </div>
             
-            {/* Concluded States Selector Pills */}
-            <div className="flex flex-wrap gap-2">
+            {/* Concluded States Selector Pills & View All */}
+            <div className="flex flex-wrap items-center gap-2">
               {pastStates.map((st, idx) => (
                 <button
                   key={st.code}
                   onClick={() => setSelectedPastIndex(idx)}
-                  className={`px-4 py-2 rounded-xl border text-xs font-mono font-bold tracking-wide uppercase transition-all cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl border text-xs font-mono font-bold tracking-wide uppercase transition-all cursor-pointer ${
                     selectedPastIndex === idx
                       ? 'bg-navy border-navy text-white shadow-sm'
                       : 'bg-white border-line text-ink hover:bg-slate-50'
@@ -771,6 +795,18 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   {st.name} State
                 </button>
               ))}
+              <a
+                href="/past-elections"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, '', '/past-elections');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+                className="px-4 py-2 rounded-xl bg-brand-blue hover:bg-brand-blue-dark text-white text-xs font-mono font-bold tracking-wider uppercase shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <span>view all</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
 
@@ -880,7 +916,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-line/50 flex justify-center">
+                <div className="pt-4 border-t border-line/50 flex flex-wrap items-center justify-center gap-3">
                   <a 
                     href={`/election/${activePastState.code}`}
                     onClick={(e) => {
@@ -891,6 +927,18 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     className="inline-flex items-center gap-2 px-4 py-2 bg-navy hover:bg-navy/95 text-white text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
                   >
                     Explore {activePastState.name} Election Details
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                  <a 
+                    href="/past-elections"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.history.pushState({}, '', '/past-elections');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-brand-blue-dark text-white text-xs font-mono font-bold tracking-wider uppercase rounded-lg shadow-2xs transition-all cursor-pointer"
+                  >
+                    <span>view all</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </a>
                 </div>

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
 import { PartyLogo } from './PartyLogo';
 
@@ -287,7 +287,12 @@ export default function CMSPanel({
       localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updatedLogos));
     } catch (e) {
       console.warn('Failed to save party logo to localStorage:', e);
-      showStatus('Storage full! Custom logo is saved in memory but could not be saved to local storage.', 'error');
+    }
+
+    try {
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updatedLogos });
+    } catch (e) {
+      console.error('Failed to sync party logos to Firestore:', e);
     }
     
     setPartyCodeForm('');
@@ -303,6 +308,12 @@ export default function CMSPanel({
       localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updated));
     } catch (e) {
       console.warn('Failed to delete party logo from localStorage:', e);
+    }
+
+    try {
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updated });
+    } catch (e) {
+      console.error('Failed to delete party logo in Firestore:', e);
     }
     showStatus(`Logo for ${partyName} deleted. Restored to vector default.`);
   };
@@ -325,7 +336,12 @@ export default function CMSPanel({
       localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(updatedStatesList));
     } catch (e) {
       console.warn('Failed to save states list to localStorage:', e);
-      showStatus('Storage full! State modifications are saved in memory but could not be saved to local storage.', 'error');
+    }
+
+    try {
+      setDoc(doc(db, 'cms', 'monitored_states'), { items: updatedStatesList });
+    } catch (e) {
+      console.error('Failed to save states to Firestore:', e);
     }
     showStatus(`Standings and stats for ${activeCMSState.name} State updated successfully!`);
   };

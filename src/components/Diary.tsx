@@ -237,154 +237,195 @@ export default function Diary() {
               
               {/* Card Title Header */}
               <div className="flex items-center justify-between border-b border-line pb-3">
-                <span className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-brand-blue" />
-                  FILTERS
-                </span>
+                <h3 className="font-display font-bold text-lg sm:text-xl text-ink flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-brand-blue" />
+                  Filter
+                </h3>
                 {activeFiltersCount > 0 && (
                   <button
                     onClick={resetFilters}
-                    className="text-[11px] font-mono text-brand-blue hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-mono text-brand-blue hover:underline flex items-center gap-1 cursor-pointer font-semibold"
                   >
-                    <X className="w-3 h-3" />
-                    Reset ({activeFiltersCount})
+                    <X className="w-3.5 h-3.5" />
+                    Reset
                   </button>
                 )}
               </div>
 
-              {/* Search Bar */}
+              {/* Oval Search Bar */}
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search election, country, executive..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-paper/80 border border-line rounded-xl text-xs text-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-blue"
+                  className="w-full pl-10 pr-4 py-2.5 bg-paper/80 border border-line rounded-full text-xs text-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-blue shadow-2xs transition-colors"
                 />
               </div>
 
-              {/* Filter by Region (Fully Visible Options) */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold font-mono text-ink uppercase tracking-wider block">
-                  Region / Scope
-                </label>
-                <div className="space-y-1">
-                  {[
-                    { id: 'all', label: 'All Regions & Continents', icon: Layers, color: 'text-slate-500' },
-                    { id: 'nigeria', label: 'Nigeria (National & State)', icon: Landmark, color: 'text-amber-500' },
-                    { id: 'africa', label: 'Africa (Continental)', icon: MapPin, color: 'text-purple-500' },
-                    { id: 'other', label: 'Other Continents (Global)', icon: Globe, color: 'text-blue-500' },
-                  ].map((opt) => {
-                    const IconComp = opt.icon;
-                    const isSelected = regionFilter === opt.id;
-                    const count = opt.id === 'all' 
-                      ? allDiaryItems.length 
-                      : allDiaryItems.filter(i => i.region === opt.id).length;
+              {/* Exact Tree List as drawn in Sketch */}
+              <div className="space-y-1 pt-1">
+                
+                {/* 1. All Option */}
+                <button
+                  onClick={() => {
+                    setRegionFilter('all');
+                    setTypeFilter('all');
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    regionFilter === 'all' && typeFilter === 'all'
+                      ? 'bg-navy text-white shadow-xs'
+                      : 'hover:bg-paper text-ink border border-transparent hover:border-line/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 opacity-75" />
+                    <span>All Elections</span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    regionFilter === 'all' && typeFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {allDiaryItems.length}
+                  </span>
+                </button>
 
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => setRegionFilter(opt.id as any)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-navy text-white shadow-xs font-semibold'
-                            : 'bg-paper/60 hover:bg-paper text-ink2 hover:text-ink border border-line/60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComp className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : opt.color}`} />
-                          <span>{opt.label}</span>
-                        </div>
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                          isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-600'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
+                {/* 2. Nigeria Parent */}
+                <div className="space-y-0.5 pt-1">
+                  <button
+                    onClick={() => {
+                      setRegionFilter('nigeria');
+                      setTypeFilter('all');
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      regionFilter === 'nigeria' && typeFilter === 'all'
+                        ? 'bg-navy text-white shadow-xs'
+                        : 'hover:bg-paper text-ink border border-transparent hover:border-line/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Landmark className="w-4 h-4 text-amber-500" />
+                      <span>Nigeria</span>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      regionFilter === 'nigeria' && typeFilter === 'all' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700'
+                    }`}>
+                      {allDiaryItems.filter(i => i.region === 'nigeria').length}
+                    </span>
+                  </button>
+
+                  {/* Nigeria Sub-items (Indented) */}
+                  <div className="pl-6 space-y-1 border-l-2 border-line/60 ml-5 my-1">
+                    
+                    {/* Presidential */}
+                    <button
+                      onClick={() => {
+                        setRegionFilter('nigeria');
+                        setTypeFilter('presidential');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        regionFilter === 'nigeria' && typeFilter === 'presidential'
+                          ? 'bg-brand-blue text-white shadow-xs font-bold'
+                          : 'hover:bg-paper text-ink2 hover:text-ink'
+                      }`}
+                    >
+                      <span>Presidential</span>
+                      <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-md ${
+                        regionFilter === 'nigeria' && typeFilter === 'presidential' ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {allDiaryItems.filter(i => i.region === 'nigeria' && i.type === 'presidential').length}
+                      </span>
+                    </button>
+
+                    {/* Governorship */}
+                    <button
+                      onClick={() => {
+                        setRegionFilter('nigeria');
+                        setTypeFilter('governorship');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        regionFilter === 'nigeria' && typeFilter === 'governorship'
+                          ? 'bg-brand-blue text-white shadow-xs font-bold'
+                          : 'hover:bg-paper text-ink2 hover:text-ink'
+                      }`}
+                    >
+                      <span>Governorship</span>
+                      <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-md ${
+                        regionFilter === 'nigeria' && typeFilter === 'governorship' ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {allDiaryItems.filter(i => i.region === 'nigeria' && i.type === 'governorship').length}
+                      </span>
+                    </button>
+
+                    {/* Local Government */}
+                    <button
+                      onClick={() => {
+                        setRegionFilter('nigeria');
+                        setTypeFilter('local_government');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        regionFilter === 'nigeria' && typeFilter === 'local_government'
+                          ? 'bg-brand-blue text-white shadow-xs font-bold'
+                          : 'hover:bg-paper text-ink2 hover:text-ink'
+                      }`}
+                    >
+                      <span>Local Government</span>
+                      <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-md ${
+                        regionFilter === 'nigeria' && typeFilter === 'local_government' ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {allDiaryItems.filter(i => i.region === 'nigeria' && i.type === 'local_government').length}
+                      </span>
+                    </button>
+
+                  </div>
                 </div>
-              </div>
 
-              {/* Filter by Type (Fully Visible Options) */}
-              <div className="space-y-2 pt-2 border-t border-line/60">
-                <label className="text-xs font-bold font-mono text-ink uppercase tracking-wider block">
-                  Election Category
-                </label>
-                <div className="space-y-1">
-                  {[
-                    { id: 'all', label: 'All Election Types' },
-                    { id: 'presidential', label: 'Presidential Polls' },
-                    { id: 'governorship', label: 'Governorship Polls' },
-                    { id: 'local_government', label: 'Local Government Polls' },
-                  ].map((opt) => {
-                    const isSelected = typeFilter === opt.id;
-                    const count = opt.id === 'all'
-                      ? allDiaryItems.length
-                      : allDiaryItems.filter(i => i.type === opt.id).length;
+                {/* 3. Africa Parent */}
+                <button
+                  onClick={() => {
+                    setRegionFilter('africa');
+                    setTypeFilter('all');
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    regionFilter === 'africa'
+                      ? 'bg-navy text-white shadow-xs'
+                      : 'hover:bg-paper text-ink border border-transparent hover:border-line/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-purple-500" />
+                    <span>Africa</span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    regionFilter === 'africa' ? 'bg-white/20 text-white' : 'bg-purple-50 text-purple-700'
+                  }`}>
+                    {allDiaryItems.filter(i => i.region === 'africa').length}
+                  </span>
+                </button>
 
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => setTypeFilter(opt.id as any)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-brand-blue text-white shadow-xs font-semibold'
-                            : 'bg-paper/60 hover:bg-paper text-ink2 hover:text-ink border border-line/60'
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                          isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/60 text-slate-600'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                {/* 4. Other Continents Parent */}
+                <button
+                  onClick={() => {
+                    setRegionFilter('other');
+                    setTypeFilter('all');
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    regionFilter === 'other'
+                      ? 'bg-navy text-white shadow-xs'
+                      : 'hover:bg-paper text-ink border border-transparent hover:border-line/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-blue-500" />
+                    <span>Other Continents</span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    regionFilter === 'other' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
+                  }`}>
+                    {allDiaryItems.filter(i => i.region === 'other').length}
+                  </span>
+                </button>
 
-              {/* Filter by Status (Fully Visible Badges) */}
-              <div className="space-y-2 pt-2 border-t border-line/60">
-                <label className="text-xs font-bold font-mono text-ink uppercase tracking-wider block">
-                  Electoral Status
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: 'all', label: 'All' },
-                    { id: 'In view', label: 'In View' },
-                    { id: 'Scheduled', label: 'Scheduled' },
-                    { id: 'Provisional', label: 'Provisional' },
-                    { id: 'Tracking', label: 'Tracking' },
-                    { id: 'Concluded', label: 'Concluded' },
-                  ].map((opt) => {
-                    const isSelected = statusFilter === opt.id;
-                    const count = opt.id === 'all'
-                      ? allDiaryItems.length
-                      : allDiaryItems.filter(i => i.status === opt.id).length;
-
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => setStatusFilter(opt.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-medium border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-navy border-navy text-white shadow-xs font-bold'
-                            : 'bg-white hover:bg-paper border-line text-slate-700'
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        <span className={`text-[9px] px-1.5 py-0.2 rounded-md ${
-                          isSelected ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Active Filter Counter Footer */}

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Paintbrush, Umbrella, Users, Bird, Shield, Leaf, HelpCircle, GraduationCap } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string; className?: string }) {
   const party = (name || "").toUpperCase().trim();
   
-  // Custom logo map from CMS (stored in localStorage under 'aeo_custom_party_logos_v2')
+  // Custom logo map from CMS & Firestore
   const [customLogos, setCustomLogos] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('aeo_custom_party_logos_v2');
@@ -14,28 +16,25 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
     }
   });
 
-  // Listen to storage changes to update live
+  // Listen to Firestore real-time snapshot + local storage fallback
   useEffect(() => {
-    const handleStorage = () => {
-      try {
-        const saved = localStorage.getItem('aeo_custom_party_logos_v2');
-        if (saved) {
-          setCustomLogos(JSON.parse(saved));
-        } else {
-          setCustomLogos({});
+    const unsub = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.map) {
+          setCustomLogos(data.map);
+          try {
+            localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(data.map));
+          } catch (e) {
+            // ignore quota error
+          }
         }
-      } catch (err) {
-        console.error("Error reading custom party logos:", err);
       }
-    };
-    
-    window.addEventListener('storage', handleStorage);
-    const interval = setInterval(handleStorage, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
-    };
+    }, err => {
+      console.warn("Firestore party logos fallback:", err);
+    });
+
+    return () => unsub();
   }, []);
 
   // 1. If we have a custom user-uploaded logo (base64 or URL), render it
