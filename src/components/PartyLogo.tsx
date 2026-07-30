@@ -18,24 +18,62 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
 
   // Listen to Firestore real-time snapshot + local storage fallback
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
+    // 1. Initial local load
+    try {
+      const saved = localStorage.getItem('aeo_custom_party_logos_v2');
+      if (saved) {
+        setCustomLogos(prev => ({ ...JSON.parse(saved), ...prev }));
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2. Global party logos map snapshot
+    const unsubMap = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.map) {
-          setCustomLogos(data.map);
-          try {
-            localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(data.map));
-          } catch (e) {
-            // ignore quota error
-          }
+          setCustomLogos(prev => {
+            const merged = { ...prev, ...data.map };
+            try {
+              localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
+            } catch {
+              // ignore
+            }
+            return merged;
+          });
         }
       }
     }, err => {
       console.warn("Firestore party logos fallback:", err);
     });
 
-    return () => unsub();
-  }, []);
+    // 3. Individual party logo document fallback (for large base64 logos)
+    let unsubSingle: (() => void) | undefined;
+    if (party) {
+      unsubSingle = onSnapshot(doc(db, 'cms', `logo_${party}`), snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data?.logo) {
+            setCustomLogos(prev => {
+              const merged = { ...prev, [party]: data.logo };
+              try {
+                localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
+              } catch {
+                // ignore
+              }
+              return merged;
+            });
+          }
+        }
+      }, () => {});
+    }
+
+    return () => {
+      unsubMap();
+      if (unsubSingle) unsubSingle();
+    };
+  }, [party]);
 
   // 1. If we have a custom user-uploaded logo (base64 or URL), render it
   if (customLogos[party]) {

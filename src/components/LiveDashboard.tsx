@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
 import { db } from '../lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export interface PartyVote {
   name: string;
@@ -436,6 +436,10 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
             // ignore
           }
         }
+      } else {
+        // Auto-seed if doc doesn't exist
+        setDoc(doc(db, 'cms', 'monitored_states'), { items: INITIAL_STATES })
+          .catch(err => console.error('Error seeding monitored_states:', err));
       }
     }, err => {
       console.warn("Firestore monitored states fallback:", err);

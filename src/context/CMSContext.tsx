@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem } from '../types';
 import { 
   REPORTS as initialReports, 
@@ -163,12 +163,63 @@ interface CMSContextType {
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
+// Helper to merge local items and remote items so user uploads (PDFs, images) are never wiped
+function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string }>(
+  localItems: T[],
+  remoteItems: T[]
+): T[] {
+  if (!remoteItems || !Array.isArray(remoteItems)) return localItems || [];
+  if (!localItems || !Array.isArray(localItems) || localItems.length === 0) return remoteItems;
+
+  const remoteMap = new Map(remoteItems.map(item => [item.id, item]));
+  const merged: T[] = [];
+
+  for (const remoteItem of remoteItems) {
+    const localMatch = localItems.find(l => l.id === remoteItem.id);
+    if (localMatch) {
+      merged.push({
+        ...localMatch,
+        ...remoteItem,
+        pdfUrl: (remoteItem.pdfUrl && remoteItem.pdfUrl.trim() !== '') 
+          ? remoteItem.pdfUrl 
+          : (localMatch.pdfUrl || ''),
+        image: (remoteItem.image && remoteItem.image.trim() !== '') 
+          ? remoteItem.image 
+          : (localMatch.image || ''),
+      });
+    } else {
+      merged.push(remoteItem);
+    }
+  }
+
+  // Include any local items that don't exist in remote at all (e.g. newly created user documents)
+  for (const localItem of localItems) {
+    if (!remoteMap.has(localItem.id)) {
+      merged.push(localItem);
+    }
+  }
+
+  return merged;
+}
+
 // Helper to save Firestore document
 const syncToFirestore = async (docName: string, data: any) => {
   try {
     await setDoc(doc(db, 'cms', docName), data);
   } catch (err) {
     console.error(`Error syncing ${docName} to Firestore:`, err);
+  }
+};
+
+const syncItemPdfs = async (items: Array<{ id: string; pdfUrl?: string }>) => {
+  for (const item of items) {
+    if (item.id && item.pdfUrl && item.pdfUrl.startsWith('data:')) {
+      try {
+        await setDoc(doc(db, 'cms', `pdf_${item.id}`), { id: item.id, pdfUrl: item.pdfUrl });
+      } catch (e) {
+        console.warn(`Could not sync individual PDF ${item.id} to Firestore:`, e);
+      }
+    }
   }
 };
 
@@ -239,156 +290,125 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : INITIAL_STATS_CONFIG;
   });
 
-  // 1. Subscribe to Firestore in Real-Time for global site sync
+  // 0. Load data asynchronously from IndexedDB on mount if available
+  useEffect(() => {
+    const loadIndexedDBData = async () => {
+      try {
+        const savedReports = await getItem<Report[]>('aeo_reports');
+        if (savedReports && savedReports.length > 0) {
+          setReports(prev => mergeCollection(prev, savedReports));
+        }
+
+        const savedDiaryNat = await getItem<DiaryItem[]>('aeo_diary_nat');
+        if (savedDiaryNat && savedDiaryNat.length > 0) {
+          setDiaryNat(prev => mergeCollection(prev, savedDiaryNat));
+        }
+
+        const savedDiaryLoc = await getItem<DiaryItem[]>('aeo_diary_loc');
+        if (savedDiaryLoc && savedDiaryLoc.length > 0) {
+          setDiaryLoc(prev => mergeCollection(prev, savedDiaryLoc));
+        }
+
+        const savedDiaryAfr = await getItem<DiaryItem[]>('aeo_diary_afr');
+        if (savedDiaryAfr && savedDiaryAfr.length > 0) {
+          setDiaryAfr(prev => mergeCollection(prev, savedDiaryAfr));
+        }
+
+        const savedDiaryOth = await getItem<DiaryItem[]>('aeo_diary_oth');
+        if (savedDiaryOth && savedDiaryOth.length > 0) {
+          setDiaryOth(prev => mergeCollection(prev, savedDiaryOth));
+        }
+
+        const savedEvents = await getItem<EventItem[]>('aeo_events');
+        if (savedEvents && savedEvents.length > 0) {
+          setEvents(prev => mergeCollection(prev, savedEvents));
+        }
+
+        const savedAnnouncements = await getItem<AnnouncementItem[]>('aeo_announcements');
+        if (savedAnnouncements && savedAnnouncements.length > 0) {
+          setAnnouncements(prev => mergeCollection(prev, savedAnnouncements));
+        }
+
+        const savedTeam = await getItem<TeamMember[]>('aeo_team');
+        if (savedTeam && savedTeam.length > 0) {
+          setTeam(prev => mergeCollection(prev, savedTeam));
+        }
+
+        const savedWeekly = await getItem<WeeklyIssue[]>('aeo_weekly');
+        if (savedWeekly && savedWeekly.length > 0) {
+          setWeekly(prev => mergeCollection(prev, savedWeekly));
+        }
+
+        const savedHero = await getItem<HeroConfig>('aeo_hero');
+        if (savedHero) setHeroConfig(savedHero);
+
+        const savedStats = await getItem<StatItemConfig[]>('aeo_stats');
+        if (savedStats && savedStats.length > 0) setStatsConfig(savedStats);
+      } catch (err) {
+        console.warn('IndexedDB load error:', err);
+      }
+    };
+    loadIndexedDBData();
+  }, []);
+
+  // 1. Subscribe to Firestore in Real-Time for global site sync with auto-seeding
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
 
-    // Reports
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'reports'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setReports(data.items);
-      }
-    }));
+    const subscribeAndSeed = <T,>(
+      docName: string, 
+      setter: Dispatch<SetStateAction<T>>, 
+      transform?: (data: T) => T
+    ) => {
+      const docRef = doc(db, 'cms', docName);
+      return onSnapshot(docRef, snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && (data.items !== undefined || data.config !== undefined)) {
+            const raw = data.items !== undefined ? data.items : data.config;
+            const finalVal = transform ? transform(raw as T) : (raw as T);
+            if (Array.isArray(finalVal)) {
+              setter(localVal => mergeCollection(localVal as any, finalVal as any) as unknown as T);
+            } else {
+              setter(finalVal);
+            }
+          }
+        } else {
+          // Document doesn't exist in Firestore yet -> seed Firestore with current local state (from localStorage/IndexedDB)!
+          setter(currentState => {
+            const payload = docName === 'hero' ? { config: currentState } : { items: currentState };
+            setDoc(docRef, payload).catch(err => console.error(`Error seeding ${docName} to Firestore:`, err));
+            return currentState;
+          });
+        }
+      }, err => {
+        console.warn(`Firestore snapshot error for ${docName}:`, err);
+      });
+    };
 
-    // Diary National
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_nat'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setDiaryNat(data.items);
+    unsubscribes.push(subscribeAndSeed('reports', setReports));
+    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat));
+    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc));
+    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr));
+    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth));
+    unsubscribes.push(subscribeAndSeed('events', setEvents));
+    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements));
+    unsubscribes.push(subscribeAndSeed('team', setTeam));
+    unsubscribes.push(subscribeAndSeed('weekly', setWeekly));
+    unsubscribes.push(subscribeAndSeed('hero', setHeroConfig, (cfg: HeroConfig) => {
+      if (cfg.spotlightStatusText === 'Off-Cycle') cfg.spotlightStatusText = 'IREV Data';
+      if (cfg.registeredVoters === '1,955,657 voters' || cfg.registeredVoters === '1,955,657') {
+        cfg.registeredVoters = '2,339,233 voters';
       }
+      return cfg;
     }));
-
-    // Diary Local
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_loc'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setDiaryLoc(data.items);
-      }
-    }));
-
-    // Diary Africa
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_afr'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setDiaryAfr(data.items);
-      }
-    }));
-
-    // Diary Other
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'diary_oth'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setDiaryOth(data.items);
-      }
-    }));
-
-    // Events
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'events'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setEvents(data.items);
-      }
-    }));
-
-    // Announcements
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'announcements'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setAnnouncements(data.items);
-      }
-    }));
-
-    // Team
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'team'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setTeam(data.items);
-      }
-    }));
-
-    // Weekly
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'weekly'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setWeekly(data.items);
-      }
-    }));
-
-    // Hero
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'hero'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.config) setHeroConfig(data.config);
-      }
-    }));
-
-    // Stats
-    unsubscribes.push(onSnapshot(doc(db, 'cms', 'stats'), snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data?.items) setStatsConfig(data.items);
-      }
-    }));
+    unsubscribes.push(subscribeAndSeed('stats', setStatsConfig));
 
     setDataLoaded(true);
 
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
-  }, []);
-
-  // Load data asynchronously from IndexedDB on mount
-  useEffect(() => {
-    const loadAllData = async () => {
-      try {
-        const savedReports = await getItem<Report[]>('aeo_reports');
-        if (savedReports) setReports(savedReports);
-
-        const savedDiaryNat = await getItem<DiaryItem[]>('aeo_diary_nat');
-        if (savedDiaryNat) setDiaryNat(savedDiaryNat);
-
-        const savedDiaryLoc = await getItem<DiaryItem[]>('aeo_diary_loc');
-        if (savedDiaryLoc) setDiaryLoc(savedDiaryLoc);
-
-        const savedDiaryAfr = await getItem<DiaryItem[]>('aeo_diary_afr');
-        if (savedDiaryAfr) setDiaryAfr(savedDiaryAfr);
-
-        const savedDiaryOth = await getItem<DiaryItem[]>('aeo_diary_oth');
-        if (savedDiaryOth) setDiaryOth(savedDiaryOth);
-
-        const savedEvents = await getItem<EventItem[]>('aeo_events');
-        if (savedEvents) setEvents(savedEvents);
-
-        const savedAnnouncements = await getItem<AnnouncementItem[]>('aeo_announcements');
-        if (savedAnnouncements) setAnnouncements(savedAnnouncements);
-
-        const savedTeam = await getItem<TeamMember[]>('aeo_team');
-        if (savedTeam) setTeam(savedTeam);
-
-        const savedWeekly = await getItem<WeeklyIssue[]>('aeo_weekly');
-        if (savedWeekly) setWeekly(savedWeekly);
-
-        const savedHero = await getItem<HeroConfig>('aeo_hero');
-        if (savedHero) {
-          if (savedHero.spotlightStatusText === 'Off-Cycle') {
-            savedHero.spotlightStatusText = 'IREV Data';
-          }
-          if (savedHero.registeredVoters === '1,955,657 voters' || savedHero.registeredVoters === '1,955,657') {
-            savedHero.registeredVoters = '2,339,233 voters';
-          }
-          setHeroConfig(savedHero);
-        }
-
-        const savedStats = await getItem<StatItemConfig[]>('aeo_stats');
-        if (savedStats) setStatsConfig(savedStats);
-      } catch (err) {
-        console.error('Error loading initial data from IndexedDB:', err);
-      } finally {
-        setDataLoaded(true);
-      }
-    };
-    loadAllData();
   }, []);
 
   // Sync to Storage (IndexedDB + fallback to localStorage)
@@ -502,12 +522,45 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     }
   }, [weekly, dataLoaded]);
 
+  // Sync individual PDF documents from Firestore if main array didn't include pdfUrl
+  useEffect(() => {
+    const allPdfItems = [
+      ...reports.map(r => ({ id: r.id, type: 'report' })),
+      ...weekly.map(w => ({ id: w.id, type: 'weekly' })),
+      ...announcements.map(a => ({ id: a.id, type: 'announcement' }))
+    ];
+
+    const unsubs: (() => void)[] = [];
+
+    for (const item of allPdfItems) {
+      if (!item.id) continue;
+      const unsub = onSnapshot(doc(db, 'cms', `pdf_${item.id}`), snapshot => {
+        if (snapshot.exists()) {
+          const pdfData = snapshot.data();
+          if (pdfData?.pdfUrl) {
+            if (item.type === 'report') {
+              setReports(prev => prev.map(r => r.id === item.id && (!r.pdfUrl || r.pdfUrl === '') ? { ...r, pdfUrl: pdfData.pdfUrl } : r));
+            } else if (item.type === 'weekly') {
+              setWeekly(prev => prev.map(w => w.id === item.id && (!w.pdfUrl || w.pdfUrl === '') ? { ...w, pdfUrl: pdfData.pdfUrl } : w));
+            } else if (item.type === 'announcement') {
+              setAnnouncements(prev => prev.map(a => a.id === item.id && (!a.pdfUrl || a.pdfUrl === '') ? { ...a, pdfUrl: pdfData.pdfUrl } : a));
+            }
+          }
+        }
+      }, () => {});
+      unsubs.push(unsub);
+    }
+
+    return () => unsubs.forEach(u => u());
+  }, [reports.map(r => r.id).join(','), weekly.map(w => w.id).join(','), announcements.map(a => a.id).join(',')]);
+
   // Handler Actions
   const saveReport = (report: Report) => {
     setReports(prev => {
       const exists = prev.some(r => r.id === report.id);
       const next = exists ? prev.map(r => r.id === report.id ? report : r) : [...prev, report];
       syncToFirestore('reports', { items: next });
+      syncItemPdfs([report]);
       return next;
     });
   };
@@ -569,6 +622,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       const exists = prev.some(a => a.id === announcement.id);
       const next = exists ? prev.map(a => a.id === announcement.id ? announcement : a) : [...prev, announcement];
       syncToFirestore('announcements', { items: next });
+      syncItemPdfs([announcement]);
       return next;
     });
   };
@@ -603,6 +657,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       const exists = prev.some(w => w.id === issue.id);
       const next = exists ? prev.map(w => w.id === issue.id ? issue : w) : [...prev, issue];
       syncToFirestore('weekly', { items: next });
+      syncItemPdfs([issue]);
       return next;
     });
   };

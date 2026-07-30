@@ -99,6 +99,90 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     ]
   },
   {
+    code: 'ED_OFF',
+    title: 'Edo State Off-Cycle Governorship Poll',
+    subtitle: 'South South, Nigeria · Concluded & Verified',
+    category: 'Off-Cycle',
+    date: 'September 2024',
+    region: 'South South',
+    status: 'Concluded',
+    voters: '2,629,025',
+    accreditedVoters: '568,693',
+    validVotes: '561,700',
+    pollingUnits: '4,519',
+    reconciledRate: '98.6%',
+    summary: 'Rigorous forensic audit across 18 LGAs. High transmission accuracy recorded on the IReV portal.',
+    winner: { candidate: 'Monday Okpebholo', party: 'APC' },
+    topParties: [
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.2, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.4, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' }
+    ]
+  },
+  {
+    code: 'KG_OFF',
+    title: 'Kogi State Off-Cycle Governorship Poll',
+    subtitle: 'North Central, Nigeria · Concluded & Audited',
+    category: 'Off-Cycle',
+    date: 'November 2023',
+    region: 'North Central',
+    status: 'Concluded',
+    voters: '1,932,474',
+    accreditedVoters: '784,305',
+    validVotes: '776,168',
+    pollingUnits: '3,508',
+    reconciledRate: '97.1%',
+    summary: 'Pre-filled result sheets identified in Ogori/Magongo LGA were flagged and excluded from official tallies during audit.',
+    winner: { candidate: 'Ahmed Usman Ododo', party: 'APC' },
+    topParties: [
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '426,237 votes', percentage: 55.4, color: 'bg-emerald-600' },
+      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 33.7, color: 'bg-amber-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '77,882 votes', percentage: 10.1, color: 'bg-red-600' }
+    ]
+  },
+  {
+    code: 'BY_OFF',
+    title: 'Bayelsa State Off-Cycle Governorship Poll',
+    subtitle: 'South South, Nigeria · Concluded & Audited',
+    category: 'Off-Cycle',
+    date: 'November 2023',
+    region: 'South South',
+    status: 'Concluded',
+    voters: '1,056,862',
+    accreditedVoters: '328,120',
+    validVotes: '323,209',
+    pollingUnits: '2,242',
+    reconciledRate: '96.8%',
+    summary: 'Post-election forensics verified polling unit returns across riverine communities in Nembe and Southern Ijaw LGAs.',
+    winner: { candidate: 'Douye Diri', party: 'PDP' },
+    topParties: [
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '175,196 votes', percentage: 54.1, color: 'bg-red-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '110,108 votes', percentage: 34.0, color: 'bg-emerald-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '905 votes', percentage: 0.3, color: 'bg-rose-500' }
+    ]
+  },
+  {
+    code: 'IM_OFF',
+    title: 'Imo State Off-Cycle Governorship Poll',
+    subtitle: 'South East, Nigeria · Concluded & Audited',
+    category: 'Off-Cycle',
+    date: 'November 2023',
+    region: 'South East',
+    status: 'Concluded',
+    voters: '2,419,922',
+    accreditedVoters: '694,892',
+    validVotes: '685,892',
+    pollingUnits: '4,758',
+    reconciledRate: '95.4%',
+    summary: 'Audit identified transmission delays in Orlu zone. Final dataset reconciles 27 LGAs with BVAS hardware logs.',
+    winner: { candidate: 'Hope Uzodimma', party: 'APC' },
+    topParties: [
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '540,308 votes', percentage: 78.2, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '71,503 votes', percentage: 10.3, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '64,081 votes', percentage: 9.3, color: 'bg-rose-500' }
+    ]
+  },
+  {
     code: 'OS_OFF',
     title: 'Osun State Off-Cycle Governorship Poll',
     subtitle: 'South West, Nigeria · Concluded & Audited',
@@ -140,6 +224,171 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
       { name: 'PDP', fullName: "People's Democratic Party", votes: '6,984,520 votes', percentage: 29.1, color: 'bg-red-600' },
       { name: 'LP', fullName: 'Labour Party', votes: '6,101,533 votes', percentage: 25.4, color: 'bg-rose-500' },
       { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '1,496,687 votes', percentage: 6.2, color: 'bg-blue-600' }
+    ]
+  },
+  {
+    code: 'SN_PRES_2024',
+    title: '2024 Senegal Presidential Election',
+    subtitle: 'Republic of Senegal · Continental Reference',
+    category: 'Presidential',
+    date: 'March 24, 2024',
+    region: 'West Africa (Senegal)',
+    status: 'Concluded',
+    voters: '7,371,890',
+    accreditedVoters: '4,520,100',
+    validVotes: '4,480,120',
+    pollingUnits: '15,633',
+    reconciledRate: '100%',
+    summary: 'High transparency election featuring rapid digital publication of constituency tally sheets.',
+    winner: { candidate: 'Bassirou Diomaye Faye', party: 'PASTEF' },
+    topParties: [
+      { name: 'PASTEF', fullName: 'Patriotes du Sénégal', votes: '2,434,751 votes', percentage: 54.3, color: 'bg-emerald-700' },
+      { name: 'BBY', fullName: 'Benno Bokk Yakaar', votes: '1,605,086 votes', percentage: 35.8, color: 'bg-amber-600' }
+    ]
+  },
+  {
+    code: 'GH_PRES_2024',
+    title: '2024 Ghana Presidential Election',
+    subtitle: 'Republic of Ghana · Continental Benchmark',
+    category: 'Presidential',
+    date: 'December 7, 2024',
+    region: 'West Africa (Ghana)',
+    status: 'Concluded',
+    voters: '18,774,159',
+    accreditedVoters: '11,250,000',
+    validVotes: '11,180,000',
+    pollingUnits: '40,000',
+    reconciledRate: '99.7%',
+    summary: 'Peaceful political transition with verified polling station pink sheets verified across 275 constituencies.',
+    winner: { candidate: 'John Dramani Mahama', party: 'NDC' },
+    topParties: [
+      { name: 'NDC', fullName: 'National Democratic Congress', votes: '6,321,800 votes', percentage: 56.2, color: 'bg-emerald-600' },
+      { name: 'NPP', fullName: 'New Patriotic Party', votes: '4,601,200 votes', percentage: 40.9, color: 'bg-blue-600' }
+    ]
+  },
+  {
+    code: 'ZA_PRES_2024',
+    title: '2024 South Africa General & Presidential Election',
+    subtitle: 'Republic of South Africa · Continental Audit',
+    category: 'Presidential',
+    date: 'May 29, 2024',
+    region: 'Southern Africa',
+    status: 'Concluded',
+    voters: '27,782,477',
+    accreditedVoters: '16,290,000',
+    validVotes: '16,080,000',
+    pollingUnits: '23,296',
+    reconciledRate: '99.2%',
+    summary: 'Historic election leading to Government of National Unity (GNU). Audit confirmed IEC tally accuracy.',
+    winner: { candidate: 'Cyril Ramaphosa', party: 'ANC' },
+    topParties: [
+      { name: 'ANC', fullName: 'African National Congress', votes: '6,483,093 votes', percentage: 40.2, color: 'bg-amber-600' },
+      { name: 'DA', fullName: 'Democratic Alliance', votes: '3,550,448 votes', percentage: 21.8, color: 'bg-blue-600' },
+      { name: 'MK', fullName: 'uMkhonto weSizwe', votes: '2,344,309 votes', percentage: 14.6, color: 'bg-emerald-800' }
+    ]
+  },
+
+  // --- GOVERNORSHIP ---
+  {
+    code: 'LA_GOV_2023',
+    title: 'Lagos State Governorship Election',
+    subtitle: 'South West, Nigeria · Audited',
+    category: 'Governorship',
+    date: 'March 18, 2023',
+    region: 'South West',
+    status: 'Concluded',
+    voters: '7,060,195',
+    accreditedVoters: '1,182,620',
+    validVotes: '1,155,123',
+    pollingUnits: '13,325',
+    reconciledRate: '97.8%',
+    summary: 'Audited 13,325 polling units in Lagos State. Evaluated voter turnout and security incidents in key urban LGAs.',
+    winner: { candidate: 'Babajide Sanwo-Olu', party: 'APC' },
+    topParties: [
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '762,134 votes', percentage: 64.9, color: 'bg-emerald-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '312,329 votes', percentage: 26.6, color: 'bg-rose-500' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '62,449 votes', percentage: 5.3, color: 'bg-red-600' }
+    ]
+  },
+  {
+    code: 'KN_GOV_2023',
+    title: 'Kano State Governorship Election',
+    subtitle: 'North West, Nigeria · Audited',
+    category: 'Governorship',
+    date: 'March 18, 2023',
+    region: 'North West',
+    status: 'Concluded',
+    voters: '5,921,370',
+    accreditedVoters: '1,780,200',
+    validVotes: '1,755,531',
+    pollingUnits: '1,755,531',
+    reconciledRate: '98.5%',
+    summary: 'Audit scrutinized 44 LGAs in Kano. Supreme Court judgment validated initial election observer findings.',
+    winner: { candidate: 'Abba Kabir Yusuf', party: 'NNPP' },
+    topParties: [
+      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '864,826 votes', percentage: 51.8, color: 'bg-blue-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '890,705 votes', percentage: 46.2, color: 'bg-emerald-600' }
+    ]
+  },
+  {
+    code: 'RV_GOV_2023',
+    title: 'Rivers State Governorship Election',
+    subtitle: 'South South, Nigeria · Audited',
+    category: 'Governorship',
+    date: 'March 18, 2023',
+    region: 'South South',
+    status: 'Concluded',
+    voters: '3,537,190',
+    accreditedVoters: '490,200',
+    validVotes: '483,170',
+    pollingUnits: '6,868',
+    reconciledRate: '96.1%',
+    summary: 'Detailed polling unit analysis across Obio/Akpor and Port Harcourt LGAs with observer reports.',
+    winner: { candidate: 'Siminalayi Fubara', party: 'PDP' },
+    topParties: [
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '302,614 votes', percentage: 62.5, color: 'bg-red-600' },
+      { name: 'SDP', fullName: 'Social Democratic Party', votes: '95,474 votes', percentage: 19.7, color: 'bg-amber-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '50,082 votes', percentage: 10.3, color: 'bg-emerald-600' }
+    ]
+  },
+  {
+    code: 'KD_GOV_2023',
+    title: 'Kaduna State Governorship Election',
+    subtitle: 'North West, Nigeria · Audited',
+    category: 'Governorship',
+    date: 'March 18, 2023',
+    region: 'North West',
+    status: 'Concluded',
+    voters: '4,335,208',
+    accreditedVoters: '1,470,200',
+    validVotes: '1,456,990',
+    pollingUnits: '8,012',
+    reconciledRate: '97.4%',
+    summary: 'Audited close margin election across 23 LGAs. Reconciled BVAS logs against local collation center sheets.',
+    winner: { candidate: 'Uba Sani', party: 'APC' },
+    topParties: [
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '737,610 votes', percentage: 50.4, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '719,380 votes', percentage: 49.1, color: 'bg-red-600' }
+    ]
+  },
+  {
+    code: 'OY_GOV_2023',
+    title: 'Oyo State Governorship Election',
+    subtitle: 'South West, Nigeria · Audited',
+    category: 'Governorship',
+    date: 'March 18, 2023',
+    region: 'South West',
+    status: 'Concluded',
+    voters: '3,276,675',
+    accreditedVoters: '890,500',
+    validVotes: '882,438',
+    pollingUnits: '6,390',
+    reconciledRate: '98.9%',
+    summary: 'Audit confirmed high electoral compliance and peaceful polling across Ibadan and Ibarapa zones.',
+    winner: { candidate: 'Seyi Makinde', party: 'PDP' },
+    topParties: [
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '563,756 votes', percentage: 63.3, color: 'bg-red-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '256,682 votes', percentage: 28.8, color: 'bg-emerald-600' }
     ]
   }
 ];

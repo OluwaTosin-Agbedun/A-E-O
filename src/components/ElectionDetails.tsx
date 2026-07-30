@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
 import { INITIAL_STATES, StateMonitor, PartyVote, LgaPartyStanding } from './LiveDashboard';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface WardStanding {
   wardName: string;
@@ -104,6 +106,20 @@ export default function ElectionDetails({
     const saved = localStorage.getItem('aeo_monitored_states_list_v8');
     return saved ? JSON.parse(saved) : INITIAL_STATES;
   });
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cms', 'monitored_states'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) {
+          const formatted = data.items.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
+          setStates(formatted);
+        }
+      }
+    }, err => console.warn('ElectionDetails snapshot error:', err));
+
+    return () => unsub();
+  }, []);
 
   const election = states.find(s => s.code.toUpperCase() === electionCode.toUpperCase()) || INITIAL_STATES[0];
 

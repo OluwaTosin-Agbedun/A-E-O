@@ -8,6 +8,7 @@ import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
 import { PartyLogo } from './PartyLogo';
+import { setItem } from '../utils/db';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -262,6 +263,31 @@ export default function CMSPanel({
     ];
   });
 
+  useEffect(() => {
+    const unsubStates = onSnapshot(doc(db, 'cms', 'monitored_states'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.items) {
+          setStatesList(data.items);
+        }
+      }
+    });
+
+    const unsubLogos = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data?.map) {
+          setPartyLogos(prev => ({ ...prev, ...data.map }));
+        }
+      }
+    });
+
+    return () => {
+      unsubStates();
+      unsubLogos();
+    };
+  }, []);
+
   const [selectedStateCode, setSelectedStateCode] = useState('OS');
   
   const activeCMSState = statesList.find(s => s.code === selectedStateCode) || statesList[0];
@@ -277,27 +303,30 @@ export default function CMSPanel({
       return;
     }
 
+    const partyKey = partyCodeForm.toUpperCase().trim();
     const updatedLogos = {
       ...partyLogos,
-      [partyCodeForm.toUpperCase().trim()]: partyLogoForm
+      [partyKey]: partyLogoForm
     };
     
     setPartyLogos(updatedLogos);
     try {
       localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updatedLogos));
+      setItem('aeo_custom_party_logos_v2', updatedLogos).catch(() => {});
     } catch (e) {
       console.warn('Failed to save party logo to localStorage:', e);
     }
 
     try {
       setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updatedLogos });
+      setDoc(doc(db, 'cms', `logo_${partyKey}`), { party: partyKey, logo: partyLogoForm });
     } catch (e) {
       console.error('Failed to sync party logos to Firestore:', e);
     }
     
     setPartyCodeForm('');
     setPartyLogoForm('');
-    showStatus(`Custom logo for ${partyCodeForm.toUpperCase()} saved successfully!`);
+    showStatus(`Custom logo for ${partyKey} saved successfully!`);
   };
 
   const handleDeletePartyLogo = (partyName: string) => {
