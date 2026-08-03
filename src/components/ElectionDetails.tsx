@@ -102,10 +102,7 @@ export default function ElectionDetails({
   onOpenReport,
   onOpenWeekly
 }: ElectionDetailsProps) {
-  const [states, setStates] = useState<StateMonitor[]>(() => {
-    const saved = localStorage.getItem('aeo_monitored_states_list_v8');
-    return saved ? JSON.parse(saved) : INITIAL_STATES;
-  });
+  const [states, setStates] = useState<StateMonitor[]>(INITIAL_STATES);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'cms', 'monitored_states'), snapshot => {

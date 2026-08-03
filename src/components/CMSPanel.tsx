@@ -8,7 +8,6 @@ import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
 import { PartyLogo } from './PartyLogo';
-import { setItem } from '../utils/db';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 
 interface CMSPanelProps {
@@ -141,31 +140,14 @@ export default function CMSPanel({
   // ----------------------------------------------------
   // Elections & Parties CMS States
   // ----------------------------------------------------
-  const [partyLogos, setPartyLogos] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem('aeo_custom_party_logos_v2');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [partyLogos, setPartyLogos] = useState<Record<string, string>>({});
 
   const [partyCodeForm, setPartyCodeForm] = useState('');
   const [partyLogoForm, setPartyLogoForm] = useState('');
 
-  const [statesList, setStatesList] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem('aeo_monitored_states_list_v8');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-    return [
-      {
-        code: 'OS',
+  const [statesList, setStatesList] = useState<any[]>([
+    {
+      code: 'OS',
         name: 'Osun',
         region: 'South West',
         election: 'Governorship',
@@ -270,8 +252,7 @@ export default function CMSPanel({
         ],
         lgaStandings: []
       }
-    ];
-  });
+  ]);
 
   useEffect(() => {
     const unsubStates = onSnapshot(doc(db, 'cms', 'monitored_states'), snapshot => {
@@ -320,16 +301,10 @@ export default function CMSPanel({
     };
     
     setPartyLogos(updatedLogos);
-    try {
-      localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updatedLogos));
-      setItem('aeo_custom_party_logos_v2', updatedLogos).catch(() => {});
-    } catch (e) {
-      console.warn('Failed to save party logo to localStorage:', e);
-    }
 
     try {
       saveAssetToFirestore('logo', partyKey, partyLogoForm);
-      setDoc(doc(db, 'cms', 'custom_party_logos'), { keys: Object.keys(updatedLogos), updated: Date.now() });
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updatedLogos, keys: Object.keys(updatedLogos), updated: Date.now() });
     } catch (e) {
       console.error('Failed to sync party logos to Firestore:', e);
     }
@@ -343,11 +318,6 @@ export default function CMSPanel({
     const updated = { ...partyLogos };
     delete updated[partyName.toUpperCase().trim()];
     setPartyLogos(updated);
-    try {
-      localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn('Failed to delete party logo from localStorage:', e);
-    }
 
     try {
       setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updated });
@@ -371,11 +341,6 @@ export default function CMSPanel({
     });
 
     setStatesList(updatedStatesList);
-    try {
-      localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(updatedStatesList));
-    } catch (e) {
-      console.warn('Failed to save states list to localStorage:', e);
-    }
 
     try {
       setDoc(doc(db, 'cms', 'monitored_states'), { items: updatedStatesList });

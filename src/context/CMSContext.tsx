@@ -11,7 +11,6 @@ import {
   WEEKLY_ISSUES as initialWeekly,
   ANNOUNCEMENTS as initialAnnouncements
 } from '../data';
-import { getItem, setItem, clearDB } from '../utils/db';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore } from '../lib/firebaseAssets';
@@ -164,67 +163,36 @@ interface CMSContextType {
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
-// Helper to merge local items and remote items so user uploads (PDFs, images, synopses) are never wiped or overwritten
-function mergeCollection<T extends { id: string; pdfUrl?: string; image?: string; summary?: string; title?: string; sections?: any }>(
+// Helper to apply remote collection updates from Firestore as authoritative source of truth,
+// while preserving in-memory base64 PDF/image data for items referencing asset docs until hydration completes.
+function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: string }>(
   localItems: T[],
   remoteItems: T[]
 ): T[] {
   if (!remoteItems || !Array.isArray(remoteItems)) return localItems || [];
-  if (!localItems || !Array.isArray(localItems) || localItems.length === 0) return remoteItems;
 
-  const remoteMap = new Map(remoteItems.map(item => [item.id, item]));
-  const merged: T[] = [];
+  const localMap = new Map((localItems || []).map(item => [item.id, item]));
 
-  for (const remoteItem of remoteItems) {
-    const localMatch = localItems.find(l => l.id === remoteItem.id);
-    if (localMatch) {
-      // Determine effective PDF URL (prefer actual base64 or HTTP URL over reference placeholders)
-      const effectivePdfUrl = (localMatch.pdfUrl && localMatch.pdfUrl.length > 20 && !localMatch.pdfUrl.startsWith('ref:'))
-        ? localMatch.pdfUrl
-        : ((remoteItem.pdfUrl && !remoteItem.pdfUrl.startsWith('ref:')) ? remoteItem.pdfUrl : (localMatch.pdfUrl || ''));
+  return remoteItems.map(remoteItem => {
+    const localMatch = localMap.get(remoteItem.id);
+    const itemCopy = { ...remoteItem };
 
-      // Determine effective Image
-      const effectiveImage = (localMatch.image && localMatch.image.length > 20 && !localMatch.image.startsWith('ref:'))
-        ? localMatch.image
-        : ((remoteItem.image && !remoteItem.image.startsWith('ref:')) ? remoteItem.image : (localMatch.image || ''));
-
-      // Determine effective Summary / Synopsis (keep local if non-empty and at least as long as remote)
-      const localSum = (localMatch.summary || '').trim();
-      const remoteSum = (remoteItem.summary || '').trim();
-      const effectiveSummary = (localSum.length >= remoteSum.length && localSum.length > 0)
-        ? localMatch.summary
-        : (remoteItem.summary || '');
-
-      const effectiveTitle = (localMatch.title && localMatch.title.trim() !== '')
-        ? localMatch.title
-        : (remoteItem.title || '');
-
-      const effectiveSections = (localMatch.sections && Array.isArray(localMatch.sections) && localMatch.sections.length > 0)
-        ? localMatch.sections
-        : (remoteItem.sections || []);
-
-      merged.push({
-        ...remoteItem,
-        ...localMatch,
-        title: effectiveTitle,
-        summary: effectiveSummary,
-        pdfUrl: effectivePdfUrl,
-        image: effectiveImage,
-        sections: effectiveSections,
-      });
-    } else {
-      merged.push(remoteItem);
+    // If remote has a reference string like ref:pdf_123, check if local state already has the resolved Base64/URL
+    if (itemCopy.pdfUrl && itemCopy.pdfUrl.startsWith('ref:')) {
+      if (localMatch && localMatch.pdfUrl && !localMatch.pdfUrl.startsWith('ref:')) {
+        itemCopy.pdfUrl = localMatch.pdfUrl;
+      }
     }
-  }
 
-  // Include any local items that don't exist in remote at all (e.g. newly created user documents)
-  for (const localItem of localItems) {
-    if (!remoteMap.has(localItem.id)) {
-      merged.push(localItem);
+    // If remote has a reference string like ref:img_123, check if local state already has the resolved Base64/URL
+    if (itemCopy.image && itemCopy.image.startsWith('ref:')) {
+      if (localMatch && localMatch.image && !localMatch.image.startsWith('ref:')) {
+        itemCopy.image = localMatch.image;
+      }
     }
-  }
 
-  return merged;
+    return itemCopy;
+  });
 }
 
 // Helper to save Firestore document cleanly with asset chunking
@@ -242,139 +210,26 @@ const syncToFirestore = async (docName: string, data: any) => {
 
 export function CMSProvider({ children }: { children: ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [reports, setReports] = useState<Report[]>(() => {
-    const saved = localStorage.getItem('aeo_reports');
-    return saved ? JSON.parse(saved) : initialReports;
-  });
+  const [reports, setReports] = useState<Report[]>(initialReports);
+  const [diaryNat, setDiaryNat] = useState<DiaryItem[]>(initialDiaryNat);
+  const [diaryLoc, setDiaryLoc] = useState<DiaryItem[]>(initialDiaryLoc);
+  const [diaryAfr, setDiaryAfr] = useState<DiaryItem[]>(initialDiaryAfr);
+  const [diaryOth, setDiaryOth] = useState<DiaryItem[]>(initialDiaryOth);
+  const [events, setEvents] = useState<EventItem[]>(initialEvents);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(initialAnnouncements);
+  const [team, setTeam] = useState<TeamMember[]>(initialTeam);
+  const [weekly, setWeekly] = useState<WeeklyIssue[]>(initialWeekly);
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>(INITIAL_HERO_CONFIG);
+  const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(INITIAL_STATS_CONFIG);
 
-  const [diaryNat, setDiaryNat] = useState<DiaryItem[]>(() => {
-    const saved = localStorage.getItem('aeo_diary_nat');
-    return saved ? JSON.parse(saved) : initialDiaryNat;
-  });
-
-  const [diaryLoc, setDiaryLoc] = useState<DiaryItem[]>(() => {
-    const saved = localStorage.getItem('aeo_diary_loc');
-    return saved ? JSON.parse(saved) : initialDiaryLoc;
-  });
-
-  const [diaryAfr, setDiaryAfr] = useState<DiaryItem[]>(() => {
-    const saved = localStorage.getItem('aeo_diary_afr');
-    return saved ? JSON.parse(saved) : initialDiaryAfr;
-  });
-
-  const [diaryOth, setDiaryOth] = useState<DiaryItem[]>(() => {
-    const saved = localStorage.getItem('aeo_diary_oth');
-    return saved ? JSON.parse(saved) : initialDiaryOth;
-  });
-
-  const [events, setEvents] = useState<EventItem[]>(() => {
-    const saved = localStorage.getItem('aeo_events');
-    return saved ? JSON.parse(saved) : initialEvents;
-  });
-
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(() => {
-    const saved = localStorage.getItem('aeo_announcements');
-    return saved ? JSON.parse(saved) : initialAnnouncements;
-  });
-
-  const [team, setTeam] = useState<TeamMember[]>(() => {
-    const saved = localStorage.getItem('aeo_team');
-    return saved ? JSON.parse(saved) : initialTeam;
-  });
-
-  const [weekly, setWeekly] = useState<WeeklyIssue[]>(() => {
-    const saved = localStorage.getItem('aeo_weekly');
-    return saved ? JSON.parse(saved) : initialWeekly;
-  });
-
-  const [heroConfig, setHeroConfig] = useState<HeroConfig>(() => {
-    const saved = localStorage.getItem('aeo_hero');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.spotlightStatusText === 'Off-Cycle') {
-        parsed.spotlightStatusText = 'IREV Data';
-      }
-      if (parsed.registeredVoters === '1,955,657 voters' || parsed.registeredVoters === '1,955,657') {
-        parsed.registeredVoters = '2,339,233 voters';
-      }
-      return parsed;
-    }
-    return INITIAL_HERO_CONFIG;
-  });
-
-  const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(() => {
-    const saved = localStorage.getItem('aeo_stats');
-    return saved ? JSON.parse(saved) : INITIAL_STATS_CONFIG;
-  });
-
-  // 0. Load data asynchronously from IndexedDB on mount if available
-  useEffect(() => {
-    const loadIndexedDBData = async () => {
-      try {
-        const savedReports = await getItem<Report[]>('aeo_reports');
-        if (savedReports && savedReports.length > 0) {
-          setReports(prev => mergeCollection(prev, savedReports));
-        }
-
-        const savedDiaryNat = await getItem<DiaryItem[]>('aeo_diary_nat');
-        if (savedDiaryNat && savedDiaryNat.length > 0) {
-          setDiaryNat(prev => mergeCollection(prev, savedDiaryNat));
-        }
-
-        const savedDiaryLoc = await getItem<DiaryItem[]>('aeo_diary_loc');
-        if (savedDiaryLoc && savedDiaryLoc.length > 0) {
-          setDiaryLoc(prev => mergeCollection(prev, savedDiaryLoc));
-        }
-
-        const savedDiaryAfr = await getItem<DiaryItem[]>('aeo_diary_afr');
-        if (savedDiaryAfr && savedDiaryAfr.length > 0) {
-          setDiaryAfr(prev => mergeCollection(prev, savedDiaryAfr));
-        }
-
-        const savedDiaryOth = await getItem<DiaryItem[]>('aeo_diary_oth');
-        if (savedDiaryOth && savedDiaryOth.length > 0) {
-          setDiaryOth(prev => mergeCollection(prev, savedDiaryOth));
-        }
-
-        const savedEvents = await getItem<EventItem[]>('aeo_events');
-        if (savedEvents && savedEvents.length > 0) {
-          setEvents(prev => mergeCollection(prev, savedEvents));
-        }
-
-        const savedAnnouncements = await getItem<AnnouncementItem[]>('aeo_announcements');
-        if (savedAnnouncements && savedAnnouncements.length > 0) {
-          setAnnouncements(prev => mergeCollection(prev, savedAnnouncements));
-        }
-
-        const savedTeam = await getItem<TeamMember[]>('aeo_team');
-        if (savedTeam && savedTeam.length > 0) {
-          setTeam(prev => mergeCollection(prev, savedTeam));
-        }
-
-        const savedWeekly = await getItem<WeeklyIssue[]>('aeo_weekly');
-        if (savedWeekly && savedWeekly.length > 0) {
-          setWeekly(prev => mergeCollection(prev, savedWeekly));
-        }
-
-        const savedHero = await getItem<HeroConfig>('aeo_hero');
-        if (savedHero) setHeroConfig(savedHero);
-
-        const savedStats = await getItem<StatItemConfig[]>('aeo_stats');
-        if (savedStats && savedStats.length > 0) setStatsConfig(savedStats);
-      } catch (err) {
-        console.warn('IndexedDB load error:', err);
-      }
-    };
-    loadIndexedDBData();
-  }, []);
-
-  // 1. Subscribe to Firestore in Real-Time for global site sync with auto-seeding
+  // Subscribe to Firestore in Real-Time for global site sync with auto-seeding
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
 
     const subscribeAndSeed = <T,>(
       docName: string, 
       setter: Dispatch<SetStateAction<T>>, 
+      seedVal: T,
       transform?: (data: T) => T
     ) => {
       const docRef = doc(db, 'cms', docName);
@@ -385,41 +240,39 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             const raw = data.items !== undefined ? data.items : data.config;
             const finalVal = transform ? transform(raw as T) : (raw as T);
             if (Array.isArray(finalVal)) {
-              setter(localVal => mergeCollection(localVal as any, finalVal as any) as unknown as T);
+              setter(localVal => applyRemoteCollection(localVal as any, finalVal as any) as unknown as T);
             } else {
               setter(finalVal);
             }
           }
         } else {
-          // Document doesn't exist in Firestore yet -> seed Firestore with current local state (from localStorage/IndexedDB)!
-          setter(currentState => {
-            const payload = docName === 'hero' ? { config: currentState } : { items: currentState };
-            setDoc(docRef, payload).catch(err => console.error(`Error seeding ${docName} to Firestore:`, err));
-            return currentState;
-          });
+          // Document doesn't exist in Firestore yet -> seed Firestore with seedVal
+          const payload = docName === 'hero' ? { config: seedVal } : { items: seedVal };
+          setDoc(docRef, payload).catch(err => console.error(`Error seeding ${docName} to Firestore:`, err));
+          setter(seedVal);
         }
       }, err => {
         console.warn(`Firestore snapshot error for ${docName}:`, err);
       });
     };
 
-    unsubscribes.push(subscribeAndSeed('reports', setReports));
-    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat));
-    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc));
-    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr));
-    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth));
-    unsubscribes.push(subscribeAndSeed('events', setEvents));
-    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements));
-    unsubscribes.push(subscribeAndSeed('team', setTeam));
-    unsubscribes.push(subscribeAndSeed('weekly', setWeekly));
-    unsubscribes.push(subscribeAndSeed('hero', setHeroConfig, (cfg: HeroConfig) => {
+    unsubscribes.push(subscribeAndSeed('reports', setReports, initialReports));
+    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, initialDiaryNat));
+    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, initialDiaryLoc));
+    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, initialDiaryAfr));
+    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, initialDiaryOth));
+    unsubscribes.push(subscribeAndSeed('events', setEvents, initialEvents));
+    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, initialAnnouncements));
+    unsubscribes.push(subscribeAndSeed('team', setTeam, initialTeam));
+    unsubscribes.push(subscribeAndSeed('weekly', setWeekly, initialWeekly));
+    unsubscribes.push(subscribeAndSeed('hero', setHeroConfig, INITIAL_HERO_CONFIG, (cfg: HeroConfig) => {
       if (cfg.spotlightStatusText === 'Off-Cycle') cfg.spotlightStatusText = 'IREV Data';
       if (cfg.registeredVoters === '1,955,657 voters' || cfg.registeredVoters === '1,955,657') {
         cfg.registeredVoters = '2,339,233 voters';
       }
       return cfg;
     }));
-    unsubscribes.push(subscribeAndSeed('stats', setStatsConfig));
+    unsubscribes.push(subscribeAndSeed('stats', setStatsConfig, INITIAL_STATS_CONFIG));
 
     setDataLoaded(true);
 
@@ -427,127 +280,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       unsubscribes.forEach(unsub => unsub());
     };
   }, []);
-
-  // Sync to Storage (IndexedDB + fallback to localStorage)
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_reports', reports).catch(e => console.error('IndexedDB reports error:', e));
-    try {
-      localStorage.setItem('aeo_reports', JSON.stringify(reports));
-    } catch (e) {
-      console.warn('aeo_reports localStorage failed (relying on IndexedDB):', e);
-    }
-  }, [reports, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_hero', heroConfig).catch(e => console.error('IndexedDB hero error:', e));
-    try {
-      localStorage.setItem('aeo_hero', JSON.stringify(heroConfig));
-    } catch (e) {
-      console.warn('aeo_hero localStorage failed:', e);
-    }
-  }, [heroConfig, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_stats', statsConfig).catch(e => console.error('IndexedDB stats error:', e));
-    try {
-      localStorage.setItem('aeo_stats', JSON.stringify(statsConfig));
-    } catch (e) {
-      console.warn('aeo_stats localStorage failed:', e);
-    }
-  }, [statsConfig, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_diary_nat', diaryNat).catch(e => console.error('IndexedDB diary_nat error:', e));
-    try {
-      localStorage.setItem('aeo_diary_nat', JSON.stringify(diaryNat));
-    } catch (e) {
-      console.warn('aeo_diary_nat localStorage failed:', e);
-    }
-  }, [diaryNat, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_diary_loc', diaryLoc).catch(e => console.error('IndexedDB diary_loc error:', e));
-    try {
-      localStorage.setItem('aeo_diary_loc', JSON.stringify(diaryLoc));
-    } catch (e) {
-      console.warn('aeo_diary_loc localStorage failed:', e);
-    }
-  }, [diaryLoc, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_diary_afr', diaryAfr).catch(e => console.error('IndexedDB diary_afr error:', e));
-    try {
-      localStorage.setItem('aeo_diary_afr', JSON.stringify(diaryAfr));
-    } catch (e) {
-      console.warn('aeo_diary_afr localStorage failed:', e);
-    }
-  }, [diaryAfr, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_diary_oth', diaryOth).catch(e => console.error('IndexedDB diary_oth error:', e));
-    try {
-      localStorage.setItem('aeo_diary_oth', JSON.stringify(diaryOth));
-    } catch (e) {
-      console.warn('aeo_diary_oth localStorage failed:', e);
-    }
-  }, [diaryOth, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_events', events).catch(e => console.error('IndexedDB events error:', e));
-    try {
-      localStorage.setItem('aeo_events', JSON.stringify(events));
-    } catch (e) {
-      console.warn('aeo_events localStorage failed:', e);
-    }
-  }, [events, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_announcements', announcements).catch(e => console.error('IndexedDB announcements error:', e));
-    try {
-      localStorage.setItem('aeo_announcements', JSON.stringify(announcements));
-    } catch (e) {
-      console.warn('aeo_announcements localStorage failed (relying on IndexedDB):', e);
-    }
-  }, [announcements, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_team', team).catch(e => console.error('IndexedDB team error:', e));
-    try {
-      localStorage.setItem('aeo_team', JSON.stringify(team));
-    } catch (e) {
-      console.warn('aeo_team localStorage failed:', e);
-    }
-  }, [team, dataLoaded]);
-
-  useEffect(() => {
-    if (!dataLoaded) return;
-    setItem('aeo_weekly', weekly).catch(e => console.error('IndexedDB weekly error:', e));
-    try {
-      localStorage.setItem('aeo_weekly', JSON.stringify(weekly));
-    } catch (e) {
-      console.warn('aeo_weekly localStorage failed (relying on IndexedDB):', e);
-    }
-  }, [weekly, dataLoaded]);
-
-  // Auto-sync current local state to Firestore on boot to ensure remote database has latest sanitized content
-  useEffect(() => {
-    if (!dataLoaded) return;
-    if (reports.length > 0) syncToFirestore('reports', { items: reports });
-    if (weekly.length > 0) syncToFirestore('weekly', { items: weekly });
-    if (announcements.length > 0) syncToFirestore('announcements', { items: announcements });
-    if (events.length > 0) syncToFirestore('events', { items: events });
-    if (team.length > 0) syncToFirestore('team', { items: team });
-  }, [dataLoaded]);
 
   // Sync individual PDF and Image documents from Firestore if main array included reference placeholders or empty asset fields
   useEffect(() => {
@@ -740,20 +472,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     syncToFirestore('stats', { items: config });
   };
 
-  const resetAllData = () => {
-    clearDB().catch(e => console.error('Failed to clear IndexedDB:', e));
-    localStorage.removeItem('aeo_reports');
-    localStorage.removeItem('aeo_diary_nat');
-    localStorage.removeItem('aeo_diary_loc');
-    localStorage.removeItem('aeo_diary_afr');
-    localStorage.removeItem('aeo_diary_oth');
-    localStorage.removeItem('aeo_events');
-    localStorage.removeItem('aeo_announcements');
-    localStorage.removeItem('aeo_team');
-    localStorage.removeItem('aeo_weekly');
-    localStorage.removeItem('aeo_hero');
-    localStorage.removeItem('aeo_stats');
-    
+  const resetAllData = async () => {
     setReports(initialReports);
     setDiaryNat(initialDiaryNat);
     setDiaryLoc(initialDiaryLoc);
@@ -765,6 +484,18 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     setWeekly(initialWeekly);
     setHeroConfig(INITIAL_HERO_CONFIG);
     setStatsConfig(INITIAL_STATS_CONFIG);
+
+    await syncToFirestore('reports', { items: initialReports });
+    await syncToFirestore('diary_nat', { items: initialDiaryNat });
+    await syncToFirestore('diary_loc', { items: initialDiaryLoc });
+    await syncToFirestore('diary_afr', { items: initialDiaryAfr });
+    await syncToFirestore('diary_oth', { items: initialDiaryOth });
+    await syncToFirestore('events', { items: initialEvents });
+    await syncToFirestore('announcements', { items: initialAnnouncements });
+    await syncToFirestore('team', { items: initialTeam });
+    await syncToFirestore('weekly', { items: initialWeekly });
+    await syncToFirestore('hero', { config: INITIAL_HERO_CONFIG });
+    await syncToFirestore('stats', { items: INITIAL_STATS_CONFIG });
   };
 
   return (

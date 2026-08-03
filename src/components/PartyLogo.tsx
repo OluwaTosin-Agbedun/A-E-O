@@ -8,53 +8,22 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
   const party = (name || "").toUpperCase().trim();
   
   // Custom logo map from CMS & Firestore
-  const [customLogos, setCustomLogos] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem('aeo_custom_party_logos_v2');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [customLogos, setCustomLogos] = useState<Record<string, string>>({});
 
-  // Listen to Firestore real-time snapshot + local storage fallback
+  // Listen to Firestore real-time snapshot
   useEffect(() => {
-    // 1. Initial local load
-    try {
-      const saved = localStorage.getItem('aeo_custom_party_logos_v2');
-      if (saved) {
-        setCustomLogos(prev => ({ ...JSON.parse(saved), ...prev }));
-      }
-    } catch {
-      // ignore
-    }
-
-    // 2. Global party logos map snapshot (manifest or map)
+    // 1. Global party logos map snapshot (manifest or map)
     const unsubMap = onSnapshot(doc(db, 'cms', 'custom_party_logos'), async snapshot => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.map) {
-          setCustomLogos(prev => {
-            const merged = { ...prev, ...data.map };
-            try {
-              localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
-            } catch {
-              // ignore
-            }
-            return merged;
-          });
+          setCustomLogos(prev => ({ ...prev, ...data.map }));
         }
         if (data?.keys && Array.isArray(data.keys)) {
           for (const k of data.keys) {
             const logoData = await loadAssetFromFirestore('logo', k);
             if (logoData) {
-              setCustomLogos(prev => {
-                const merged = { ...prev, [k]: logoData };
-                try {
-                  localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
-                } catch {}
-                return merged;
-              });
+              setCustomLogos(prev => ({ ...prev, [k]: logoData }));
             }
           }
         }
@@ -63,7 +32,7 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
       console.warn("Firestore party logos fallback:", err);
     });
 
-    // 3. Individual party logo document fallback (for large or chunked base64 logos)
+    // 2. Individual party logo document fallback (for large or chunked base64 logos)
     let unsubSingle: (() => void) | undefined;
     if (party) {
       unsubSingle = onSnapshot(doc(db, 'cms', `logo_${party}`), async snapshot => {
@@ -74,15 +43,7 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
             logoVal = await loadAssetFromFirestore('logo', party);
           }
           if (logoVal) {
-            setCustomLogos(prev => {
-              const merged = { ...prev, [party]: logoVal };
-              try {
-                localStorage.setItem('aeo_custom_party_logos_v2', JSON.stringify(merged));
-              } catch {
-                // ignore
-              }
-              return merged;
-            });
+            setCustomLogos(prev => ({ ...prev, [party]: logoVal }));
           }
         }
       }, () => {});

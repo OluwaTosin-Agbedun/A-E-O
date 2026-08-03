@@ -87,13 +87,13 @@ export async function sanitizeAndSyncItems(docName: string, items: any[]): Promi
 
     // Heavy PDF
     if (itemCopy.pdfUrl && itemCopy.pdfUrl.startsWith('data:')) {
-      saveAssetToFirestore('pdf', itemCopy.id, itemCopy.pdfUrl);
+      await saveAssetToFirestore('pdf', itemCopy.id, itemCopy.pdfUrl);
       itemCopy.pdfUrl = `ref:pdf_${itemCopy.id}`;
     }
 
     // Heavy Image
     if (itemCopy.image && itemCopy.image.startsWith('data:')) {
-      saveAssetToFirestore('img', itemCopy.id, itemCopy.image);
+      await saveAssetToFirestore('img', itemCopy.id, itemCopy.image);
       itemCopy.image = `ref:img_${itemCopy.id}`;
     }
 

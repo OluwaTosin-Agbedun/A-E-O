@@ -391,18 +391,7 @@ interface LiveDashboardProps {
 }
 
 export default function LiveDashboard({ isPreview = false }: LiveDashboardProps) {
-  const [states, setStates] = useState<StateMonitor[]>(() => {
-    const saved = localStorage.getItem('aeo_monitored_states_list_v8');
-    if (saved) {
-      try {
-        const parsed: StateMonitor[] = JSON.parse(saved);
-        return parsed.map(s => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_STATES;
-  });
+  const [states, setStates] = useState<StateMonitor[]>(INITIAL_STATES);
 
   // Split into Upcoming (Live) and Concluded (Past)
   const liveStates = states.filter(s => s.status === 'Upcoming');
@@ -430,11 +419,6 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
         if (data?.items) {
           const formatted = data.items.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
           setStates(formatted);
-          try {
-            localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(formatted));
-          } catch (e) {
-            // ignore
-          }
         }
       } else {
         // Auto-seed if doc doesn't exist
@@ -447,15 +431,6 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
 
     return () => unsub();
   }, []);
-
-  // Persist states array to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('aeo_monitored_states_list_v8', JSON.stringify(states));
-    } catch (e) {
-      console.warn('Failed to save aeo_monitored_states_list_v8 to localStorage:', e);
-    }
-  }, [states]);
 
   // Reset searches on changes
   useEffect(() => {
