@@ -210,61 +210,97 @@ const syncToFirestore = async (docName: string, data: any) => {
 
 export function CMSProvider({ children }: { children: ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [reports, setReports] = useState<Report[]>(initialReports);
-  const [diaryNat, setDiaryNat] = useState<DiaryItem[]>(initialDiaryNat);
-  const [diaryLoc, setDiaryLoc] = useState<DiaryItem[]>(initialDiaryLoc);
-  const [diaryAfr, setDiaryAfr] = useState<DiaryItem[]>(initialDiaryAfr);
-  const [diaryOth, setDiaryOth] = useState<DiaryItem[]>(initialDiaryOth);
-  const [events, setEvents] = useState<EventItem[]>(initialEvents);
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(initialAnnouncements);
-  const [team, setTeam] = useState<TeamMember[]>(initialTeam);
-  const [weekly, setWeekly] = useState<WeeklyIssue[]>(initialWeekly);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [diaryNat, setDiaryNat] = useState<DiaryItem[]>([]);
+  const [diaryLoc, setDiaryLoc] = useState<DiaryItem[]>([]);
+  const [diaryAfr, setDiaryAfr] = useState<DiaryItem[]>([]);
+  const [diaryOth, setDiaryOth] = useState<DiaryItem[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [weekly, setWeekly] = useState<WeeklyIssue[]>([]);
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(INITIAL_HERO_CONFIG);
   const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(INITIAL_STATS_CONFIG);
 
-  // Subscribe to Firestore in Real-Time for global site sync with auto-seeding
+  // Subscribe to Firestore in Real-Time for global site sync without automatic default seeding
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
+    let loadedCount = 0;
+    const totalDocs = 11;
+
+    const MOCK_IDS = new Set([
+      'anambra', 'imo', 'tech', 'kaduna-security', 'hospitals-reform',
+      'wk-1', 'wk-2', 'wk-3',
+      'ann-1', 'ann-2',
+      'w-1', 'w-2', 'w-3',
+      'a-1', 'a-2',
+      'nasarawa-governance', 'plat-security', 'kano-security', 'benue-security', 'adamawa-security', 'taraba-security'
+    ]);
 
     const subscribeAndSeed = <T,>(
       docName: string, 
       setter: Dispatch<SetStateAction<T>>, 
-      seedVal: T,
+      fallbackVal: T,
       transform?: (data: T) => T
     ) => {
       const docRef = doc(db, 'cms', docName);
+      let isFirst = true;
       return onSnapshot(docRef, snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (data && (data.items !== undefined || data.config !== undefined)) {
-            const raw = data.items !== undefined ? data.items : data.config;
+            let raw = data.items !== undefined ? data.items : data.config;
+
+            if (Array.isArray(raw)) {
+              const origLen = raw.length;
+              raw = raw.filter((item: any) => item && item.id && !MOCK_IDS.has(item.id));
+              if (raw.length !== origLen) {
+                syncToFirestore(docName, { items: raw });
+              }
+            }
+
             const finalVal = transform ? transform(raw as T) : (raw as T);
             if (Array.isArray(finalVal)) {
               setter(localVal => applyRemoteCollection(localVal as any, finalVal as any) as unknown as T);
             } else {
               setter(finalVal);
             }
+          } else {
+            setter(fallbackVal);
           }
         } else {
-          // Document doesn't exist in Firestore yet -> seed Firestore with seedVal
-          const payload = docName === 'hero' ? { config: seedVal } : { items: seedVal };
-          setDoc(docRef, payload).catch(err => console.error(`Error seeding ${docName} to Firestore:`, err));
-          setter(seedVal);
+          // Document doesn't exist in Firestore -> default to empty / fallback without auto-writing hardcoded defaults
+          setter(fallbackVal);
+        }
+        if (isFirst) {
+          isFirst = false;
+          loadedCount++;
+          if (loadedCount >= totalDocs) {
+            setDataLoaded(true);
+          }
         }
       }, err => {
         console.warn(`Firestore snapshot error for ${docName}:`, err);
+        setter(fallbackVal);
+        if (isFirst) {
+          isFirst = false;
+          loadedCount++;
+          if (loadedCount >= totalDocs) {
+            setDataLoaded(true);
+          }
+        }
       });
     };
 
-    unsubscribes.push(subscribeAndSeed('reports', setReports, initialReports));
-    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, initialDiaryNat));
-    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, initialDiaryLoc));
-    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, initialDiaryAfr));
-    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, initialDiaryOth));
-    unsubscribes.push(subscribeAndSeed('events', setEvents, initialEvents));
-    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, initialAnnouncements));
-    unsubscribes.push(subscribeAndSeed('team', setTeam, initialTeam));
-    unsubscribes.push(subscribeAndSeed('weekly', setWeekly, initialWeekly));
+    unsubscribes.push(subscribeAndSeed('reports', setReports, []));
+    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, []));
+    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, []));
+    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, []));
+    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, []));
+    unsubscribes.push(subscribeAndSeed('events', setEvents, []));
+    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, []));
+    unsubscribes.push(subscribeAndSeed('team', setTeam, []));
+    unsubscribes.push(subscribeAndSeed('weekly', setWeekly, []));
     unsubscribes.push(subscribeAndSeed('hero', setHeroConfig, INITIAL_HERO_CONFIG, (cfg: HeroConfig) => {
       if (cfg.spotlightStatusText === 'Off-Cycle') cfg.spotlightStatusText = 'IREV Data';
       if (cfg.registeredVoters === '1,955,657 voters' || cfg.registeredVoters === '1,955,657') {
@@ -273,8 +309,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       return cfg;
     }));
     unsubscribes.push(subscribeAndSeed('stats', setStatsConfig, INITIAL_STATS_CONFIG));
-
-    setDataLoaded(true);
 
     return () => {
       unsubscribes.forEach(unsub => unsub());
