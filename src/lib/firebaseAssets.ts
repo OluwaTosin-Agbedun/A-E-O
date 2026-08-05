@@ -8,10 +8,11 @@ const CHUNK_SIZE = 600000; // ~600KB per chunk to safely stay under Firestore's 
  */
 export async function saveAssetToFirestore(assetType: 'pdf' | 'img' | 'logo', id: string, dataUrl: string): Promise<void> {
   if (!id || !dataUrl) return;
+  const cleanId = id.replace(/[\/\s#?\[\]]/gi, '_');
   try {
     if (dataUrl.length <= CHUNK_SIZE) {
-      await setDoc(doc(db, 'cms', `${assetType}_${id}`), {
-        id,
+      await setDoc(doc(db, 'cms', `${assetType}_${cleanId}`), {
+        id: cleanId,
         dataUrl,
         chunksCount: 1,
         updatedAt: Date.now()
@@ -20,21 +21,21 @@ export async function saveAssetToFirestore(assetType: 'pdf' | 'img' | 'logo', id
       const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
       for (let i = 0; i < totalChunks; i++) {
         const chunk = dataUrl.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        await setDoc(doc(db, 'cms', `${assetType}_${id}_chunk_${i}`), {
+        await setDoc(doc(db, 'cms', `${assetType}_${cleanId}_chunk_${i}`), {
           chunk,
           index: i,
           totalChunks,
-          id
+          id: cleanId
         });
       }
-      await setDoc(doc(db, 'cms', `${assetType}_${id}`), {
-        id,
+      await setDoc(doc(db, 'cms', `${assetType}_${cleanId}`), {
+        id: cleanId,
         chunksCount: totalChunks,
         updatedAt: Date.now()
       });
     }
   } catch (err) {
-    console.error(`Error saving ${assetType} asset for ${id} to Firestore:`, err);
+    console.error(`Error saving ${assetType} asset for ${cleanId} to Firestore:`, err);
   }
 }
 
@@ -43,8 +44,9 @@ export async function saveAssetToFirestore(assetType: 'pdf' | 'img' | 'logo', id
  */
 export async function loadAssetFromFirestore(assetType: 'pdf' | 'img' | 'logo', id: string): Promise<string | null> {
   if (!id) return null;
+  const cleanId = id.replace(/[\/\s#?\[\]]/gi, '_');
   try {
-    const mainRef = doc(db, 'cms', `${assetType}_${id}`);
+    const mainRef = doc(db, 'cms', `${assetType}_${cleanId}`);
     const snap = await getDoc(mainRef);
     if (!snap.exists()) return null;
 
@@ -56,7 +58,7 @@ export async function loadAssetFromFirestore(assetType: 'pdf' | 'img' | 'logo', 
     if (data.chunksCount && data.chunksCount > 1) {
       const chunkPromises = [];
       for (let i = 0; i < data.chunksCount; i++) {
-        chunkPromises.push(getDoc(doc(db, 'cms', `${assetType}_${id}_chunk_${i}`)));
+        chunkPromises.push(getDoc(doc(db, 'cms', `${assetType}_${cleanId}_chunk_${i}`)));
       }
       const chunkSnaps = await Promise.all(chunkPromises);
       let fullStr = '';
@@ -68,7 +70,7 @@ export async function loadAssetFromFirestore(assetType: 'pdf' | 'img' | 'logo', 
       return fullStr || null;
     }
   } catch (err) {
-    console.warn(`Error loading asset ${assetType}_${id}:`, err);
+    console.warn(`Error loading asset ${assetType}_${cleanId}:`, err);
   }
   return null;
 }

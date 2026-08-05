@@ -118,7 +118,7 @@ export const DIARY_NATIONAL: DiaryItem[] = [
     date: '08 Nov 2025',
     title: 'Anambra State Governorship',
     subtitle: 'Off-cycle · INEC Monitored',
-    status: 'In view',
+    status: 'Concluded',
     region: 'nigeria',
     type: 'governorship',
     country: 'Nigeria',

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download, Award } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download, Award, MapPin, Users, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { formatReportDate } from '../utils/date';
+import DiaryElectionDetail from './DiaryElectionDetail';
+import { DiaryItem } from '../types';
 
 export const triggerPdfDownload = (title: string, summary: string, author: string, date: string, pdfUrl?: string, customContent?: string) => {
   if (pdfUrl) {
@@ -64,7 +66,7 @@ interface UnifiedPublication {
 }
 
 export default function PublicationsPage() {
-  const { reports, weekly, announcements } = useCMS();
+  const { reports, weekly, announcements, diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -81,8 +83,50 @@ export default function PublicationsPage() {
     { value: 'announcement', label: 'Announcements' }
   ];
   
-  // State for announcement reader modal
+  // State for announcement reader modal & diary detail modal
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<UnifiedPublication | null>(null);
+  const [selectedDiaryItem, setSelectedDiaryItem] = useState<DiaryItem | null>(null);
+
+  // Combine all diary items and find the 3 closest elections
+  const allDiaryItems = useMemo(() => {
+    const nat = (diaryNat || []).map(item => ({
+      ...item,
+      region: item.region || ('nigeria' as const),
+      type: item.type || (item.title.toLowerCase().includes('presidential') ? ('presidential' as const) : ('governorship' as const))
+    }));
+    const loc = (diaryLoc || []).map(item => ({
+      ...item,
+      region: item.region || ('nigeria' as const),
+      type: item.type || ('local_government' as const)
+    }));
+    const afr = (diaryAfr || []).map(item => ({
+      ...item,
+      region: item.region || ('africa' as const),
+      type: item.type || ('presidential' as const)
+    }));
+    const oth = (diaryOth || []).map(item => ({
+      ...item,
+      region: item.region || ('other' as const),
+      type: item.type || ('presidential' as const)
+    }));
+    return [...nat, ...loc, ...afr, ...oth];
+  }, [diaryNat, diaryLoc, diaryAfr, diaryOth]);
+
+  const closestElections = useMemo(() => {
+    const statusPriority: Record<string, number> = {
+      'In view': 1,
+      'Scheduled': 2,
+      'Tracking': 3,
+      'Provisional': 4,
+      'Concluded': 5
+    };
+    return [...allDiaryItems].sort((a, b) => {
+      const pA = statusPriority[a.status] || 99;
+      const pB = statusPriority[b.status] || 99;
+      if (pA !== pB) return pA - pB;
+      return a.date.localeCompare(b.date);
+    }).slice(0, 3);
+  }, [allDiaryItems]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

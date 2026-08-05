@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
-  ArrowRight, ArrowLeft, Users, AlertCircle, Search, MapPin, CheckCircle2
+  ArrowRight, ArrowLeft, Users, AlertCircle, Search, MapPin, CheckCircle2,
+  Calendar, ShieldCheck, X, ChevronRight
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useCMS } from '../context/CMSContext';
+import DiaryElectionDetail from './DiaryElectionDetail';
+import { DiaryItem } from '../types';
 
 export interface PartyVote {
   name: string;
@@ -393,6 +397,67 @@ interface LiveDashboardProps {
 export default function LiveDashboard({ isPreview = false }: LiveDashboardProps) {
   const [states, setStates] = useState<StateMonitor[]>(INITIAL_STATES);
 
+  const { diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
+  const [selectedDiaryItem, setSelectedDiaryItem] = useState<DiaryItem | null>(null);
+
+  // Combine all diary items and find the 3 closest elections
+  const allDiaryItems = useMemo(() => {
+    const nat = (diaryNat || []).map(item => ({
+      ...item,
+      region: item.region || ('nigeria' as const),
+      type: item.type || (item.title.toLowerCase().includes('presidential') ? ('presidential' as const) : ('governorship' as const))
+    }));
+    const loc = (diaryLoc || []).map(item => ({
+      ...item,
+      region: item.region || ('nigeria' as const),
+      type: item.type || ('local_government' as const)
+    }));
+    const afr = (diaryAfr || []).map(item => ({
+      ...item,
+      region: item.region || ('africa' as const),
+      type: item.type || ('presidential' as const)
+    }));
+    const oth = (diaryOth || []).map(item => ({
+      ...item,
+      region: item.region || ('other' as const),
+      type: item.type || ('presidential' as const)
+    }));
+    return [...nat, ...loc, ...afr, ...oth];
+  }, [diaryNat, diaryLoc, diaryAfr, diaryOth]);
+
+  const closestElections = useMemo(() => {
+    const statusPriority: Record<string, number> = {
+      'In view': 1,
+      'Scheduled': 2,
+      'Tracking': 3,
+      'Provisional': 4,
+    };
+
+    // Exclude Osun (live election in focus) and Concluded/Past elections
+    const upcoming = allDiaryItems.filter(item => {
+      if (item.status === 'Concluded') return false;
+
+      const isOsun = item.id === 'nat-1' || 
+                     item.title.toLowerCase().includes('osun') ||
+                     (item.location && item.location.toLowerCase().includes('osun')) ||
+                     item.stateCode === 'OS';
+      if (isOsun) return false;
+
+      if (item.date && (item.date.includes('2025') || item.date.includes('2024') || item.date.includes('2023'))) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return [...upcoming].sort((a, b) => {
+      const pA = statusPriority[a.status] || 99;
+      const pB = statusPriority[b.status] || 99;
+      if (pA !== pB) return pA - pB;
+      return a.date.localeCompare(b.date);
+    }).slice(0, 3);
+  }, [allDiaryItems]);
+
   // Split into Upcoming (Live) and Concluded (Past)
   const liveStates = states.filter(s => s.status === 'Upcoming');
   const pastStates = states.filter(s => s.status !== 'Upcoming');
@@ -741,6 +806,110 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
               </div>
 
             </div>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            SECTION: UPCOMING ELECTIONS (3 CLOSEST ELECTIONS LIST VIEW)
+           ========================================================================= */}
+        <div className="w-full space-y-8 mt-16 pt-12 border-t border-line">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold tracking-widest text-brand-blue uppercase px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20">
+                  Electoral Calendar
+                </span>
+              </div>
+              <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
+                Upcoming Elections
+              </h2>
+              <p className="text-ink2 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                Upcoming electoral milestones and sub-national polls currently under active observation by the Athena Observatory research team.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/diary');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-brand-blue hover:text-brand-blue-dark uppercase transition-colors shrink-0 group cursor-pointer"
+            >
+              <span>View Full Election Diary ({allDiaryItems.length})</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
+
+          {/* 3 Closest Elections List View (Formatted as on Diary of Election page) */}
+          <div className="bg-white border border-line rounded-3xl overflow-hidden shadow-custom divide-y divide-line">
+            {closestElections.map((item) => {
+              const getStatusColor = (status: DiaryItem['status']) => {
+                switch (status) {
+                  case 'In view':
+                    return 'bg-amber-500/10 text-amber-700 border-amber-300';
+                  case 'Scheduled':
+                    return 'bg-blue-500/10 text-blue-700 border-blue-300';
+                  case 'Provisional':
+                    return 'bg-purple-500/10 text-brand-purple border-purple-300';
+                  case 'Tracking':
+                    return 'bg-slate-500/10 text-slate-700 border-slate-300';
+                  case 'Concluded':
+                    return 'bg-emerald-500/10 text-emerald-700 border-emerald-300';
+                  default:
+                    return 'bg-blue-500/10 text-blue-700 border-blue-300';
+                }
+              };
+
+              return (
+                <div 
+                  key={item.id}
+                  onClick={() => setSelectedDiaryItem(item)}
+                  className="p-5 sm:p-6 hover:bg-blue-50/40 transition-all cursor-pointer group relative"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    
+                    {/* Date Badge */}
+                    <div className="md:col-span-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-brand-blue uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 group-hover:bg-blue-100 transition-colors">
+                        <Calendar className="w-3.5 h-3.5 text-brand-blue" />
+                        {item.date}
+                      </span>
+                    </div>
+
+                    {/* Title & Metadata */}
+                    <div className="md:col-span-6 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-display font-bold text-base sm:text-lg text-ink group-hover:text-brand-blue transition-colors">
+                          {item.title}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-mut font-medium uppercase tracking-wider flex items-center gap-2">
+                        <span>{item.subtitle}</span>
+                        {(item.country || item.location) && (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-600 font-bold">{item.country || item.location}</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Status & Arrow Action */}
+                    <div className="md:col-span-3 flex items-center md:justify-end justify-between gap-3">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border ${getStatusColor(item.status)}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        {item.status}
+                      </span>
+
+                      <div className="w-8 h-8 rounded-full bg-paper border border-line flex items-center justify-center text-slate-400 group-hover:bg-brand-blue group-hover:text-white group-hover:border-brand-blue transition-all shrink-0">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1139,6 +1308,29 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
+
+      {/* Modal for Diary Item detail view */}
+      {selectedDiaryItem && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-navy/70 backdrop-blur-sm p-4 sm:p-6 lg:p-8 flex justify-center items-start pt-12">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-line relative animate-scale-up">
+            <button 
+              onClick={() => setSelectedDiaryItem(null)}
+              className="absolute top-4 right-4 bg-paper hover:bg-line p-2 rounded-full text-mut hover:text-ink transition-colors cursor-pointer z-20"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <DiaryElectionDetail 
+              item={selectedDiaryItem} 
+              onBack={() => setSelectedDiaryItem(null)}
+              onNavigateToElection={(code) => {
+                setSelectedDiaryItem(null);
+                window.history.pushState({}, '', `/election/${code}`);
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       </div>
     </div>

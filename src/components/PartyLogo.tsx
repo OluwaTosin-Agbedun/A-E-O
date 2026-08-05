@@ -6,6 +6,7 @@ import { loadAssetFromFirestore } from '../lib/firebaseAssets';
 
 export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string; className?: string }) {
   const party = (name || "").toUpperCase().trim();
+  const safePartyId = party.replace(/[\/\s#?\[\]]/gi, '_');
   
   // Custom logo map from CMS & Firestore
   const [customLogos, setCustomLogos] = useState<Record<string, string>>({});
@@ -34,8 +35,8 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
 
     // 2. Individual party logo document fallback (for large or chunked base64 logos)
     let unsubSingle: (() => void) | undefined;
-    if (party) {
-      unsubSingle = onSnapshot(doc(db, 'cms', `logo_${party}`), async snapshot => {
+    if (party && safePartyId) {
+      unsubSingle = onSnapshot(doc(db, 'cms', `logo_${safePartyId}`), async snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           let logoVal = data?.dataUrl || data?.logo;
