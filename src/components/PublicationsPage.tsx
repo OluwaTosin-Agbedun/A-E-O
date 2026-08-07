@@ -319,7 +319,7 @@ export default function PublicationsPage() {
     } else if (pub.type === 'weekly') {
       navigateTo(`/weekly/${pub.id}`);
     } else if (pub.type === 'announcement') {
-      setSelectedAnnouncement(pub);
+      navigateTo(`/announcement/${pub.id}`);
     }
   };
 
@@ -641,102 +641,6 @@ export default function PublicationsPage() {
           </div>
 
         </div>
-
-      {/* Elegant Modal for Announcements Reader */}
-      {selectedAnnouncement && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div 
-            onClick={() => setSelectedAnnouncement(null)}
-            className="fixed inset-0 bg-navy/60 backdrop-blur-sm transition-opacity"
-          />
-
-          {/* Modal Container */}
-          <div className="relative bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-line z-10 animate-scale-up">
-            
-            {/* Header image banner */}
-            <div className="h-44 w-full relative bg-paper">
-              <img 
-                src={selectedAnnouncement.image} 
-                alt={selectedAnnouncement.title}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              
-              {/* Close button */}
-              <button 
-                onClick={() => setSelectedAnnouncement(null)}
-                className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="absolute bottom-4 left-6 right-6">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-brand-blue text-white uppercase tracking-wider">
-                  {selectedAnnouncement.category}
-                </span>
-                <span className="text-white/80 font-mono text-xs ml-3">
-                  {selectedAnnouncement.date}
-                </span>
-              </div>
-            </div>
-
-            {/* Content area */}
-            <div className="p-6 sm:p-8 space-y-5">
-              <h2 className="font-display font-bold text-xl sm:text-2xl text-ink leading-tight">
-                {selectedAnnouncement.title}
-              </h2>
-
-              <div className="text-xs text-mut font-medium border-y border-line py-2.5 flex items-center justify-between">
-                <div>
-                  <span className="text-ink font-semibold">Author:</span> {selectedAnnouncement.authorsList}
-                </div>
-                <div>
-                  <span className="text-ink font-semibold">Issued:</span> {selectedAnnouncement.date}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm font-semibold text-ink2 leading-relaxed bg-paper p-4 rounded-xl border border-line/60">
-                  {selectedAnnouncement.summary}
-                </p>
-
-                {selectedAnnouncement.originalItem?.content && (
-                  <p className="text-xs sm:text-sm text-ink2 leading-relaxed whitespace-pre-wrap">
-                    {selectedAnnouncement.originalItem.content}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-line flex justify-end gap-3">
-                <button
-                  onClick={() => triggerPdfDownload(
-                    selectedAnnouncement.title,
-                    selectedAnnouncement.summary,
-                    selectedAnnouncement.authorsList,
-                    selectedAnnouncement.date,
-                    selectedAnnouncement.pdfUrl,
-                    selectedAnnouncement.originalItem?.content
-                  )}
-                  className="bg-brand-blue hover:bg-brand-blue-dark text-white font-mono text-xs font-bold tracking-wider uppercase px-5 py-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
-                </button>
-                <button 
-                  onClick={() => setSelectedAnnouncement(null)}
-                  className="bg-navy hover:bg-navy-dark text-white font-mono text-xs font-bold tracking-wider uppercase px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  Close Document
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -4,7 +4,7 @@ import {
   FileText, ClipboardCheck, Clock, ShieldCheck, BarChart3, Info
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
-import { INITIAL_STATES, StateMonitor, PartyVote, LgaPartyStanding } from './LiveDashboard';
+import { INITIAL_STATES, StateMonitor, PartyVote, LgaPartyStanding, getLgaOthersVotes, getLgaValidVotes } from './LiveDashboard';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -109,7 +109,20 @@ export default function ElectionDetails({
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.items) {
-          const formatted = data.items.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
+          const formatted = data.items.map((s: any) => {
+            if (s.code === 'OS') {
+              const currentCount = s.topParties?.length || 0;
+              if (currentCount < 14) {
+                return {
+                  ...s,
+                  voters: '2,339,233',
+                  topParties: INITIAL_STATES[0].topParties
+                };
+              }
+              return { ...s, voters: '2,339,233' };
+            }
+            return s;
+          });
           setStates(formatted);
         }
       }
@@ -509,7 +522,7 @@ export default function ElectionDetails({
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-emerald-50/90 border border-emerald-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-emerald-700/80 leading-tight">Valid Votes</span>
-                                <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{(lga.first.votes + lga.second.votes + lga.third.votes).toLocaleString()}</span>
+                                <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{getLgaValidVotes(lga).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-rose-50/90 border border-rose-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-rose-700/80 leading-tight">Rejected Votes</span>
@@ -517,14 +530,14 @@ export default function ElectionDetails({
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-blue-50/90 border border-blue-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-blue-700/80 leading-tight">Total Votes</span>
-                                <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(lga.first.votes + lga.second.votes + lga.third.votes + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
+                                <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
                               </div>
                             </div>
                           )}
                         </div>
 
-                        {/* Top 3 Party results in this LGA */}
-                        <div className="grid grid-cols-3 gap-2">
+                        {/* Top 3 Parties & Others results in this LGA */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           <div className="p-2 bg-white rounded-lg border border-line text-center space-y-1">
                             <span className="block text-[9px] font-mono font-bold text-mut">{election.status === 'Upcoming' ? 'Contender' : '1st Lead'}</span>
                             <span className={`inline-block text-[10px] font-bold text-white px-1.5 py-0.2 rounded ${lga.first.color}`}>
@@ -552,6 +565,16 @@ export default function ElectionDetails({
                             </span>
                             <span className="block text-[10px] font-mono font-bold text-ink mt-0.5">
                               {election.status === 'Upcoming' ? 'Nominated' : lga.third.votes.toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="p-2 bg-white rounded-lg border border-line text-center space-y-1">
+                            <span className="block text-[9px] font-mono font-bold text-mut">{election.status === 'Upcoming' ? 'Other Parties' : 'Others'}</span>
+                            <span className="inline-block text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded border border-slate-300">
+                              Others
+                            </span>
+                            <span className="block text-[10px] font-mono font-bold text-ink mt-0.5">
+                              {election.status === 'Upcoming' ? 'Nominated' : getLgaOthersVotes(lga).toLocaleString()}
                             </span>
                           </div>
                         </div>

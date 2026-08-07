@@ -4,6 +4,7 @@ import {
   MapPin, Calendar, Users, Layers, Award, ChevronRight, ArrowRight, RotateCcw
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
+import { getTop3AndOthersParties } from './LiveDashboard';
 
 export interface PastElectionItem {
   code: string;
@@ -616,12 +617,18 @@ export default function PastElectionsArchive() {
                       Leading Party Votes
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {item.topParties.map((p, idx) => (
+                      {getTop3AndOthersParties(item.topParties).map((p, idx) => (
                         <div 
                           key={idx}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-paper rounded-lg border border-line text-xs font-medium text-ink"
                         >
-                          <PartyLogo name={p.name} className="w-4 h-4" />
+                          {p.isOthers ? (
+                            <span className="w-4 h-4 rounded bg-slate-200 text-slate-700 font-mono text-[9px] font-bold flex items-center justify-center">
+                              OTH
+                            </span>
+                          ) : (
+                            <PartyLogo name={p.name} className="w-4 h-4" />
+                          )}
                           <span className="font-bold">{p.name}:</span>
                           <span className="font-mono text-slate-600 text-[11px]">{p.votes} ({p.percentage}%)</span>
                         </div>

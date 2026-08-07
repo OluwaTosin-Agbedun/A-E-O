@@ -165,7 +165,11 @@ export default function AnnouncementsArchive() {
             {filteredAnnouncements.map((ann) => (
               <div 
                 key={ann.id}
-                className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-custom hover:shadow-md transition-all flex flex-col md:flex-row gap-6 items-start relative group"
+                onClick={() => {
+                  window.history.pushState({}, '', `/announcement/${ann.id}`);
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+                className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-custom hover:shadow-md transition-all flex flex-col md:flex-row gap-6 items-start relative group cursor-pointer"
               >
                 {/* Date stamp */}
                 <div className="flex-shrink-0 w-16 text-center border border-line rounded-xl overflow-hidden bg-white shadow-sm self-start md:self-auto">

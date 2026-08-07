@@ -26,6 +26,7 @@ import EhiiIndex from './components/EhiiIndex';
 import DiaryPage from './components/DiaryPage';
 import PublicationsPage from './components/PublicationsPage';
 import EventReader from './components/EventReader';
+import AnnouncementReader from './components/AnnouncementReader';
 import ElectionDetails from './components/ElectionDetails';
 import PastElectionsArchive from './components/PastElectionsArchive';
 
@@ -147,10 +148,13 @@ export default function App() {
     content = <DiaryPage />;
   } else if (path.startsWith('/report/')) {
     const reportId = path.substring('/report/'.length);
-    content = <ReportReader reportId={reportId} onClose={() => navigate('/')} />;
+    content = <ReportReader reportId={reportId} onClose={() => navigate('/publications')} />;
   } else if (path.startsWith('/weekly/')) {
     const weeklyId = path.substring('/weekly/'.length);
-    content = <WeeklyReader weeklyId={weeklyId} onClose={() => navigate('/')} />;
+    content = <WeeklyReader weeklyId={weeklyId} onClose={() => navigate('/publications')} />;
+  } else if (path.startsWith('/announcement/')) {
+    const announcementId = path.substring('/announcement/'.length);
+    content = <AnnouncementReader announcementId={announcementId} onClose={() => navigate('/publications')} />;
   } else if (path.startsWith('/event/')) {
     const eventId = path.substring('/event/'.length);
     content = <EventReader eventId={eventId} onClose={() => navigate('/')} />;

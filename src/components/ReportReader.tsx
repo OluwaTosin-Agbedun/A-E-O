@@ -75,31 +75,33 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
           </button>
 
           {/* Interactive Download Action */}
-          <div>
-            {downloadProgress !== null ? (
-              <div className="flex items-center gap-2 bg-paper border border-line px-4 py-2 rounded-lg text-xs font-semibold font-mono text-ink">
-                {downloadProgress < 100 ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 text-brand-blue animate-spin" />
-                    <span>Compiling PDF... {downloadProgress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
-                    <span className="text-brand-green">Download Ready!</span>
-                  </>
-                )}
-              </div>
-            ) : (
-              <button 
-                onClick={handleDownloadPDF}
-                className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download PDF · {report.size}</span>
-              </button>
-            )}
-          </div>
+          {report.pdfUrl && (
+            <div>
+              {downloadProgress !== null ? (
+                <div className="flex items-center gap-2 bg-paper border border-line px-4 py-2 rounded-lg text-xs font-semibold font-mono text-ink">
+                  {downloadProgress < 100 ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 text-brand-blue animate-spin" />
+                      <span>Compiling PDF... {downloadProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
+                      <span className="text-brand-green">Download Ready!</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button 
+                  onClick={handleDownloadPDF}
+                  className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF · {report.size}</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

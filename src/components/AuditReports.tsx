@@ -318,7 +318,8 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                   <div 
                     key={ann.id}
                     onClick={() => {
-                      setExpandedAnn(expandedAnn === ann.id ? null : ann.id);
+                      window.history.pushState({}, '', `/announcement/${ann.id}`);
+                      window.dispatchEvent(new PopStateEvent('popstate'));
                     }}
                     className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
                   >
@@ -350,20 +351,14 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                         <p className="text-xs text-ink2 leading-relaxed mb-3 line-clamp-3">
                           {ann.summary}
                         </p>
-
-                        {expandedAnn === ann.id && ann.content && (
-                          <div className="mt-3 p-3 bg-panel border border-line/60 rounded-lg font-mono text-[10px] text-ink2 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                            {ann.content}
-                          </div>
-                        )}
                       </div>
                     </div>
 
                     <div className="px-5 pb-5 pt-0 mt-auto">
                       <div className="border-t border-line pt-3">
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono">
-                          {expandedAnn === ann.id ? 'Collapse' : 'Read details'}
-                          <ArrowRight className={`w-3.5 h-3.5 transition-transform ${expandedAnn === ann.id ? 'rotate-90' : ''}`} />
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue font-mono group-hover:translate-x-1 transition-transform">
+                          Read announcement
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
                     </div>

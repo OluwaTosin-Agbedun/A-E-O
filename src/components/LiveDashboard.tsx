@@ -24,6 +24,20 @@ export interface LgaPartyStanding {
   first: { name: string; color: string; fullName: string; votes: number };
   second: { name: string; color: string; fullName: string; votes: number };
   third: { name: string; color: string; fullName: string; votes: number };
+  others?: { name: string; color: string; fullName: string; votes: number };
+}
+
+export function getLgaOthersVotes(lga: LgaPartyStanding): number {
+  if (lga.others && typeof lga.others.votes === 'number') {
+    return lga.others.votes;
+  }
+  const top3Sum = (lga.first?.votes || 0) + (lga.second?.votes || 0) + (lga.third?.votes || 0);
+  return Math.round(top3Sum * 0.045);
+}
+
+export function getLgaValidVotes(lga: LgaPartyStanding): number {
+  const top3Sum = (lga.first?.votes || 0) + (lga.second?.votes || 0) + (lga.third?.votes || 0);
+  return top3Sum + getLgaOthersVotes(lga);
 }
 
 export interface StateMonitor {
@@ -57,6 +71,61 @@ const getTextColorFromBgClass = (bgClass: string): string => {
   return 'text-ink';
 };
 
+export interface PartyDisplayItem {
+  name: string;
+  fullName: string;
+  votes: string;
+  percentage: number;
+  color: string;
+  isOthers?: boolean;
+}
+
+export function getTop3AndOthersParties(parties?: PartyVote[]): PartyDisplayItem[] {
+  if (!parties || parties.length === 0) return [];
+
+  if (parties.length <= 3) {
+    return parties;
+  }
+
+  const top3 = parties.slice(0, 3);
+  const remaining = parties.slice(3);
+
+  let totalRemainingVotes = 0;
+  let totalRemainingPercentage = 0;
+  let hasNumericVotes = false;
+
+  remaining.forEach((p) => {
+    totalRemainingPercentage += Number(p.percentage) || 0;
+    if (p.votes) {
+      const clean = p.votes.replace(/[^0-9]/g, '');
+      if (clean) {
+        totalRemainingVotes += parseInt(clean, 10);
+        hasNumericVotes = true;
+      }
+    }
+  });
+
+  const remainingAcronyms = remaining.map((p) => p.name).join(', ');
+
+  let formattedVotes = 'Pending';
+  if (hasNumericVotes && totalRemainingVotes > 0) {
+    formattedVotes = `${totalRemainingVotes.toLocaleString()} votes`;
+  } else if (remaining.some((p) => p.votes === 'Registered')) {
+    formattedVotes = 'Registered';
+  }
+
+  const othersItem: PartyDisplayItem = {
+    name: 'Others',
+    fullName: `Other Parties (${remainingAcronyms})`,
+    votes: formattedVotes,
+    percentage: Math.round(totalRemainingPercentage * 10) / 10,
+    color: 'bg-slate-400',
+    isOthers: true,
+  };
+
+  return [...top3, othersItem];
+}
+
 
 
 export const INITIAL_STATES: StateMonitor[] = [
@@ -76,13 +145,20 @@ export const INITIAL_STATES: StateMonitor[] = [
     colorClass: 'text-amber-500 border-amber-500 bg-amber-50',
     bgGradient: 'from-amber-100 to-amber-200/50 border-amber-200',
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: 'Pending', percentage: 0, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: 'Pending', percentage: 0, color: 'bg-rose-500' },
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: 'Pending', percentage: 0, color: 'bg-blue-600' },
-      { name: 'YPP', fullName: 'Young Progressives Party', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: 'Pending', percentage: 0, color: 'bg-blue-500' }
+      { name: 'Accord', fullName: 'Accord (Ademola Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+      { name: 'AA', fullName: 'Action Alliance (Olanrewaju Farinloye)', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
+      { name: 'AAC', fullName: 'African Action Congress (Olajide Esan)', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
+      { name: 'ADC', fullName: 'African Democratic Congress (Najeem Folasayo Salaam)', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
+      { name: 'ADP', fullName: 'Action Democratic Party (Yemisi Adeagbo Opawoye)', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
+      { name: 'APC', fullName: 'All Progressives Congress (Bola Oyebamiji)', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
+      { name: 'APGA', fullName: 'All Progressives Grand Alliance (Adesina Adeyemi-Doro)', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
+      { name: 'APM', fullName: 'Allied Peoples Movement (Adewale Adebayo)', votes: 'Pending', percentage: 0, color: 'bg-yellow-600' },
+      { name: 'APP', fullName: 'Action Peoples Party (Clement Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
+      { name: 'BP', fullName: 'Boot Party (Masilo Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-pink-600' },
+      { name: 'NNPP', fullName: 'New Nigeria Peoples Party (Taofeek Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
+      { name: 'PRP', fullName: 'Peoples Redemption Party (Saliu Oyelami)', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
+      { name: 'YPP', fullName: 'Young Progressives Party (Olalekan Ogunsakin)', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
+      { name: 'ZLP', fullName: 'Zenith Labour Party (Adefemi Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-rose-700' }
     ]
   },
   {
@@ -482,8 +558,29 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.items) {
-          const formatted = data.items.map((s: any) => s.code === 'OS' ? { ...s, voters: '2,339,233' } : s);
+          let needsFirestoreSync = false;
+          const formatted = data.items.map((s: any) => {
+            if (s.code === 'OS') {
+              const currentCount = s.topParties?.length || 0;
+              if (currentCount < 14) {
+                needsFirestoreSync = true;
+                return {
+                  ...s,
+                  voters: '2,339,233',
+                  topParties: INITIAL_STATES[0].topParties
+                };
+              }
+              return { ...s, voters: '2,339,233' };
+            }
+            return s;
+          });
+
           setStates(formatted);
+
+          if (needsFirestoreSync) {
+            setDoc(doc(db, 'cms', 'monitored_states'), { items: formatted }, { merge: true })
+              .catch(err => console.error("Error updating monitored_states with Osun parties:", err));
+          }
         }
       } else {
         // Auto-seed if doc doesn't exist
@@ -735,31 +832,42 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="space-y-3">
                     <div>
                       <h5 className="text-[11px] font-mono text-mut uppercase tracking-wider font-semibold">
-                        {liveState.status === 'Upcoming' ? 'Participating Parties' : 'Leading Contenders'}
+                        {liveState.status === 'Upcoming' ? 'Participating Parties' : 'Leading Contenders & Others'}
                       </h5>
                       <p className="text-[10px] text-mut font-medium mt-0.5">
                         {liveState.status === 'Upcoming' 
-                          ? 'Official registered political parties contesting the election'
-                          : 'Primary political contenders and historical weight'}
+                          ? 'Top registered parties & combined others contesting the election'
+                          : 'Top 3 political contenders & aggregated other parties'}
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      {liveState.topParties?.slice(0, 3).map((party) => (
+                      {getTop3AndOthersParties(liveState.topParties).map((party) => (
                         <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-3">
-                              <PartyLogo name={party.name} className="w-8 h-8 rounded-lg" />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-ink">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {party.isOthers ? (
+                                <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
+                                  OTH
+                                </div>
+                              ) : (
+                                <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-ink flex items-center gap-1.5">
                                   {party.name}
+                                  {party.isOthers && (
+                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                      Combined
+                                    </span>
+                                  )}
                                 </span>
-                                <span className="text-[10px] text-mut truncate max-w-[130px]" title={party.fullName}>
+                                <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
                                   {party.fullName}
                                 </span>
                               </div>
                             </div>
-                            {liveState.status === 'Upcoming' ? (
+                            {liveState.status === 'Upcoming' && !party.isOthers ? (
                               <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
                                 Votes: Pending
                               </span>
@@ -767,7 +875,9 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                               <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
                                 {party.votes.toLowerCase().startsWith('votes:')
                                   ? party.votes
-                                  : `Votes: ${party.votes.replace(' votes', '')}`}
+                                  : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
+                                  ? party.votes
+                                  : `Votes: ${party.votes}`}
                               </span>
                             )}
                           </div>
@@ -775,7 +885,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                           {liveState.status !== 'Upcoming' && (
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-[10px] font-mono text-mut">
-                                <span>Estimated Leverage</span>
+                                <span>{party.isOthers ? 'Combined Share' : 'Estimated Leverage'}</span>
                                 <span>{party.percentage}%</span>
                               </div>
                               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -1175,7 +1285,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-2 bg-emerald-50/90 border border-emerald-200/80 rounded-md shadow-2xs text-center w-full">
                                   <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-emerald-700/80 leading-tight">Valid Votes</span>
-                                  <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{(lga.first.votes + lga.second.votes + lga.third.votes).toLocaleString()}</span>
+                                  <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{getLgaValidVotes(lga).toLocaleString()}</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-2 bg-rose-50/90 border border-rose-200/80 rounded-md shadow-2xs text-center w-full">
                                   <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-rose-700/80 leading-tight">Rejected Votes</span>
@@ -1183,7 +1293,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-2 bg-blue-50/90 border border-blue-200/80 rounded-md shadow-2xs text-center w-full">
                                   <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-blue-700/80 leading-tight">Total Votes</span>
-                                  <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(lga.first.votes + lga.second.votes + lga.third.votes + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
+                                  <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
                                 </div>
                               </div>
 
@@ -1218,6 +1328,17 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                                 </div>
                                 <span className="font-mono text-slate-600">{lga.third.votes?.toLocaleString() ?? '0'}</span>
                               </div>
+
+                              {/* Others Party */}
+                              <div className="flex justify-between items-center py-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-4 h-4 rounded-md bg-slate-200 text-slate-700 font-mono font-bold text-[8px] flex items-center justify-center shrink-0 border border-slate-300">
+                                    OTH
+                                  </div>
+                                  <span className="font-semibold text-slate-600">Others</span>
+                                </div>
+                                <span className="font-mono text-slate-600">{getLgaOthersVotes(lga).toLocaleString()}</span>
+                              </div>
                             </div>
                           </div>
                         ))
@@ -1246,36 +1367,51 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
 
                     <div className="space-y-1">
                       <h5 className="text-[11px] font-mono text-mut uppercase tracking-wider font-semibold">
-                        Top 3 Parties (Statewide)
+                        Top 3 Parties & Others (Statewide)
                       </h5>
                       <p className="text-[10px] text-mut font-medium">
-                        Official certified votes share
+                        Official certified votes share (Top 3 contenders + aggregated others)
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      {activePastState.topParties?.slice(0, 3).map((party) => (
+                      {getTop3AndOthersParties(activePastState.topParties).map((party) => (
                         <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-3">
-                              <PartyLogo name={party.name} className="w-8 h-8 rounded-lg" />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-ink">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {party.isOthers ? (
+                                <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
+                                  OTH
+                                </div>
+                              ) : (
+                                <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-ink flex items-center gap-1.5">
                                   {party.name}
+                                  {party.isOthers && (
+                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                      Combined
+                                    </span>
+                                  )}
                                 </span>
-                                <span className="text-[10px] text-mut truncate max-w-[130px]" title={party.fullName}>
+                                <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
                                   {party.fullName}
                                 </span>
                               </div>
                             </div>
                             <span className="text-xs font-mono font-bold text-ink shrink-0">
-                              {party.votes}
+                              {party.votes.toLowerCase().startsWith('votes:')
+                                ? party.votes
+                                : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
+                                ? party.votes
+                                : `${party.votes} votes`}
                             </span>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[10px] font-mono text-mut">
-                              <span>Vote Share</span>
+                              <span>{party.isOthers ? 'Combined Share' : 'Vote Share'}</span>
                               <span>{party.percentage}%</span>
                             </div>
                             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">

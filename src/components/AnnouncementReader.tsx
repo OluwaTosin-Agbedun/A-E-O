@@ -1,0 +1,227 @@
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Download, CheckCircle2, Loader2, Bell, Share2, Calendar, User } from 'lucide-react';
+import { useCMS } from '../context/CMSContext';
+import { triggerPdfDownload } from './PublicationsPage';
+import { formatReportDate } from '../utils/date';
+
+interface AnnouncementReaderProps {
+  announcementId: string | null;
+  onClose: () => void;
+}
+
+export default function AnnouncementReader({ announcementId, onClose }: AnnouncementReaderProps) {
+  const { announcements } = useCMS();
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [hasShared, setHasShared] = useState(false);
+
+  useEffect(() => {
+    if (announcementId) {
+      window.scrollTo(0, 0);
+      setDownloadProgress(null);
+      setHasShared(false);
+    }
+  }, [announcementId]);
+
+  if (!announcementId) return null;
+
+  const announcement = announcements.find(a => a.id === announcementId);
+
+  const getCategoryLabel = (cat: string) => {
+    switch (cat) {
+      case 'press': return 'Press Release';
+      case 'bulletin': return 'Official Bulletin';
+      case 'statement': return 'Public Statement';
+      case 'alert': return 'Security / Audit Alert';
+      default: return cat || 'Official Declaration';
+    }
+  };
+
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case 'press': return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'bulletin': return 'text-blue-700 bg-blue-50 border-blue-200';
+      case 'statement': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      case 'alert': return 'text-red-700 bg-red-50 border-red-200';
+      default: return 'text-slate-700 bg-slate-50 border-slate-200';
+    }
+  };
+
+  if (!announcement) {
+    return (
+      <div className="min-h-screen bg-panel flex items-center justify-center p-6 font-sans">
+        <div className="bg-white border border-line rounded-2xl p-8 max-w-md w-full text-center shadow-custom">
+          <Bell className="w-10 h-10 text-brand-purple mx-auto mb-4" />
+          <h2 className="font-display font-bold text-xl text-ink mb-2">Announcement Not Found</h2>
+          <p className="text-xs text-ink2 mb-6 leading-relaxed">
+            The requested publication or announcement declaration could not be located in our active database registry.
+          </p>
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-2 bg-navy hover:bg-navy-dark text-white font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Publications</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleDownloadPDF = () => {
+    if (downloadProgress !== null) return;
+    setDownloadProgress(0);
+
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += 15;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setDownloadProgress(100);
+
+        triggerPdfDownload(
+          announcement.title,
+          announcement.summary,
+          announcement.authorsList || announcement.author || 'AEO Secretariat',
+          announcement.date,
+          announcement.pdfUrl,
+          announcement.content
+        );
+
+        setTimeout(() => {
+          setDownloadProgress(null);
+        }, 2500);
+      } else {
+        setDownloadProgress(currentProgress);
+      }
+    }, 150);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: announcement.title,
+        text: announcement.summary,
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setHasShared(true);
+      setTimeout(() => setHasShared(false), 2000);
+    }
+  };
+
+  const imageUrl = announcement.image || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800';
+
+  return (
+    <div className="bg-white min-h-screen font-sans animate-fade-in">
+      {/* Reader Top Bar */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-line sticky top-0 z-30 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-ink2 hover:text-brand-blue uppercase transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>← Back to Publications</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 bg-paper hover:bg-line border border-line text-ink text-xs font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{hasShared ? 'Copied Link!' : 'Share'}</span>
+            </button>
+
+            {announcement.pdfUrl && (
+              downloadProgress !== null ? (
+                <div className="flex items-center gap-2 bg-paper border border-line px-4 py-2 rounded-lg text-xs font-semibold font-mono text-ink">
+                  {downloadProgress < 100 ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 text-brand-blue animate-spin" />
+                      <span>Compiling PDF... {downloadProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
+                      <span className="text-brand-green">Ready!</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={handleDownloadPDF}
+                  className="inline-flex items-center gap-1.5 bg-brand-blue hover:bg-brand-blue-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-600/10"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Article Layout */}
+      <article className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
+        
+        {/* Banner image */}
+        <div className="rounded-2xl overflow-hidden border border-line h-64 sm:h-80 w-full relative bg-paper shadow-sm">
+          <img
+            src={imageUrl}
+            alt={announcement.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          
+          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between flex-wrap gap-3">
+            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md border shadow-sm ${getCategoryColor(announcement.category)}`}>
+              {getCategoryLabel(announcement.category)}
+            </span>
+            <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
+              <Calendar className="w-3.5 h-3.5" />
+              {formatReportDate(announcement.date)}
+            </span>
+          </div>
+        </div>
+
+        {/* Title and Metadata */}
+        <div className="space-y-4 border-b border-line pb-8">
+          <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-ink leading-tight">
+            {announcement.title}
+          </h1>
+
+          <div className="flex items-center gap-2 text-xs text-mut font-medium pt-2">
+            <User className="w-4 h-4 text-brand-blue" />
+            <span>
+              Issued by <strong className="text-ink font-semibold">{announcement.authorsList || announcement.author || 'Athena Election Observatory Secretariat'}</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Declaration Body / Content */}
+        <div className="space-y-6 pt-2 text-ink2 leading-relaxed font-sans text-sm sm:text-base">
+          <div className="prose max-w-none text-ink2 whitespace-pre-wrap leading-relaxed space-y-4 text-base sm:text-lg">
+            {announcement.content || announcement.summary}
+          </div>
+        </div>
+
+        {/* Bottom Actions and Navigation */}
+        <div className="pt-10 border-t border-line">
+          <div className="text-center pt-2">
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-ink2 hover:text-brand-blue uppercase transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to Publications Catalog</span>
+            </button>
+          </div>
+        </div>
+
+      </article>
+    </div>
+  );
+}

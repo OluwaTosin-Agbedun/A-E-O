@@ -8,6 +8,7 @@ import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
 import { PartyLogo } from './PartyLogo';
+import { INITIAL_STATES } from './LiveDashboard';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 
 interface CMSPanelProps {
@@ -18,6 +19,27 @@ interface CMSPanelProps {
 }
 
 type TabType = 'publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections';
+
+const DEFAULT_PARTY_NAMES: Record<string, string> = {
+  APC: 'All Progressives Congress',
+  PDP: "People's Democratic Party",
+  LP: 'Labour Party',
+  APGA: 'All Progressives Grand Alliance',
+  SDP: 'Social Democratic Party',
+  NNPP: 'New Nigeria Peoples Party',
+  YPP: 'Young Progressives Party',
+  ADC: 'African Democratic Congress',
+  ADP: 'Action Democratic Party',
+  AAC: 'African Action Congress',
+  ZLP: 'Zenith Labour Party',
+  APM: 'All Allied Peoples Movement',
+  APP: 'Action Peoples Party',
+  BP: 'Boot Party',
+  NRM: 'National Rescue Movement',
+  PRP: 'Peoples Redemption Party',
+};
+
+const ALL_DEFAULT_PARTIES = ['APC', 'PDP', 'LP', 'APGA', 'SDP', 'NNPP', 'YPP', 'ADC', 'ADP', 'AAC', 'ZLP', 'APM', 'APP', 'BP', 'NRM', 'PRP'];
 
 const FileUploadField = ({ 
   label, 
@@ -141,9 +163,19 @@ export default function CMSPanel({
   // Elections & Parties CMS States
   // ----------------------------------------------------
   const [partyLogos, setPartyLogos] = useState<Record<string, string>>({});
+  const [partyFullNames, setPartyFullNames] = useState<Record<string, string>>({});
 
   const [partyCodeForm, setPartyCodeForm] = useState('');
+  const [partyFullNameForm, setPartyFullNameForm] = useState('');
   const [partyLogoForm, setPartyLogoForm] = useState('');
+  const [partySearch, setPartySearch] = useState('');
+
+  // Add party to state standing fields
+  const [newPartyCode, setNewPartyCode] = useState('');
+  const [newPartyFullName, setNewPartyFullName] = useState('');
+  const [newPartyVotes, setNewPartyVotes] = useState('');
+  const [newPartyPercentage, setNewPartyPercentage] = useState<number>(0);
+  const [newPartyColor, setNewPartyColor] = useState('bg-indigo-600');
 
   const [statesList, setStatesList] = useState<any[]>([
     {
@@ -162,13 +194,20 @@ export default function CMSPanel({
         colorClass: 'text-amber-500 border-amber-500 bg-amber-50',
         bgGradient: 'from-amber-100 to-amber-200/50 border-amber-200',
         topParties: [
-          { name: 'APC', fullName: 'All Progressives Congress', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
-          { name: 'PDP', fullName: "People's Democratic Party", votes: 'Pending', percentage: 0, color: 'bg-red-600' },
-          { name: 'LP', fullName: 'Labour Party', votes: 'Pending', percentage: 0, color: 'bg-rose-500' },
-          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
-          { name: 'SDP', fullName: 'Social Democratic Party', votes: 'Pending', percentage: 0, color: 'bg-blue-600' },
-          { name: 'YPP', fullName: 'Young Progressives Party', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
-          { name: 'ADC', fullName: 'African Democratic Congress', votes: 'Pending', percentage: 0, color: 'bg-blue-500' }
+          { name: 'Accord', fullName: 'Accord (Ademola Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+          { name: 'AA', fullName: 'Action Alliance (Olanrewaju Farinloye)', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
+          { name: 'AAC', fullName: 'African Action Congress (Olajide Esan)', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
+          { name: 'ADC', fullName: 'African Democratic Congress (Najeem Folasayo Salaam)', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
+          { name: 'ADP', fullName: 'Action Democratic Party (Yemisi Adeagbo Opawoye)', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
+          { name: 'APC', fullName: 'All Progressives Congress (Bola Oyebamiji)', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance (Adesina Adeyemi-Doro)', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
+          { name: 'APM', fullName: 'Allied Peoples Movement (Adewale Adebayo)', votes: 'Pending', percentage: 0, color: 'bg-yellow-600' },
+          { name: 'APP', fullName: 'Action Peoples Party (Clement Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
+          { name: 'BP', fullName: 'Boot Party (Masilo Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-pink-600' },
+          { name: 'NNPP', fullName: 'New Nigeria Peoples Party (Taofeek Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
+          { name: 'PRP', fullName: 'Peoples Redemption Party (Saliu Oyelami)', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
+          { name: 'YPP', fullName: 'Young Progressives Party (Olalekan Ogunsakin)', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
+          { name: 'ZLP', fullName: 'Zenith Labour Party (Adefemi Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-rose-700' }
         ]
       },
       {
@@ -259,7 +298,17 @@ export default function CMSPanel({
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.items) {
-          setStatesList(data.items);
+          const formatted = data.items.map((s: any) => {
+            if (s.code === 'OS' && (!s.topParties || s.topParties.length < 14)) {
+              return {
+                ...s,
+                voters: '2,339,233',
+                topParties: INITIAL_STATES[0].topParties
+              };
+            }
+            return s;
+          });
+          setStatesList(formatted);
         }
       }
     });
@@ -269,6 +318,9 @@ export default function CMSPanel({
         const data = snapshot.data();
         if (data?.map) {
           setPartyLogos(prev => ({ ...prev, ...data.map }));
+        }
+        if (data?.names) {
+          setPartyFullNames(prev => ({ ...prev, ...data.names }));
         }
       }
     });
@@ -286,45 +338,110 @@ export default function CMSPanel({
   const handleSavePartyLogo = (e: any) => {
     e.preventDefault();
     if (!partyCodeForm) {
-      showStatus('Please enter a party acronym (e.g., APC, PDP, APGA).', 'error');
-      return;
-    }
-    if (!partyLogoForm) {
-      showStatus('Please upload an image file or paste an image URL.', 'error');
+      showStatus('Please enter a party acronym (e.g., APC, PDP, NNPP, AAC).', 'error');
       return;
     }
 
     const partyKey = partyCodeForm.toUpperCase().trim();
-    const updatedLogos = {
-      ...partyLogos,
-      [partyKey]: partyLogoForm
-    };
-    
+    const updatedLogos = partyLogoForm 
+      ? { ...partyLogos, [partyKey]: partyLogoForm }
+      : partyLogos;
+
+    const updatedNames = partyFullNameForm.trim() 
+      ? { ...partyFullNames, [partyKey]: partyFullNameForm.trim() }
+      : partyFullNames;
+
     setPartyLogos(updatedLogos);
+    setPartyFullNames(updatedNames);
 
     try {
-      saveAssetToFirestore('logo', partyKey, partyLogoForm);
-      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updatedLogos, keys: Object.keys(updatedLogos), updated: Date.now() });
+      if (partyLogoForm) {
+        saveAssetToFirestore('logo', partyKey, partyLogoForm);
+      }
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { 
+        map: updatedLogos, 
+        names: updatedNames,
+        keys: Array.from(new Set([...Object.keys(updatedLogos), ...Object.keys(updatedNames)])), 
+        updated: Date.now() 
+      });
     } catch (e) {
       console.error('Failed to sync party logos to Firestore:', e);
     }
     
     setPartyCodeForm('');
+    setPartyFullNameForm('');
     setPartyLogoForm('');
-    showStatus(`Custom logo for ${partyKey} saved successfully!`);
+    showStatus(`Political party ${partyKey} registered/updated successfully!`);
   };
 
   const handleDeletePartyLogo = (partyName: string) => {
+    const partyKey = partyName.toUpperCase().trim();
     const updated = { ...partyLogos };
-    delete updated[partyName.toUpperCase().trim()];
+    delete updated[partyKey];
     setPartyLogos(updated);
 
     try {
-      setDoc(doc(db, 'cms', 'custom_party_logos'), { map: updated });
+      setDoc(doc(db, 'cms', 'custom_party_logos'), { 
+        map: updated,
+        names: partyFullNames,
+        updated: Date.now() 
+      });
     } catch (e) {
       console.error('Failed to delete party logo in Firestore:', e);
     }
-    showStatus(`Logo for ${partyName} deleted. Restored to vector default.`);
+    showStatus(`Logo for ${partyKey} restored to vector default.`);
+  };
+
+  const handleAddPartyToState = (e: any) => {
+    e.preventDefault();
+    if (!newPartyCode) {
+      showStatus('Please select or enter a party acronym.', 'error');
+      return;
+    }
+    const code = newPartyCode.toUpperCase().trim();
+    const defaultName = DEFAULT_PARTY_NAMES[code] || `${code} Party`;
+    const fullName = newPartyFullName.trim() || partyFullNames[code] || defaultName;
+    const votes = newPartyVotes.trim() || 'Pending';
+    const percentage = Number(newPartyPercentage) || 0;
+    const color = newPartyColor || 'bg-indigo-600';
+
+    const currentParties = activeCMSState.topParties || [];
+    const existingIdx = currentParties.findIndex((p: any) => p.name.toUpperCase().trim() === code);
+    let updatedParties;
+    if (existingIdx >= 0) {
+      updatedParties = [...currentParties];
+      updatedParties[existingIdx] = { name: code, fullName, votes, percentage, color };
+    } else {
+      updatedParties = [...currentParties, { name: code, fullName, votes, percentage, color }];
+    }
+
+    const updatedStatesList = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+    setStatesList(updatedStatesList);
+
+    try {
+      setDoc(doc(db, 'cms', 'monitored_states'), { items: updatedStatesList });
+    } catch (err) {
+      console.error('Failed to sync state parties:', err);
+    }
+
+    setNewPartyCode('');
+    setNewPartyFullName('');
+    setNewPartyVotes('');
+    setNewPartyPercentage(0);
+    showStatus(`Added ${code} (${fullName}) to ${activeCMSState.name} election standings!`);
+  };
+
+  const handleRemovePartyFromState = (partyName: string) => {
+    const currentParties = activeCMSState.topParties || [];
+    const updatedParties = currentParties.filter((p: any) => p.name.toUpperCase().trim() !== partyName.toUpperCase().trim());
+    const updatedStatesList = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+    setStatesList(updatedStatesList);
+    try {
+      setDoc(doc(db, 'cms', 'monitored_states'), { items: updatedStatesList });
+    } catch (err) {
+      console.error('Failed to sync state parties:', err);
+    }
+    showStatus(`Removed ${partyName} from ${activeCMSState.name} election standings.`);
   };
 
   const handleSaveStateCMS = (e: any) => {
@@ -2815,34 +2932,51 @@ export default function CMSPanel({
           {activeTab === 'elections' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-ink mb-1">Elections & Party Logos</h3>
-                <p className="text-xs text-mut">Manage active participating political parties, upload brand logos, and customize electoral standings or accredited voter counts across states.</p>
+                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-ink mb-1">Elections & Political Parties Registry</h3>
+                <p className="text-xs text-mut">Register new political parties, upload brand logos, and customize electoral standings or accredited voter counts across states.</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                {/* 1. Party Logos Management */}
+                {/* 1. Political Parties & Logo Registry */}
                 <div className="lg:col-span-5 bg-paper p-5 border border-line rounded-xl space-y-4">
-                  <div className="flex items-center gap-2 pb-2 border-b border-line">
-                    <Database className="w-4 h-4 text-indigo-600" />
-                    <h4 className="text-xs font-bold font-mono uppercase text-ink">Party Logo Configuration</h4>
+                  <div className="flex items-center justify-between pb-2 border-b border-line">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4 text-indigo-600" />
+                      <h4 className="text-xs font-bold font-mono uppercase text-ink">Register Party & Logo</h4>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {Array.from(new Set([...ALL_DEFAULT_PARTIES, ...Object.keys(partyLogos), ...Object.keys(partyFullNames)])).length} Parties Total
+                    </span>
                   </div>
 
                   <form onSubmit={handleSavePartyLogo} className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Party Acronym</label>
-                      <input 
-                        type="text" 
-                        value={partyCodeForm}
-                        onChange={(e) => setPartyCodeForm(e.target.value)}
-                        placeholder="e.g. APC, PDP, LP, APGA, SDP, YPP, ADC"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono font-bold"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Party Acronym *</label>
+                        <input 
+                          type="text" 
+                          value={partyCodeForm}
+                          onChange={(e) => setPartyCodeForm(e.target.value.toUpperCase())}
+                          placeholder="e.g. NNPP, AAC, ZLP"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono font-bold"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Party Name</label>
+                        <input 
+                          type="text" 
+                          value={partyFullNameForm}
+                          onChange={(e) => setPartyFullNameForm(e.target.value)}
+                          placeholder="e.g. New Nigeria Peoples Party"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-sans text-ink"
+                        />
+                      </div>
                     </div>
 
                     <FileUploadField 
-                      label="Upload Party Logo or Image" 
+                      label="Upload Party Logo or Image Emblem" 
                       accept="image/*"
                       value={partyLogoForm}
                       onChange={(val) => setPartyLogoForm(val)}
@@ -2850,39 +2984,79 @@ export default function CMSPanel({
 
                     <button 
                       type="submit" 
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold uppercase text-[10px] rounded-lg tracking-wider transition-colors cursor-pointer"
+                      className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold uppercase text-[10px] rounded-lg tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
-                      Save Custom Logo
+                      <Plus className="w-3.5 h-3.5" />
+                      Save & Register Party
                     </button>
                   </form>
 
-                  <div className="space-y-2 pt-2">
-                    <span className="block text-[10px] font-mono uppercase font-bold text-mut">Registered Parties List</span>
-                    <div className="border border-line rounded-lg divide-y divide-line overflow-hidden max-h-[300px] overflow-y-auto">
-                      {['APC', 'PDP', 'LP', 'APGA', 'SDP', 'YPP', 'ADC'].map(party => {
-                        const hasCustom = !!partyLogos[party];
-                        return (
-                          <div key={party} className="p-2.5 flex items-center justify-between text-xs bg-white">
-                            <div className="flex items-center gap-2">
-                              <PartyLogo name={party} className="w-8 h-8 rounded border border-line" />
-                              <div>
-                                <span className="font-bold font-mono">{party}</span>
-                                <span className="block text-[9px] text-mut">
-                                  {hasCustom ? '✓ Custom Logo Active' : 'Default Vector Icon'}
-                                </span>
+                  <div className="space-y-2 pt-2 border-t border-line">
+                    <div className="flex items-center justify-between">
+                      <span className="block text-[10px] font-mono uppercase font-bold text-mut">Registered Parties Directory</span>
+                      <input 
+                        type="text"
+                        value={partySearch}
+                        onChange={(e) => setPartySearch(e.target.value)}
+                        placeholder="Search party..."
+                        className="text-[10px] p-1 px-2 border border-line rounded bg-white w-28 font-mono"
+                      />
+                    </div>
+
+                    <div className="border border-line rounded-lg divide-y divide-line overflow-hidden max-h-[320px] overflow-y-auto bg-white">
+                      {Array.from(new Set([...ALL_DEFAULT_PARTIES, ...Object.keys(partyLogos), ...Object.keys(partyFullNames)]))
+                        .sort()
+                        .filter(p => p.toLowerCase().includes(partySearch.toLowerCase()) || (partyFullNames[p] || DEFAULT_PARTY_NAMES[p] || '').toLowerCase().includes(partySearch.toLowerCase()))
+                        .map(party => {
+                          const hasCustomLogo = !!partyLogos[party];
+                          const fullName = partyFullNames[party] || DEFAULT_PARTY_NAMES[party] || `${party} Political Party`;
+                          return (
+                            <div key={party} className="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <PartyLogo name={party} className="w-8 h-8 rounded border border-line shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold font-mono text-ink">{party}</span>
+                                    {hasCustomLogo ? (
+                                      <span className="text-[8px] bg-indigo-50 text-indigo-700 font-mono px-1.5 py-0.5 rounded border border-indigo-200">
+                                        Custom Logo
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] bg-slate-100 text-slate-500 font-mono px-1.5 py-0.5 rounded">
+                                        Vector Icon
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="block text-[10px] text-mut truncate max-w-[180px]" title={fullName}>
+                                    {fullName}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button 
+                                  onClick={() => {
+                                    setPartyCodeForm(party);
+                                    setPartyFullNameForm(fullName);
+                                    if (partyLogos[party]) setPartyLogoForm(partyLogos[party]);
+                                  }}
+                                  className="text-[10px] px-2 py-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded font-mono font-semibold cursor-pointer"
+                                  title="Edit party details"
+                                >
+                                  Edit
+                                </button>
+                                {hasCustomLogo && (
+                                  <button 
+                                    onClick={() => handleDeletePartyLogo(party)}
+                                    className="text-[10px] px-1.5 py-1 text-rose-600 hover:underline font-mono cursor-pointer"
+                                    title="Restore default icon"
+                                  >
+                                    Restore
+                                  </button>
+                                )}
                               </div>
                             </div>
-                            {hasCustom && (
-                              <button 
-                                onClick={() => handleDeletePartyLogo(party)}
-                                className="text-[10px] text-rose-600 font-mono font-semibold hover:underline"
-                              >
-                                Restore
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
                 </div>
@@ -3072,17 +3246,18 @@ export default function CMSPanel({
                     </div>
 
                     {/* Parties details inside the state */}
-                    <div className="space-y-2 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="block text-[10px] font-mono uppercase font-bold text-mut">Political Party Standings</span>
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between border-b border-line pb-1.5">
+                        <span className="block text-[10px] font-mono uppercase font-bold text-ink">Participating Parties in {activeCMSState.name} Election</span>
                         <span className="text-[9px] text-mut italic">Ensure percentages sum cleanly</span>
                       </div>
-                      <div className="border border-line rounded-lg overflow-hidden divide-y divide-line">
+
+                      <div className="border border-line rounded-lg overflow-hidden divide-y divide-line bg-white">
                         {activeCMSState.topParties && activeCMSState.topParties.map((p: any, idx: number) => (
-                          <div key={idx} className="p-3 bg-white grid grid-cols-12 gap-2 items-center text-xs">
+                          <div key={idx} className="p-3 bg-white grid grid-cols-12 gap-2 items-center text-xs hover:bg-slate-50">
                             <div className="col-span-2 flex items-center gap-1.5 font-mono font-bold">
-                              <PartyLogo name={p.name} className="w-5 h-5" />
-                              <span>{p.name}</span>
+                              <PartyLogo name={p.name} className="w-5 h-5 shrink-0" />
+                              <span className="truncate">{p.name}</span>
                             </div>
                             <div className="col-span-4">
                               <input 
@@ -3109,10 +3284,10 @@ export default function CMSPanel({
                                   setStatesList(updated);
                                 }}
                                 className="w-full text-[11px] p-1 border border-line rounded bg-slate-50 font-mono"
-                                placeholder="e.g. Registered or 12,345 votes"
+                                placeholder="e.g. Registered or 12,345"
                               />
                             </div>
-                            <div className="col-span-3 flex items-center gap-1 font-mono">
+                            <div className="col-span-2 flex items-center gap-1 font-mono">
                               <input 
                                 type="number"
                                 step="0.1"
@@ -3123,12 +3298,77 @@ export default function CMSPanel({
                                   const updated = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
                                   setStatesList(updated);
                                 }}
-                                className="w-16 text-[11px] p-1 border border-line rounded bg-slate-50 text-right"
+                                className="w-12 text-[11px] p-1 border border-line rounded bg-slate-50 text-right"
                               />
                               <span>%</span>
                             </div>
+                            <div className="col-span-1 flex justify-end">
+                              <button 
+                                type="button"
+                                onClick={() => handleRemovePartyFromState(p.name)}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                title={`Remove ${p.name} from state`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Add party to state standing form */}
+                      <div className="bg-slate-50 p-3 border border-line rounded-lg space-y-2">
+                        <span className="block text-[10px] font-mono uppercase font-bold text-indigo-700">Add Party to {activeCMSState.name} Election</span>
+                        <div className="grid grid-cols-12 gap-2 text-xs">
+                          <div className="col-span-3">
+                            <input 
+                              type="text" 
+                              value={newPartyCode}
+                              onChange={(e) => {
+                                const val = e.target.value.toUpperCase();
+                                setNewPartyCode(val);
+                                if (partyFullNames[val] || DEFAULT_PARTY_NAMES[val]) {
+                                  setNewPartyFullName(partyFullNames[val] || DEFAULT_PARTY_NAMES[val]);
+                                }
+                              }}
+                              placeholder="Acronym (e.g. NNPP)"
+                              className="w-full text-[11px] p-1.5 border border-line rounded bg-white font-mono font-bold uppercase"
+                              list="registered-parties-list"
+                            />
+                            <datalist id="registered-parties-list">
+                              {Array.from(new Set([...ALL_DEFAULT_PARTIES, ...Object.keys(partyLogos), ...Object.keys(partyFullNames)])).map(p => (
+                                <option key={p} value={p}>{partyFullNames[p] || DEFAULT_PARTY_NAMES[p] || p}</option>
+                              ))}
+                            </datalist>
+                          </div>
+                          <div className="col-span-4">
+                            <input 
+                              type="text" 
+                              value={newPartyFullName}
+                              onChange={(e) => setNewPartyFullName(e.target.value)}
+                              placeholder="Full Party Name"
+                              className="w-full text-[11px] p-1.5 border border-line rounded bg-white font-sans"
+                            />
+                          </div>
+                          <div className="col-span-3">
+                            <input 
+                              type="text" 
+                              value={newPartyVotes}
+                              onChange={(e) => setNewPartyVotes(e.target.value)}
+                              placeholder="Votes (e.g. 5,432 votes)"
+                              className="w-full text-[11px] p-1.5 border border-line rounded bg-white font-mono"
+                            />
+                          </div>
+                          <div className="col-span-2 flex items-center justify-end">
+                            <button 
+                              type="button"
+                              onClick={handleAddPartyToState}
+                              className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold uppercase text-[10px] rounded transition-colors cursor-pointer"
+                            >
+                              Add Party
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
