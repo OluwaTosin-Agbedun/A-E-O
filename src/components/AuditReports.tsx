@@ -201,7 +201,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
             {/* AUDIT, MONITORING & DCI REPORTS CARD RENDER */}
             {(selectedTag === 'audit' || selectedTag === 'monitor' || selectedTag === 'dci') && (
               displayedItems.map((report) => {
-                const imageUrl = report.image || (selectedTag === 'monitor' ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800' : 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=800');
+                const imageUrl = report.image || '';
                 return (
                   <div 
                     key={report.id}
@@ -260,7 +260,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
             {/* WEEKLY DIGESTS CARD RENDER */}
             {selectedTag === 'weekly' && (
               displayedItems.map((issue) => {
-                const imageUrl = issue.image || 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=800';
+                const imageUrl = issue.image || '';
                 return (
                   <div 
                     key={issue.id}
@@ -313,7 +313,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
             {/* ANNOUNCEMENTS CARD RENDER */}
             {selectedTag === 'announcements' && (
               displayedItems.map((ann) => {
-                const imageUrl = ann.image || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800';
+                const imageUrl = ann.image || '';
                 return (
                   <div 
                     key={ann.id}

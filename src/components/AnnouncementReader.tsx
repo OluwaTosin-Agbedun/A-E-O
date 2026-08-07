@@ -81,7 +81,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
         triggerPdfDownload(
           announcement.title,
           announcement.summary,
-          announcement.authorsList || announcement.author || 'AEO Secretariat',
+          announcement.authorsList || announcement.author || '',
           announcement.date,
           announcement.pdfUrl,
           announcement.content
@@ -109,8 +109,6 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       setTimeout(() => setHasShared(false), 2000);
     }
   };
-
-  const imageUrl = announcement.image || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800';
 
   return (
     <div className="bg-white min-h-screen font-sans animate-fade-in">
@@ -166,26 +164,38 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       {/* Main Content Article Layout */}
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
         
-        {/* Banner image */}
-        <div className="rounded-2xl overflow-hidden border border-line h-64 sm:h-80 w-full relative bg-paper shadow-sm">
-          <img
-            src={imageUrl}
-            alt={announcement.title}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          
-          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between flex-wrap gap-3">
+        {/* Banner image if available */}
+        {announcement.image ? (
+          <div className="rounded-2xl overflow-hidden border border-line h-64 sm:h-80 w-full relative bg-paper shadow-sm">
+            <img
+              src={announcement.image}
+              alt={announcement.title}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            
+            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between flex-wrap gap-3">
+              <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md border shadow-sm ${getCategoryColor(announcement.category)}`}>
+                {getCategoryLabel(announcement.category)}
+              </span>
+              <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
+                <Calendar className="w-3.5 h-3.5" />
+                {formatReportDate(announcement.date)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-line">
             <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md border shadow-sm ${getCategoryColor(announcement.category)}`}>
               {getCategoryLabel(announcement.category)}
             </span>
-            <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
+            <span className="text-ink2 font-mono text-xs flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
               {formatReportDate(announcement.date)}
             </span>
           </div>
-        </div>
+        )}
 
         {/* Title and Metadata */}
         <div className="space-y-4 border-b border-line pb-8">
@@ -193,12 +203,14 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
             {announcement.title}
           </h1>
 
-          <div className="flex items-center gap-2 text-xs text-mut font-medium pt-2">
-            <User className="w-4 h-4 text-brand-blue" />
-            <span>
-              Issued by <strong className="text-ink font-semibold">{announcement.authorsList || announcement.author || 'Athena Election Observatory Secretariat'}</strong>
-            </span>
-          </div>
+          {(announcement.authorsList || announcement.author) ? (
+            <div className="flex items-center gap-2 text-xs text-mut font-medium pt-2">
+              <User className="w-4 h-4 text-brand-blue" />
+              <span>
+                Issued by <strong className="text-ink font-semibold">{announcement.authorsList || announcement.author}</strong>
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {/* Declaration Body / Content */}

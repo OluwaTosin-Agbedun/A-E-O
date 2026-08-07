@@ -105,8 +105,8 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
         };
       default:
         return {
-          author: "Athena Staff Writer",
-          readingTime: "4 min read",
+          author: issue.author || "",
+          readingTime: issue.readingTime || "4 min read",
           sections: []
         };
     }
@@ -159,20 +159,22 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => triggerPdfDownload(
-                issue.title,
-                issue.summary,
-                articleDetails.author,
-                formatReportDate(issue.date),
-                issue.pdfUrl,
-                (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
-              )}
-              className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download PDF</span>
-            </button>
+            {issue.pdfUrl && (
+              <button
+                onClick={() => triggerPdfDownload(
+                  issue.title,
+                  issue.summary,
+                  articleDetails.author,
+                  formatReportDate(issue.date),
+                  issue.pdfUrl,
+                  (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+                )}
+                className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download PDF</span>
+              </button>
+            )}
             <button
               onClick={handleShare}
               className="inline-flex items-center gap-1.5 bg-paper hover:bg-line border border-line text-ink text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
@@ -208,13 +210,17 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
             {/* Author card meta */}
             <div className="flex flex-wrap items-center gap-4 text-xs font-mono font-medium text-mut pt-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-6 h-6 rounded-full bg-brand-purple/10 text-brand-purple font-display font-bold text-[10px] flex items-center justify-center">
-                  AE
-                </span>
-                <span className="text-ink font-semibold">{articleDetails.author}</span>
-              </div>
-              <span className="text-slate-300">|</span>
+              {articleDetails.author ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-full bg-brand-purple/10 text-brand-purple font-display font-bold text-[10px] flex items-center justify-center">
+                      AE
+                    </span>
+                    <span className="text-ink font-semibold">{articleDetails.author}</span>
+                  </div>
+                  <span className="text-slate-300">|</span>
+                </>
+              ) : null}
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{articleDetails.readingTime}</span>

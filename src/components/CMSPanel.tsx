@@ -525,7 +525,7 @@ export default function CMSPanel({
   // 3. Weekly Issue Form
   const [weeklyForm, setWeeklyForm] = useState<Partial<WeeklyIssue>>({
     id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-    author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
+    author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
   });
 
   // 4. Event Form
@@ -648,7 +648,7 @@ export default function CMSPanel({
       title: weeklyForm.title,
       summary: weeklyForm.summary,
       linkText: weeklyForm.linkText || 'Read full analysis',
-      author: weeklyForm.author || 'Athena Forensics',
+      author: weeklyForm.author || '',
       readingTime: weeklyForm.readingTime || '5 min read',
       sections: weeklyForm.sections && weeklyForm.sections.length > 0
         ? weeklyForm.sections
@@ -664,7 +664,7 @@ export default function CMSPanel({
     setEditingId(null);
     setWeeklyForm({
       id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-      author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
+      author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
     });
     showStatus(`Weekly briefing "${finalIssue.title}" saved!`);
   };
@@ -964,7 +964,7 @@ export default function CMSPanel({
                         onClick={() => {
                           setEditingId(null);
                           setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '' });
-                          setWeeklyForm({ id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis', author: 'Athena Observatory', readingTime: '4 min read', sections: [], image: '', pdfUrl: '' });
+                          setWeeklyForm({ id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis', author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: '' });
                           setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '' });
                         }}
                         className="text-xs text-red-600 hover:underline font-semibold font-mono"

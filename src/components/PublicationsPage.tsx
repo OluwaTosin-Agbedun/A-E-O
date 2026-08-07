@@ -158,10 +158,10 @@ export default function PublicationsPage() {
       category: r.tag || 'ELECTION AUDIT',
       title: r.title,
       summary: r.summary,
-      author: r.author || 'AEO Research Team',
-      authorsList: r.authorsList || 'Athena Election Observatory Research Team',
+      author: r.author || '',
+      authorsList: r.authorsList || r.author || '',
       date: formatReportDate(r.date),
-      image: r.image || 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=800',
+      image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl
@@ -181,10 +181,10 @@ export default function PublicationsPage() {
       category: category,
       title: r.title,
       summary: r.summary,
-      author: r.author || 'AEO Audit Panel',
-      authorsList: r.authorsList || 'AEO Technology Audit Panel',
+      author: r.author || '',
+      authorsList: r.authorsList || r.author || '',
       date: formatReportDate(r.date),
-      image: r.image || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800',
+      image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl
@@ -200,10 +200,10 @@ export default function PublicationsPage() {
       category: r.tag || 'DCI REPORT',
       title: r.title,
       summary: r.summary,
-      author: r.author || 'AEO Research Team',
-      authorsList: r.authorsList || 'Athena Election Observatory Research Team',
+      author: r.author || '',
+      authorsList: r.authorsList || r.author || '',
       date: formatReportDate(r.date),
-      image: r.image || 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=800',
+      image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl
@@ -219,10 +219,10 @@ export default function PublicationsPage() {
       category: w.tag || 'AEO WEEKLY DIGEST',
       title: w.title,
       summary: w.summary,
-      author: w.author || 'AEO Research Team',
-      authorsList: w.authorsList || w.author || 'AEO Editorial Board',
+      author: w.author || '',
+      authorsList: w.authorsList || w.author || '',
       date: formatReportDate(w.date),
-      image: w.image || 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=800',
+      image: w.image || '',
       readTimeOrSize: w.readingTime || '5 min read',
       originalItem: w,
       pdfUrl: w.pdfUrl
@@ -238,10 +238,10 @@ export default function PublicationsPage() {
       category: a.category === 'press' ? 'PRESS STATEMENT' : a.category === 'bulletin' ? 'OFFICIAL BULLETIN' : a.category === 'statement' ? 'PUBLIC STATEMENT' : 'ALERT',
       title: a.title,
       summary: a.summary,
-      author: a.author || 'AEO Secretariat',
-      authorsList: a.authorsList || 'Athena Election Observatory Secretariat',
+      author: a.author || '',
+      authorsList: a.authorsList || a.author || '',
       date: formatReportDate(a.date),
-      image: a.image || 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800',
+      image: a.image || '',
       readTimeOrSize: '3 min read',
       originalItem: a,
       pdfUrl: a.pdfUrl
@@ -591,14 +591,16 @@ export default function PublicationsPage() {
                       className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-brand-blue transition-all flex flex-col md:flex-row items-stretch cursor-pointer group"
                     >
                       {/* Left Side: Thumbnail Image with NO tags on top */}
-                      <div className="w-full md:w-64 shrink-0 relative bg-paper min-h-[160px] md:min-h-full">
-                        <img 
-                          src={pub.image} 
-                          alt={pub.title}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                        />
-                      </div>
+                      {pub.image ? (
+                        <div className="w-full md:w-64 shrink-0 relative bg-paper min-h-[160px] md:min-h-full">
+                          <img 
+                            src={pub.image} 
+                            alt={pub.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          />
+                        </div>
+                      ) : null}
 
                       {/* Right Side: Title, Summary & Author/Date Footer only */}
                       <div className="p-6 md:p-8 flex-1 flex flex-col justify-between space-y-4">
@@ -625,8 +627,12 @@ export default function PublicationsPage() {
 
                         {/* Bottom line: Displays ONLY author and date */}
                         <div className="pt-4 border-t border-line/60 flex items-center gap-2 text-xs text-mut font-semibold">
-                          <span className="text-ink">{pub.authorsList}</span>
-                          <span>·</span>
+                          {pub.authorsList ? (
+                            <>
+                              <span className="text-ink">{pub.authorsList}</span>
+                              <span>·</span>
+                            </>
+                          ) : null}
                           <span className="text-ink2">{pub.date}</span>
                         </div>
 
