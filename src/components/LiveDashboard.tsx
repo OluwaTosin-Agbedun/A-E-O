@@ -11,6 +11,8 @@ import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
 import { parseDateValue } from '../utils/date';
 
+import { FULL_ELECTION_STATES } from '../data/allElectionData';
+
 export interface PartyVote {
   name: string;
   fullName: string;
@@ -22,6 +24,9 @@ export interface PartyVote {
 export interface LgaPartyStanding {
   lgaName: string;
   accreditedVoters: number;
+  validVotes?: number;
+  rejectedVotes?: number;
+  totalVotes?: number;
   first: { name: string; color: string; fullName: string; votes: number };
   second: { name: string; color: string; fullName: string; votes: number };
   third: { name: string; color: string; fullName: string; votes: number };
@@ -32,11 +37,17 @@ export function getLgaOthersVotes(lga: LgaPartyStanding): number {
   if (lga.others && typeof lga.others.votes === 'number') {
     return lga.others.votes;
   }
-  const top3Sum = (lga.first?.votes || 0) + (lga.second?.votes || 0) + (lga.third?.votes || 0);
-  return Math.round(top3Sum * 0.045);
+  if (typeof lga.validVotes === 'number') {
+    const top3Sum = (lga.first?.votes || 0) + (lga.second?.votes || 0) + (lga.third?.votes || 0);
+    return Math.max(0, lga.validVotes - top3Sum);
+  }
+  return 0;
 }
 
 export function getLgaValidVotes(lga: LgaPartyStanding): number {
+  if (typeof lga.validVotes === 'number') {
+    return lga.validVotes;
+  }
   const top3Sum = (lga.first?.votes || 0) + (lga.second?.votes || 0) + (lga.third?.votes || 0);
   return top3Sum + getLgaOthersVotes(lga);
 }
@@ -83,499 +94,10 @@ export interface PartyDisplayItem {
 
 export function getTop3AndOthersParties(parties?: PartyVote[]): PartyDisplayItem[] {
   if (!parties || parties.length === 0) return [];
-
-  if (parties.length <= 3) {
-    return parties;
-  }
-
-  const top3 = parties.slice(0, 3);
-  const remaining = parties.slice(3);
-
-  let totalRemainingVotes = 0;
-  let totalRemainingPercentage = 0;
-  let hasNumericVotes = false;
-
-  remaining.forEach((p) => {
-    totalRemainingPercentage += Number(p.percentage) || 0;
-    if (p.votes) {
-      const clean = p.votes.replace(/[^0-9]/g, '');
-      if (clean) {
-        totalRemainingVotes += parseInt(clean, 10);
-        hasNumericVotes = true;
-      }
-    }
-  });
-
-  const remainingAcronyms = remaining.map((p) => p.name).join(', ');
-
-  let formattedVotes = 'Pending';
-  if (hasNumericVotes && totalRemainingVotes > 0) {
-    formattedVotes = `${totalRemainingVotes.toLocaleString()} votes`;
-  } else if (remaining.some((p) => p.votes === 'Registered')) {
-    formattedVotes = 'Registered';
-  }
-
-  const othersItem: PartyDisplayItem = {
-    name: 'Others',
-    fullName: `Other Parties (${remainingAcronyms})`,
-    votes: formattedVotes,
-    percentage: Math.round(totalRemainingPercentage * 10) / 10,
-    color: 'bg-slate-400',
-    isOthers: true,
-  };
-
-  return [...top3, othersItem];
+  return parties;
 }
 
-
-
-export const INITIAL_STATES: StateMonitor[] = [
-  {
-    code: 'OS',
-    name: 'Osun',
-    region: 'South West',
-    election: 'Governorship',
-    status: 'Upcoming',
-    date: 'Saturday, 15 August 2026',
-    voters: '2,339,233',
-    pollingUnits: '3,763',
-    numLgas: 30,
-    numWards: 332,
-    reconciledRate: '0%',
-    summary: 'Preparing 1,200 ad-hoc observers. Observer accreditation and mapping of local collation center routes are underway.',
-    colorClass: 'text-amber-500 border-amber-500 bg-amber-50',
-    bgGradient: 'from-amber-100 to-amber-200/50 border-amber-200',
-    topParties: [
-      { name: 'Accord', fullName: 'Accord (Ademola Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
-      { name: 'AA', fullName: 'Action Alliance (Olanrewaju Farinloye)', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
-      { name: 'AAC', fullName: 'African Action Congress (Olajide Esan)', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress (Najeem Folasayo Salaam)', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
-      { name: 'ADP', fullName: 'Action Democratic Party (Yemisi Adeagbo Opawoye)', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
-      { name: 'APC', fullName: 'All Progressives Congress (Bola Oyebamiji)', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance (Adesina Adeyemi-Doro)', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
-      { name: 'APM', fullName: 'Allied Peoples Movement (Adewale Adebayo)', votes: 'Pending', percentage: 0, color: 'bg-yellow-600' },
-      { name: 'APP', fullName: 'Action Peoples Party (Clement Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
-      { name: 'BP', fullName: 'Boot Party (Masilo Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-pink-600' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party (Taofeek Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
-      { name: 'PRP', fullName: 'Peoples Redemption Party (Saliu Oyelami)', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
-      { name: 'YPP', fullName: 'Young Progressives Party (Olalekan Ogunsakin)', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
-      { name: 'ZLP', fullName: 'Zenith Labour Party (Adefemi Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-rose-700' }
-    ]
-  },
-  {
-    code: 'EK',
-    name: 'Ekiti',
-    region: 'South West',
-    election: 'Governorship',
-    status: 'Concluded',
-    date: 'June 2026',
-    voters: '1,019,592',
-    accreditedVoters: 373981,
-    validVotes: 361578,
-    rejectedVotes: 7222,
-    totalVotes: 368800,
-    pollingUnits: '2,440',
-    numLgas: 16,
-    numWards: 178,
-    reconciledRate: '98.2%',
-    summary: 'Full post-election audit completed. High IReV upload fidelity recorded with minor ad-hoc administrative delays in Ekiti East LGA.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-emerald-50 to-emerald-100/50 border-emerald-200',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '308,958 votes', percentage: 85.4, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '39,173 votes', percentage: 10.8, color: 'bg-red-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '12,223 votes', percentage: 3.4, color: 'bg-blue-500' },
-      { name: 'ADP', fullName: 'Action Democratic Party', votes: '1,998 votes', percentage: 0.6, color: 'bg-teal-600' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Ado-Ekiti',
-        accreditedVoters: 70350,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 58120 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 7373 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 2300 }
-      },
-      {
-        lgaName: 'Oye',
-        accreditedVoters: 48900,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 40400 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 5120 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1600 }
-      },
-      {
-        lgaName: 'Ikole',
-        accreditedVoters: 44700,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 36930 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4680 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1460 }
-      },
-      {
-        lgaName: 'Ekiti East',
-        accreditedVoters: 40650,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 33580 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4250 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1320 }
-      },
-      {
-        lgaName: 'Irepodun/Ifelodun',
-        accreditedVoters: 52250,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 43160 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 5470 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1700 }
-      },
-      {
-        lgaName: 'Emure',
-        accreditedVoters: 27750,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 22920 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 2900 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 900 }
-      },
-      {
-        lgaName: 'Ijero',
-        accreditedVoters: 30250,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 24990 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 3160 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 990 }
-      },
-      {
-        lgaName: 'Ekiti West',
-        accreditedVoters: 35550,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 29370 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 3720 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1160 }
-      },
-      {
-        lgaName: 'Moba',
-        accreditedVoters: 27600,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 22800 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 2890 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 900 }
-      },
-      {
-        lgaName: 'Ikere',
-        accreditedVoters: 40350,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 33340 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4220 },
-        third: { name: 'ADC', color: 'bg-blue-500', fullName: 'African Democratic Congress', votes: 1320 }
-      }
-    ]
-  },
-  {
-    code: 'AN',
-    name: 'Anambra',
-    region: 'South East',
-    election: 'Governorship',
-    status: 'Concluded',
-    date: 'November 2025',
-    voters: '2,781,299',
-    accreditedVoters: 615630,
-    validVotes: 583797,
-    rejectedVotes: 11378,
-    totalVotes: 593901,
-    pollingUnits: '5,720',
-    numLgas: 21,
-    numWards: 326,
-    reconciledRate: '100%',
-    summary: 'Comprehensive audit report published. Verified 5,720 PUs with specific legal findings on over-accreditation patterns.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-blue-50 to-blue-100/50 border-blue-200',
-    topParties: [
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '312,229 votes', percentage: 53.5, color: 'bg-indigo-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '143,285 votes', percentage: 24.5, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '103,074 votes', percentage: 17.7, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '25,209 votes', percentage: 4.3, color: 'bg-rose-500' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Awka South',
-        accreditedVoters: 44200,
-        first: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 24510 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 10285 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 8074 }
-      },
-      {
-        lgaName: 'Onitsha North',
-        accreditedVoters: 40100,
-        first: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 22310 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 11074 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 5285 }
-      },
-      {
-        lgaName: 'Nnewi North',
-        accreditedVoters: 38400,
-        first: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 18510 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 10285 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 6074 }
-      },
-      {
-        lgaName: 'Ihiala',
-        accreditedVoters: 34100,
-        first: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 19210 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 8285 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 5074 }
-      },
-      {
-        lgaName: 'Aguata',
-        accreditedVoters: 42300,
-        first: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 23310 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 10074 },
-        third: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 7285 }
-      }
-    ]
-  },
-  {
-    code: 'OD',
-    name: 'Ondo',
-    region: 'South West',
-    election: 'Governorship',
-    status: 'Concluded',
-    date: 'November 2024',
-    voters: '2,053,061',
-    accreditedVoters: 506149,
-    validVotes: 495844,
-    rejectedVotes: 12445,
-    totalVotes: 508730,
-    pollingUnits: '3,933',
-    numLgas: 18,
-    numWards: 203,
-    reconciledRate: '99.4%',
-    summary: 'All polling unit results parsed. Forensic audit confirmed declared results match verified Form EC8A uploads.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-indigo-50 to-indigo-100/50 border-indigo-200',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '366,612 votes', percentage: 73.9, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 23.8, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '4,743 votes', percentage: 1.0, color: 'bg-rose-500' },
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '1,214 votes', percentage: 0.2, color: 'bg-indigo-600' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Akure South',
-        accreditedVoters: 87900,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 62310 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 22845 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 1234 }
-      },
-      {
-        lgaName: 'Ondo West',
-        accreditedVoters: 72800,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 52110 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 18245 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 1112 }
-      },
-      {
-        lgaName: 'Owo',
-        accreditedVoters: 65100,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 48310 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 14845 },
-        third: { name: 'APGA', color: 'bg-indigo-600', fullName: 'All Progressives Grand Alliance', votes: 834 }
-      }
-    ]
-  },
-  {
-    code: 'IM',
-    name: 'Imo',
-    region: 'South East',
-    election: 'Off-cycle Gov.',
-    status: 'Concluded',
-    date: 'November 2023',
-    voters: '2,420,840',
-    accreditedVoters: 541049,
-    validVotes: 696056,
-    rejectedVotes: 11099,
-    totalVotes: 705815,
-    pollingUnits: '4,758',
-    numLgas: 27,
-    numWards: 306,
-    reconciledRate: '99.1%',
-    summary: 'Comprehensive election audit completed across all 27 LGAs in Imo State. Polling unit level EC8B and BVAS accreditation numbers reconciled.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-purple-50 to-purple-100/50 border-purple-200',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '544,337 votes', percentage: 78.2, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '70,909 votes', percentage: 10.2, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '64,530 votes', percentage: 9.3, color: 'bg-rose-500' },
-      { name: 'AA', fullName: 'Action Alliance', votes: '8,148 votes', percentage: 1.2, color: 'bg-indigo-500' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Owerri Municipal',
-        accreditedVoters: 25410,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 16840 },
-        second: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 4950 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 2810 }
-      },
-      {
-        lgaName: 'Mbaitoli',
-        accreditedVoters: 28900,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 20140 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4820 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 3150 }
-      },
-      {
-        lgaName: 'Aboh Mbaise',
-        accreditedVoters: 22100,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 14210 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4320 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 2980 }
-      },
-      {
-        lgaName: 'Orlu',
-        accreditedVoters: 24800,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 18950 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 3120 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 2110 }
-      }
-    ]
-  },
-  {
-    code: 'ED',
-    name: 'Edo',
-    region: 'South South',
-    election: 'Governorship',
-    status: 'Concluded',
-    date: 'September 2024',
-    voters: '2,610,730',
-    accreditedVoters: 604134,
-    validVotes: 570690,
-    rejectedVotes: 13275,
-    totalVotes: 584065,
-    pollingUnits: '4,519',
-    numLgas: 18,
-    numWards: 192,
-    reconciledRate: '98.6%',
-    summary: 'Rigorous forensic audit across 18 LGAs. High transmission accuracy recorded on the IReV portal.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-amber-50 to-amber-100/50 border-amber-200',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.1, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.3, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '2,009 votes', percentage: 0.4, color: 'bg-sky-600' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Oredo',
-        accreditedVoters: 55400,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 26100 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 22400 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 3200 }
-      },
-      {
-        lgaName: 'Ikpoba-Okha',
-        accreditedVoters: 48200,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 23100 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 19800 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 2900 }
-      },
-      {
-        lgaName: 'Egor',
-        accreditedVoters: 42100,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 20200 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 17100 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 2400 }
-      }
-    ]
-  },
-  {
-    code: 'KG',
-    name: 'Kogi',
-    region: 'North Central',
-    election: 'Off-cycle Gov.',
-    status: 'Concluded',
-    date: 'November 2023',
-    voters: '1,932,692',
-    accreditedVoters: 656313,
-    validVotes: 771715,
-    rejectedVotes: 14624,
-    totalVotes: 786231,
-    pollingUnits: '3,508',
-    numLgas: 21,
-    numWards: 239,
-    reconciledRate: '97.1%',
-    summary: 'Pre-filled result sheets identified in Ogori/Magongo LGA were flagged and excluded from official tallies during audit.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-orange-50 to-orange-100/50 border-orange-200',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '426,237 votes', percentage: 55.2, color: 'bg-emerald-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 33.6, color: 'bg-amber-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '77,882 votes', percentage: 10.1, color: 'bg-red-600' },
-      { name: 'AA', fullName: 'Action Alliance', votes: '1,438 votes', percentage: 0.2, color: 'bg-indigo-500' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Lokoja',
-        accreditedVoters: 42100,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 24200 },
-        second: { name: 'SDP', color: 'bg-amber-600', fullName: 'Social Democratic Party', votes: 12100 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 4100 }
-      },
-      {
-        lgaName: 'Okene',
-        accreditedVoters: 58900,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 48200 },
-        second: { name: 'SDP', color: 'bg-amber-600', fullName: 'Social Democratic Party', votes: 7200 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 2100 }
-      },
-      {
-        lgaName: 'Dekina',
-        accreditedVoters: 51200,
-        first: { name: 'SDP', color: 'bg-amber-600', fullName: 'Social Democratic Party', votes: 28400 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 18100 },
-        third: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 3800 }
-      }
-    ]
-  },
-  {
-    code: 'BY',
-    name: 'Bayelsa',
-    region: 'South South',
-    election: 'Off-cycle Gov.',
-    status: 'Concluded',
-    date: 'November 2023',
-    voters: '1,056,862',
-    accreditedVoters: 253520,
-    validVotes: 312397,
-    rejectedVotes: 3905,
-    totalVotes: 314983,
-    pollingUnits: '2,244',
-    numLgas: 8,
-    numWards: 105,
-    reconciledRate: '96.8%',
-    summary: 'Post-election forensics verified polling unit returns across riverine communities in Nembe and Southern Ijaw LGAs.',
-    colorClass: 'text-green-600 border-green-600 bg-green-50',
-    bgGradient: 'from-cyan-50 to-cyan-100/50 border-cyan-200',
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '173,310 votes', percentage: 55.5, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '136,609 votes', percentage: 43.7, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '1,027 votes', percentage: 0.3, color: 'bg-rose-500' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '193 votes', percentage: 0.1, color: 'bg-amber-600' }
-    ],
-    lgaStandings: [
-      {
-        lgaName: 'Yenagoa',
-        accreditedVoters: 45200,
-        first: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 28100 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 15200 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 410 }
-      },
-      {
-        lgaName: 'Southern Ijaw',
-        accreditedVoters: 48900,
-        first: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 26400 },
-        second: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 21100 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 220 }
-      },
-      {
-        lgaName: 'Nembe',
-        accreditedVoters: 32100,
-        first: { name: 'APC', color: 'bg-emerald-600', fullName: 'All Progressives Congress', votes: 18200 },
-        second: { name: 'PDP', color: 'bg-red-600', fullName: "People's Democratic Party", votes: 13100 },
-        third: { name: 'LP', color: 'bg-rose-500', fullName: 'Labour Party', votes: 110 }
-      }
-    ]
-  }
-];
+export const INITIAL_STATES: StateMonitor[] = FULL_ELECTION_STATES;
 
 interface LiveDashboardProps {
   isPreview?: boolean;
@@ -670,21 +192,28 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
         const data = snapshot.data();
         if (data?.items) {
           let formatted = data.items.map((s: any) => {
-            if (s.code === 'OS' && (!s.voters || s.voters === '1,955,657')) {
-              return { ...s, voters: '2,339,233' };
-            }
-            return s;
+            const init = INITIAL_STATES.find(i => i.code === s.code);
+            if (!init) return s;
+            return {
+              ...init,
+              ...s,
+              topParties: (init.topParties && init.topParties.length > 0) ? init.topParties : s.topParties,
+              lgaStandings: (init.lgaStandings && init.lgaStandings.length > 0) ? init.lgaStandings : s.lgaStandings,
+              validVotes: init.validVotes ?? s.validVotes,
+              rejectedVotes: init.rejectedVotes ?? s.rejectedVotes,
+              totalVotes: init.totalVotes ?? s.totalVotes,
+              accreditedVoters: init.accreditedVoters ?? s.accreditedVoters,
+              numLgas: init.numLgas ?? s.numLgas,
+              numWards: init.numWards ?? s.numWards,
+            };
           });
 
-          // If Imo state is missing from existing Firestore document, append it and sync
-          if (!formatted.some((s: any) => s.code === 'IM')) {
-            const imo = INITIAL_STATES.find(s => s.code === 'IM');
-            if (imo) {
-              formatted = [...formatted, imo];
-              setDoc(doc(db, 'cms', 'monitored_states'), { items: formatted }, { merge: true })
-                .catch(err => console.error("Error adding Imo state to Firestore:", err));
+          // Ensure all initial states are present
+          INITIAL_STATES.forEach(init => {
+            if (!formatted.some((s: any) => s.code === init.code)) {
+              formatted.push(init);
             }
-          }
+          });
 
           setStates(formatted);
         }
@@ -938,12 +467,12 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="space-y-3">
                     <div>
                       <h5 className="text-[11px] font-mono text-mut uppercase tracking-wider font-semibold">
-                        {liveState.status === 'Upcoming' ? 'Participating Parties' : 'Leading Contenders & Others'}
+                        {liveState.status === 'Upcoming' ? 'Participating Parties' : 'Electoral Standings & Party Vote Breakdown'}
                       </h5>
                       <p className="text-[10px] text-mut font-medium mt-0.5">
                         {liveState.status === 'Upcoming' 
-                          ? 'Top registered parties & combined others contesting the election'
-                          : 'Top 3 political contenders & aggregated other parties'}
+                          ? 'Full list of political parties contesting the election'
+                          : 'Certified votes share for all participating political parties'}
                       </p>
                     </div>
 
@@ -1395,11 +924,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-2 bg-rose-50/90 border border-rose-200/80 rounded-md shadow-2xs text-center w-full">
                                   <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-rose-700/80 leading-tight">Rejected Votes</span>
-                                  <span className="text-[11px] font-mono font-bold text-rose-900 leading-tight mt-0.5">{Math.round((lga.first.votes + lga.second.votes) * 0.015).toLocaleString()}</span>
+                                  <span className="text-[11px] font-mono font-bold text-rose-900 leading-tight mt-0.5">{lga.rejectedVotes !== undefined ? lga.rejectedVotes.toLocaleString() : Math.round((lga.first.votes + lga.second.votes) * 0.015).toLocaleString()}</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-2 bg-blue-50/90 border border-blue-200/80 rounded-md shadow-2xs text-center w-full">
                                   <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-blue-700/80 leading-tight">Total Votes</span>
-                                  <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
+                                  <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{lga.totalVotes !== undefined ? lga.totalVotes.toLocaleString() : (getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
                                 </div>
                               </div>
 
@@ -1473,10 +1002,10 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
 
                     <div className="space-y-1">
                       <h5 className="text-[11px] font-mono text-mut uppercase tracking-wider font-semibold">
-                        Top 3 Parties & Others (Statewide)
+                        All Participating Parties (Statewide)
                       </h5>
                       <p className="text-[10px] text-mut font-medium">
-                        Official certified votes share (Top 3 contenders + aggregated others)
+                        Official certified votes share for all political parties contesting
                       </p>
                     </div>
 

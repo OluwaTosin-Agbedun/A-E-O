@@ -110,10 +110,20 @@ export default function ElectionDetails({
         const data = snapshot.data();
         if (data?.items) {
           let formatted = data.items.map((s: any) => {
-            if (s.code === 'OS' && (!s.voters || s.voters === '1,955,657')) {
-              return { ...s, voters: '2,339,233' };
-            }
-            return s;
+            const init = INITIAL_STATES.find(i => i.code === s.code);
+            if (!init) return s;
+            return {
+              ...init,
+              ...s,
+              topParties: (init.topParties && init.topParties.length > 0) ? init.topParties : s.topParties,
+              lgaStandings: (init.lgaStandings && init.lgaStandings.length > 0) ? init.lgaStandings : s.lgaStandings,
+              validVotes: init.validVotes ?? s.validVotes,
+              rejectedVotes: init.rejectedVotes ?? s.rejectedVotes,
+              totalVotes: init.totalVotes ?? s.totalVotes,
+              accreditedVoters: init.accreditedVoters ?? s.accreditedVoters,
+              numLgas: init.numLgas ?? s.numLgas,
+              numWards: init.numWards ?? s.numWards,
+            };
           });
           INITIAL_STATES.forEach(init => {
             if (!formatted.some((s: any) => s.code === init.code)) {
@@ -531,15 +541,15 @@ export default function ElectionDetails({
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-emerald-50/90 border border-emerald-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-emerald-700/80 leading-tight">Valid Votes</span>
-                                <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{getLgaValidVotes(lga).toLocaleString()}</span>
+                                <span className="text-[11px] font-mono font-bold text-emerald-900 leading-tight mt-0.5">{lga.validVotes !== undefined ? lga.validVotes.toLocaleString() : getLgaValidVotes(lga).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-rose-50/90 border border-rose-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-rose-700/80 leading-tight">Rejected Votes</span>
-                                <span className="text-[11px] font-mono font-bold text-rose-900 leading-tight mt-0.5">{Math.round((lga.first.votes + lga.second.votes) * 0.015).toLocaleString()}</span>
+                                <span className="text-[11px] font-mono font-bold text-rose-900 leading-tight mt-0.5">{lga.rejectedVotes !== undefined ? lga.rejectedVotes.toLocaleString() : Math.round((lga.first.votes + lga.second.votes) * 0.015).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col items-center justify-center p-2 bg-blue-50/90 border border-blue-200/80 rounded-md shadow-2xs text-center w-full">
                                 <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-blue-700/80 leading-tight">Total Votes</span>
-                                <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{(getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
+                                <span className="text-[11px] font-mono font-bold text-blue-950 leading-tight mt-0.5">{lga.totalVotes !== undefined ? lga.totalVotes.toLocaleString() : (getLgaValidVotes(lga) + Math.round((lga.first.votes + lga.second.votes) * 0.015)).toLocaleString()}</span>
                               </div>
                             </div>
                           )}
