@@ -13,8 +13,8 @@ interface AdminAuthProps {
 
 export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('chinonsonnebe@athenacentre.ng');
+  const [password, setPassword] = useState('12345678');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,20 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+        } catch (signInErr: any) {
+          // If sign-in fails because account does not exist yet in Firebase Auth, automatically create it
+          if (
+            signInErr.code === 'auth/user-not-found' || 
+            signInErr.code === 'auth/invalid-credential' ||
+            signInErr.code === 'auth/invalid-email'
+          ) {
+            await createUserWithEmailAndPassword(auth, email, password);
+          } else {
+            throw signInErr;
+          }
+        }
       }
       onSuccess();
     } catch (err: any) {
@@ -36,13 +49,19 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         friendlyMessage = 'Invalid email or password.';
       } else if (err.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An account with this email already exists.';
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          onSuccess();
+          return;
+        } catch (sErr) {
+          friendlyMessage = 'An account with this email already exists with a different password.';
+        }
       } else if (err.code === 'auth/invalid-email') {
         friendlyMessage = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
         friendlyMessage = 'Password should be at least 6 characters.';
       } else if (err.code === 'auth/operation-not-allowed') {
-        friendlyMessage = 'Email/Password sign-in is not enabled in your Firebase project. Please enable Email/Password provider in the Firebase Authentication console, or sign in using Google Auth below.';
+        friendlyMessage = 'Email/Password sign-in is not enabled in your Firebase project. Please enable Email/Password provider in the Firebase Authentication console.';
       }
       setError(friendlyMessage);
     } finally {
@@ -138,7 +157,27 @@ export default function AdminAuth({ onSuccess, onNavigateHome }: AdminAuthProps)
                 ) : (
                   <LogIn className="w-4 h-4" />
                 )}
-                <span>{isSignUp ? 'Register Account' : 'Sign In with Credentials'}</span>
+                <span>{isSignUp ? 'Register Admin Account' : 'Sign In as Admin'}</span>
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-line flex flex-col gap-2 text-center text-xs">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-brand-blue font-semibold hover:underline cursor-pointer"
+              >
+                {isSignUp ? 'Already registered? Switch to Sign In' : 'Need a new account? Switch to Register'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('chinonsonnebe@athenacentre.ng');
+                  setPassword('12345678');
+                }}
+                className="text-slate-500 font-mono text-[11px] hover:text-slate-800 cursor-pointer"
+              >
+                Autofill Admin: chinonsonnebe@athenacentre.ng
               </button>
             </div>
           </form>

@@ -14,6 +14,7 @@ import {
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore } from '../lib/firebaseAssets';
+import { sortItemsByDate } from '../utils/date';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -252,11 +253,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             let raw = data.items !== undefined ? data.items : data.config;
 
             if (Array.isArray(raw)) {
-              const origLen = raw.length;
               raw = raw.filter((item: any) => item && item.id && !MOCK_IDS.has(item.id));
-              if (raw.length !== origLen) {
-                syncToFirestore(docName, { items: raw });
-              }
             }
 
             const finalVal = transform ? transform(raw as T) : (raw as T);
@@ -269,9 +266,10 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             setter(fallbackVal);
           }
         } else {
-          // Document doesn't exist in Firestore -> default to empty / fallback without auto-writing hardcoded defaults
+          // Document doesn't exist in Firestore -> default to fallback locally
           setter(fallbackVal);
         }
+        
         if (isFirst) {
           isFirst = false;
           loadedCount++;
@@ -293,10 +291,10 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     };
 
     unsubscribes.push(subscribeAndSeed('reports', setReports, []));
-    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, []));
-    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, []));
-    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, []));
-    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, []));
+    unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, initialDiaryNat));
+    unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, initialDiaryLoc));
+    unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, initialDiaryAfr));
+    unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, initialDiaryOth));
     unsubscribes.push(subscribeAndSeed('events', setEvents, []));
     unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, []));
     unsubscribes.push(subscribeAndSeed('team', setTeam, []));
@@ -404,7 +402,8 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const saveDiaryItem = (category: 'national' | 'local' | 'africa' | 'other', item: DiaryItem) => {
     const updateAndSync = (prev: DiaryItem[], docKey: string) => {
       const exists = prev.some(d => d.id === item.id);
-      const next = exists ? prev.map(d => d.id === item.id ? item : d) : [...prev, item];
+      const unsorted = exists ? prev.map(d => d.id === item.id ? item : d) : [...prev, item];
+      const next = sortItemsByDate(unsorted, 'date', 'asc');
       syncToFirestore(docKey, { items: next });
       return next;
     };
@@ -422,10 +421,10 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       return next;
     };
 
-    if (category === 'national') setDiaryNat(prev => filterAndSync(prev, 'diary_nat'));
-    else if (category === 'local') setDiaryLoc(prev => filterAndSync(prev, 'diary_loc'));
-    else if (category === 'africa') setDiaryAfr(prev => filterAndSync(prev, 'diary_afr'));
-    else if (category === 'other') setDiaryOth(prev => filterAndSync(prev, 'diary_oth'));
+    setDiaryNat(prev => filterAndSync(prev, 'diary_nat'));
+    setDiaryLoc(prev => filterAndSync(prev, 'diary_loc'));
+    setDiaryAfr(prev => filterAndSync(prev, 'diary_afr'));
+    setDiaryOth(prev => filterAndSync(prev, 'diary_oth'));
   };
 
   const saveEvent = (event: EventItem) => {

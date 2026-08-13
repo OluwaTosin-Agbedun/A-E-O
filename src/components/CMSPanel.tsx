@@ -1,15 +1,25 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { 
   X, Database, Edit3, Trash2, Plus, Save, RotateCcw, 
-  BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight, LogOut, Bell, Search, Loader2
+  BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight, LogOut, Bell, Search, Loader2,
+  ChevronUp, ChevronDown, FileSpreadsheet, UploadCloud, Download, Table, PlusCircle, UserPlus, Check, AlertCircle, Sparkles
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
+import { sortItemsByDate } from '../utils/date';
+import { 
+  parseSpreadsheetText, 
+  downloadDiaryCSVTemplate, 
+  downloadElectionDataCSVTemplate, 
+  downloadCSV,
+  ParsedSpreadsheet 
+} from '../utils/spreadsheet';
 import { PartyLogo } from './PartyLogo';
 import { INITIAL_STATES } from './LiveDashboard';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
+import { prepareDocumentUrl } from '../utils/url';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -216,9 +226,9 @@ export default function CMSPanel({
         region: 'South West',
         election: 'Governorship',
         status: 'Concluded',
-        date: 'June 2024',
-        voters: '988,923',
-        accreditedVoters: 345100,
+        date: 'June 2026',
+        voters: '1,019,592',
+        accreditedVoters: 373981,
         pollingUnits: '2,445',
         numLgas: 16,
         numWards: 177,
@@ -227,13 +237,13 @@ export default function CMSPanel({
         colorClass: 'text-green-600 border-green-600 bg-green-50',
         bgGradient: 'from-emerald-50 to-emerald-100/50 border-emerald-200',
         topParties: [
-          { name: 'APC', fullName: 'All Progressives Congress', votes: '187,057 votes', percentage: 52.3, color: 'bg-emerald-600' },
-          { name: 'SDP', fullName: 'Social Democratic Party', votes: '82,211 votes', percentage: 23.0, color: 'bg-amber-600' },
-          { name: 'PDP', fullName: "People's Democratic Party", votes: '67,454 votes', percentage: 18.9, color: 'bg-red-600' },
-          { name: 'LP', fullName: 'Labour Party', votes: '11,450 votes', percentage: 3.2, color: 'bg-rose-500' },
-          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '5,120 votes', percentage: 1.4, color: 'bg-indigo-600' },
-          { name: 'YPP', fullName: 'Young Progressives Party', votes: '3,100 votes', percentage: 0.9, color: 'bg-emerald-800' },
-          { name: 'ADC', fullName: 'African Democratic Congress', votes: '1,050 votes', percentage: 0.3, color: 'bg-blue-500' }
+          { name: 'APC', fullName: 'All Progressives Congress', votes: '308,958 votes', percentage: 85.4, color: 'bg-emerald-600' },
+          { name: 'PDP', fullName: "People's Democratic Party", votes: '39,173 votes', percentage: 10.8, color: 'bg-red-600' },
+          { name: 'ADC', fullName: 'African Democratic Congress', votes: '12,223 votes', percentage: 3.4, color: 'bg-blue-500' },
+          { name: 'ADP', fullName: 'Action Democratic Party', votes: '1,998 votes', percentage: 0.6, color: 'bg-teal-600' },
+          { name: 'A', fullName: 'Accord', votes: '687 votes', percentage: 0.2, color: 'bg-purple-600' },
+          { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '269 votes', percentage: 0.1, color: 'bg-indigo-600' },
+          { name: 'LP', fullName: 'Labour Party', votes: '225 votes', percentage: 0.1, color: 'bg-rose-500' }
         ],
         lgaStandings: []
       },
@@ -298,16 +308,21 @@ export default function CMSPanel({
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.items) {
-          const formatted = data.items.map((s: any) => {
-            if (s.code === 'OS' && (!s.topParties || s.topParties.length < 14)) {
+          let formatted = data.items.map((s: any) => {
+            if (s.code === 'OS' && (!s.voters || s.voters === '1,955,657')) {
               return {
                 ...s,
-                voters: '2,339,233',
-                topParties: INITIAL_STATES[0].topParties
+                voters: '2,339,233'
               };
             }
             return s;
           });
+          if (!formatted.some((s: any) => s.code === 'IM')) {
+            const imo = INITIAL_STATES.find(s => s.code === 'IM');
+            if (imo) {
+              formatted = [...formatted, imo];
+            }
+          }
           setStatesList(formatted);
         }
       }
@@ -444,6 +459,25 @@ export default function CMSPanel({
     showStatus(`Removed ${partyName} from ${activeCMSState.name} election standings.`);
   };
 
+  const handleMovePartyInState = (idx: number, direction: 'up' | 'down') => {
+    const currentParties = activeCMSState?.topParties || [];
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentParties.length) return;
+
+    const updatedParties = [...currentParties];
+    const [moved] = updatedParties.splice(idx, 1);
+    updatedParties.splice(targetIdx, 0, moved);
+
+    const updatedStatesList = statesList.map(s => s.code === selectedStateCode ? { ...s, topParties: updatedParties } : s);
+    setStatesList(updatedStatesList);
+
+    try {
+      setDoc(doc(db, 'cms', 'monitored_states'), { items: updatedStatesList });
+    } catch (err) {
+      console.error('Failed to sync party order:', err);
+    }
+  };
+
   const handleSaveStateCMS = (e: any) => {
     e.preventDefault();
     
@@ -512,36 +546,75 @@ export default function CMSPanel({
   // Form States
   // ----------------------------------------------------
   
-  // 1. Report Form
-  const [reportForm, setReportForm] = useState<Partial<Report>>({
+  // Empty form templates for clean resets
+  const EMPTY_REPORT_FORM: Partial<Report> = {
     id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: ''
-  });
+  };
 
-  // 2. Diary Form
-  const [diaryForm, setDiaryForm] = useState<Partial<DiaryItem>>({
-    id: '', date: '', title: '', subtitle: '', status: 'In view'
-  });
-
-  // 3. Weekly Issue Form
-  const [weeklyForm, setWeeklyForm] = useState<Partial<WeeklyIssue>>({
+  const EMPTY_WEEKLY_FORM: Partial<WeeklyIssue> = {
     id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
     author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
-  });
+  };
+
+  const EMPTY_EVENT_FORM: Partial<EventItem> = {
+    id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: '', links: []
+  };
+
+  const EMPTY_ANNOUNCEMENT_FORM: Partial<AnnouncementItem> = {
+    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: ''
+  };
+
+  const EMPTY_TEAM_FORM: Partial<TeamMember> = {
+    id: '', name: '', role: '', initials: ''
+  };
+
+  const EMPTY_DIARY_FORM: Partial<DiaryItem> = {
+    id: '',
+    date: '',
+    title: '',
+    subtitle: '',
+    status: 'In view',
+    region: 'nigeria',
+    type: 'governorship',
+    country: 'Nigeria',
+    location: '',
+    electoralBody: 'INEC',
+    registeredVoters: '',
+    pollingUnits: '',
+    lgasCount: '',
+    description: '',
+    keyIssues: [],
+    monitoringMission: 'Athena Field Observers deploying across all LGAs.',
+    sittingExecutive: { name: '', title: '', party: '', assumedOffice: '', termInfo: '', notes: '' },
+    participants: []
+  };
+
+  // 1. Report Form
+  const [reportForm, setReportForm] = useState<Partial<Report>>(EMPTY_REPORT_FORM);
+
+  // 2. Diary Form
+  const [diaryForm, setDiaryForm] = useState<Partial<DiaryItem>>(EMPTY_DIARY_FORM);
+  const [diarySubMode, setDiarySubMode] = useState<'form' | 'spreadsheet'>('form');
+  const [diarySpreadsheetText, setDiarySpreadsheetText] = useState('');
+  const [diarySpreadsheetParsed, setDiarySpreadsheetParsed] = useState<ParsedSpreadsheet | null>(null);
+  const [diarySearchQuery, setDiarySearchQuery] = useState('');
+
+  // Elections spreadsheet submode states
+  const [electionsSubMode, setElectionsSubMode] = useState<'manual' | 'spreadsheet'>('manual');
+  const [electionsSpreadsheetText, setElectionsSpreadsheetText] = useState('');
+  const [electionsSpreadsheetParsed, setElectionsSpreadsheetParsed] = useState<ParsedSpreadsheet | null>(null);
+
+  // 3. Weekly Issue Form
+  const [weeklyForm, setWeeklyForm] = useState<Partial<WeeklyIssue>>(EMPTY_WEEKLY_FORM);
 
   // 4. Event Form
-  const [eventForm, setEventForm] = useState<Partial<EventItem>>({
-    id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: ''
-  });
+  const [eventForm, setEventForm] = useState<Partial<EventItem>>(EMPTY_EVENT_FORM);
 
   // Announcement Form
-  const [announcementForm, setAnnouncementForm] = useState<Partial<AnnouncementItem>>({
-    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: ''
-  });
+  const [announcementForm, setAnnouncementForm] = useState<Partial<AnnouncementItem>>(EMPTY_ANNOUNCEMENT_FORM);
 
   // 5. Team Member Form
-  const [teamForm, setTeamForm] = useState<Partial<TeamMember>>({
-    id: '', name: '', role: '', initials: ''
-  });
+  const [teamForm, setTeamForm] = useState<Partial<TeamMember>>(EMPTY_TEAM_FORM);
 
   if (!isStandalone && !isOpen) return null;
 
@@ -602,7 +675,7 @@ export default function CMSPanel({
       author: reportForm.author || '',
       authorsList: reportForm.authorsList || '',
       image: reportForm.image || '',
-      pdfUrl: reportForm.pdfUrl || ''
+      pdfUrl: prepareDocumentUrl(reportForm.pdfUrl || '')
     };
 
     saveReport(finalReport);
@@ -620,17 +693,239 @@ export default function CMSPanel({
 
     const finalId = diaryForm.id || generateId();
     const finalItem: DiaryItem = {
+      ...diaryForm,
       id: finalId,
       date: diaryForm.date,
       title: diaryForm.title,
       subtitle: diaryForm.subtitle || 'Observatory Sync',
-      status: diaryForm.status || 'In view'
+      status: diaryForm.status || 'In view',
+      region: diaryForm.region || (diaryCategory === 'national' || diaryCategory === 'local' ? 'nigeria' : diaryCategory === 'africa' ? 'africa' : 'other'),
+      type: diaryForm.type || 'governorship',
+      country: diaryForm.country || 'Nigeria',
+      location: diaryForm.location || '',
+      electoralBody: diaryForm.electoralBody || 'INEC',
+      registeredVoters: diaryForm.registeredVoters || '',
+      pollingUnits: diaryForm.pollingUnits || '',
+      lgasCount: diaryForm.lgasCount || '',
+      description: diaryForm.description || '',
+      keyIssues: Array.isArray(diaryForm.keyIssues) ? diaryForm.keyIssues : [],
+      monitoringMission: diaryForm.monitoringMission || '',
+      sittingExecutive: diaryForm.sittingExecutive || { name: '', title: '', party: '' },
+      participants: Array.isArray(diaryForm.participants) ? diaryForm.participants : []
     };
 
     saveDiaryItem(diaryCategory, finalItem);
     setEditingId(null);
-    setDiaryForm({ id: '', date: '', title: '', subtitle: '', status: 'In view' });
-    showStatus(`Electoral timeline "${finalItem.title}" saved!`);
+    setDiaryForm(EMPTY_DIARY_FORM);
+    showStatus(`Electoral timeline "${finalItem.title}" saved successfully!`);
+  };
+
+  const handleAddCandidateToDiary = () => {
+    const current = diaryForm.participants || [];
+    setDiaryForm({
+      ...diaryForm,
+      participants: [...current, { name: '', party: '', role: 'Candidate', platform: '' }]
+    });
+  };
+
+  const handleRemoveCandidateFromDiary = (index: number) => {
+    const current = diaryForm.participants || [];
+    setDiaryForm({
+      ...diaryForm,
+      participants: current.filter((_, idx) => idx !== index)
+    });
+  };
+
+  const handleCandidateChange = (index: number, field: string, value: string) => {
+    const current = [...(diaryForm.participants || [])];
+    if (current[index]) {
+      current[index] = { ...current[index], [field]: value };
+      setDiaryForm({ ...diaryForm, participants: current });
+    }
+  };
+
+  const handleProcessDiarySpreadsheet = () => {
+    if (!diarySpreadsheetText.trim()) {
+      showStatus('Please paste spreadsheet rows or upload a CSV file.', 'error');
+      return;
+    }
+    const parsed = parseSpreadsheetText(diarySpreadsheetText);
+    if (parsed.rows.length === 0) {
+      showStatus('No valid data rows found in spreadsheet text.', 'error');
+      return;
+    }
+    setDiarySpreadsheetParsed(parsed);
+    showStatus(`Parsed ${parsed.rows.length} rows from spreadsheet!`);
+  };
+
+  const handleImportDiarySpreadsheetToDB = () => {
+    if (!diarySpreadsheetParsed || diarySpreadsheetParsed.rows.length === 0) return;
+
+    let importedCount = 0;
+    diarySpreadsheetParsed.rows.forEach(row => {
+      const title = row['Title'] || row['Event Title'] || row['Name'] || row['title'] || '';
+      const date = row['Date'] || row['Electoral Date'] || row['date'] || '';
+      if (!title || !date) return;
+
+      const subtitle = row['Subtitle'] || row['Context'] || row['subtitle'] || 'Electoral Monitored';
+      const statusRaw = row['Status'] || row['status'] || 'In view';
+      const validStatuses = ['In view', 'Scheduled', 'Provisional', 'Tracking', 'Concluded'];
+      const status = validStatuses.includes(statusRaw) ? statusRaw as any : 'In view';
+
+      const catRaw = (row['Category'] || row['category'] || diaryCategory || 'national').toLowerCase();
+      const targetCat: 'national' | 'local' | 'africa' | 'other' = 
+        catRaw.includes('local') ? 'local' :
+        catRaw.includes('africa') ? 'africa' :
+        catRaw.includes('other') ? 'other' : 'national';
+
+      const regionRaw = (row['Region'] || row['region'] || 'nigeria').toLowerCase();
+      const region = (regionRaw.includes('africa') ? 'africa' : regionRaw.includes('other') ? 'other' : 'nigeria') as any;
+
+      const typeRaw = (row['Type'] || row['type'] || 'governorship').toLowerCase();
+      const type = (typeRaw.includes('presid') ? 'presidential' : typeRaw.includes('local') ? 'local_government' : typeRaw.includes('gov') ? 'governorship' : 'other') as any;
+
+      const keyIssuesStr = row['Key Issues'] || row['Key issues'] || row['keyIssues'] || '';
+      const keyIssues = keyIssuesStr ? keyIssuesStr.split(/;|\|/).map(s => s.trim()).filter(Boolean) : [];
+
+      const execName = row['Executive Name'] || row['Executive'] || '';
+      const execParty = row['Executive Party'] || row['Party'] || '';
+
+      const newItem: DiaryItem = {
+        id: generateId(),
+        title,
+        date,
+        subtitle,
+        status,
+        region,
+        type,
+        country: row['Country'] || row['country'] || 'Nigeria',
+        location: row['Location'] || row['State'] || row['location'] || '',
+        electoralBody: row['Electoral Body'] || row['INEC'] || row['electoralBody'] || 'INEC',
+        registeredVoters: row['Registered Voters'] || row['Voters'] || row['registeredVoters'] || '',
+        pollingUnits: row['Polling Units'] || row['PUs'] || row['pollingUnits'] || '',
+        lgasCount: row['LGAs'] || row['LGAs Count'] || row['lgasCount'] || '',
+        description: row['Description'] || row['description'] || '',
+        keyIssues,
+        monitoringMission: row['Monitoring Mission'] || 'Athena Field Observers deployment',
+        sittingExecutive: { name: execName, title: 'Governor / Head', party: execParty },
+        participants: []
+      };
+
+      saveDiaryItem(targetCat, newItem);
+      importedCount++;
+    });
+
+    showStatus(`Successfully imported ${importedCount} diary records into database!`);
+    setDiarySpreadsheetText('');
+    setDiarySpreadsheetParsed(null);
+    setDiarySubMode('form');
+  };
+
+  const handleProcessElectionsSpreadsheet = () => {
+    if (!electionsSpreadsheetText.trim()) {
+      showStatus('Please paste spreadsheet rows or upload a CSV file.', 'error');
+      return;
+    }
+    const parsed = parseSpreadsheetText(electionsSpreadsheetText);
+    if (parsed.rows.length === 0) {
+      showStatus('No valid data rows found in spreadsheet.', 'error');
+      return;
+    }
+    setElectionsSpreadsheetParsed(parsed);
+    showStatus(`Parsed ${parsed.rows.length} rows of election data!`);
+  };
+
+  const handleImportElectionsSpreadsheetToDB = () => {
+    if (!electionsSpreadsheetParsed || electionsSpreadsheetParsed.rows.length === 0) return;
+
+    let updatedCount = 0;
+    const currentList = [...statesList];
+
+    electionsSpreadsheetParsed.rows.forEach(row => {
+      const code = (row['State Code'] || row['Code'] || row['stateCode'] || '').toUpperCase();
+      if (!code) return;
+
+      const stateName = row['State Name'] || row['State'] || row['name'] || code;
+      const electionTitle = row['Election Title'] || row['Title'] || row['election'] || `${stateName} State Election`;
+      const status = row['Status'] || row['status'] || 'Upcoming';
+      const date = row['Date'] || row['date'] || '2026';
+
+      const regVoters = row['Registered Voters'] || row['Voters'] || row['voters'] || '0';
+      const accVoters = Number(row['Accredited Voters'] || row['accreditedVoters'] || 0);
+      const pus = row['Polling Units'] || row['pollingUnits'] || '0';
+      const lgas = Number(row['LGAs'] || row['numLgas'] || 0);
+      const wards = Number(row['Wards'] || row['numWards'] || 0);
+      const valid = Number(row['Valid Votes'] || row['validVotes'] || 0);
+      const rejected = Number(row['Rejected Votes'] || row['rejectedVotes'] || 0);
+      const total = Number(row['Total Votes'] || row['totalVotes'] || (valid + rejected));
+      const reconRate = row['Reconciliation Rate'] || row['reconciledRate'] || '99.0%';
+
+      // Party votes columns
+      const partiesToExtract = ['APC', 'PDP', 'LP', 'NNPP', 'APGA', 'SDP', 'YPP', 'ADC', 'AAC', 'ZLP'];
+      const partyVotes: { name: string; votesNum: number }[] = [];
+      let sumVotes = 0;
+
+      partiesToExtract.forEach(p => {
+        const valStr = row[`${p} Votes`] || row[`${p}`] || row[p] || '0';
+        const num = parseInt(valStr.replace(/,/g, ''), 10) || 0;
+        if (num > 0) {
+          partyVotes.push({ name: p, votesNum: num });
+          sumVotes += num;
+        }
+      });
+
+      const denominator = total > 0 ? total : (sumVotes > 0 ? sumVotes : 1);
+      const topParties = partyVotes.map(pv => {
+        const pct = Number(((pv.votesNum / denominator) * 100).toFixed(1));
+        return {
+          name: pv.name,
+          fullName: partyFullNames[pv.name] || `${pv.name} Party`,
+          votes: `${pv.votesNum.toLocaleString()} votes`,
+          percentage: pct,
+          color: pv.name === 'APC' ? 'bg-emerald-600' : pv.name === 'PDP' ? 'bg-red-600' : pv.name === 'LP' ? 'bg-rose-500' : 'bg-indigo-600'
+        };
+      });
+
+      const existingIndex = currentList.findIndex(s => s.code === code);
+      const updatedStateObj = {
+        code,
+        name: stateName,
+        election: electionTitle,
+        status,
+        date,
+        voters: regVoters,
+        accreditedVoters: accVoters,
+        pollingUnits: pus,
+        numLgas: lgas,
+        numWards: wards,
+        validVotes: valid,
+        rejectedVotes: rejected,
+        totalVotes: total,
+        reconciledRate: reconRate,
+        summary: row['Summary'] || row['summary'] || `Election metrics updated for ${stateName} State.`,
+        topParties: topParties.length > 0 ? topParties : (existingIndex >= 0 ? currentList[existingIndex].topParties : []),
+        lgaStandings: existingIndex >= 0 ? currentList[existingIndex].lgaStandings : []
+      };
+
+      if (existingIndex >= 0) {
+        currentList[existingIndex] = { ...currentList[existingIndex], ...updatedStateObj };
+      } else {
+        currentList.push(updatedStateObj);
+      }
+      updatedCount++;
+    });
+
+    setStatesList(currentList);
+    try {
+      setDoc(doc(db, 'cms', 'monitored_states'), { items: currentList });
+    } catch (e) {
+      console.error("Failed to sync updated states to Firestore:", e);
+    }
+
+    showStatus(`Updated election data for ${updatedCount} state records!`);
+    setElectionsSpreadsheetText('');
+    setElectionsSpreadsheetParsed(null);
+    setElectionsSubMode('manual');
   };
 
   const handleSaveWeekly = (e: FormEvent) => {
@@ -657,7 +952,7 @@ export default function CMSPanel({
             { title: 'Logistics Breakdown', text: 'This represents a live, custom edited observation sub-paragraph.' }
           ],
       image: weeklyForm.image || '',
-      pdfUrl: weeklyForm.pdfUrl || ''
+      pdfUrl: prepareDocumentUrl(weeklyForm.pdfUrl || '')
     };
 
     saveWeeklyIssue(finalIssue);
@@ -719,7 +1014,7 @@ export default function CMSPanel({
       author: announcementForm.author || '',
       authorsList: announcementForm.authorsList || '',
       image: announcementForm.image || '',
-      pdfUrl: announcementForm.pdfUrl || ''
+      pdfUrl: prepareDocumentUrl(announcementForm.pdfUrl || '')
     };
 
     saveAnnouncement(finalAnnouncement);
@@ -1535,6 +1830,7 @@ export default function CMSPanel({
                               } else if (item.unifiedType === 'announcement') {
                                 setAnnouncementForm(item);
                               }
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                             title="Edit Publication"
                             className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple cursor-pointer"
@@ -1550,6 +1846,12 @@ export default function CMSPanel({
                                   deleteWeeklyIssue(item.id);
                                 } else if (item.unifiedType === 'announcement') {
                                   deleteAnnouncement(item.id);
+                                }
+                                if (editingId === item.id) {
+                                  setEditingId(null);
+                                  setReportForm(EMPTY_REPORT_FORM);
+                                  setWeeklyForm(EMPTY_WEEKLY_FORM);
+                                  setAnnouncementForm(EMPTY_ANNOUNCEMENT_FORM);
                                 }
                                 showStatus(`Publication deleted.`);
                               });
@@ -1569,145 +1871,603 @@ export default function CMSPanel({
             </div>
           )}
 
-          {/* ELECTORAL TIMELINES TAB */}
+          {/* ELECTORAL TIMELINES / DIARY OF ELECTION TAB */}
           {activeTab === 'diary' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Timeline Form */}
-              <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                  <Plus className="w-4.5 h-4.5 text-brand-blue" />
-                  <span>{editingId ? 'Edit Calendar Row' : 'Add Calendar Row'}</span>
-                </h3>
-
-                <form onSubmit={handleSaveDiary} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Database Category</label>
-                      <select 
-                        value={diaryCategory} 
-                        onChange={(e) => setDiaryCategory(e.target.value as any)}
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      >
-                        <option value="national">Nigeria — National</option>
-                        <option value="local">Local Government councils</option>
-                        <option value="africa">Africa Referrals</option>
-                        <option value="other">Other Global Countries</option>
-                      </select>
+            <div className="space-y-6">
+              {/* Header Banner & Sub-Mode Switcher */}
+              <div className="bg-paper border border-line rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-brand-purple shrink-0" />
+                      <h3 className="text-base font-bold font-display text-ink uppercase tracking-wider">Diary of Election CMS & Spreadsheet Engine</h3>
                     </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Timeline status</label>
-                      <select 
-                        value={diaryForm.status} 
-                        onChange={(e) => setDiaryForm({ ...diaryForm, status: e.target.value as any })}
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                      >
-                        <option value="In view">In view</option>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="Provisional">Provisional</option>
-                        <option value="Tracking">Tracking</option>
-                        <option value="Concluded">Concluded</option>
-                      </select>
-                    </div>
+                    <p className="text-xs text-mut mt-1">Manage comprehensive electoral timelines, candidate lists, incumbent details, voter stats, and bulk-import election calendars via spreadsheet.</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Date String</label>
-                      <input 
-                        type="text" 
-                        value={diaryForm.date} 
-                        onChange={(e) => setDiaryForm({ ...diaryForm, date: e.target.value })}
-                        placeholder="E.g., Aug 16, 2026"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Poll Subtitle / Context</label>
-                      <input 
-                        type="text" 
-                        value={diaryForm.subtitle} 
-                        onChange={(e) => setDiaryForm({ ...diaryForm, subtitle: e.target.value })}
-                        placeholder="E.g., 30 seats contested"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
-                      />
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setDiarySubMode('form')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        diarySubMode === 'form' 
+                          ? 'bg-brand-purple text-white shadow-sm' 
+                          : 'bg-white border border-line text-mut hover:text-ink'
+                      }`}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Form Editor</span>
+                    </button>
+                    <button
+                      onClick={() => setDiarySubMode('spreadsheet')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        diarySubMode === 'spreadsheet' 
+                          ? 'bg-brand-purple text-white shadow-sm' 
+                          : 'bg-white border border-line text-mut hover:text-ink'
+                      }`}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Spreadsheet Import</span>
+                    </button>
+                    <button
+                      onClick={downloadDiaryCSVTemplate}
+                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                      title="Download CSV Spreadsheet Template"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>CSV Template</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SPREADSHEET BULK IMPORTER MODE */}
+              {diarySubMode === 'spreadsheet' && (
+                <div className="bg-paper border border-line rounded-2xl p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4 text-brand-purple" />
+                      <span>Bulk Upload Election Diary Data</span>
+                    </h4>
+                    <p className="text-xs text-mut leading-relaxed">
+                      Copy and paste rows directly from <strong>Microsoft Excel</strong>, <strong>Google Sheets</strong>, or a <strong>CSV/TSV file</strong>. The system will automatically map headers like <code>Title, Date, Subtitle, Status, Category, Country, Location, Electoral Body, Registered Voters, Polling Units, LGAs, Description, Key Issues</code>.
+                    </p>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Event Title</label>
-                    <input 
-                      type="text" 
-                      value={diaryForm.title} 
-                      onChange={(e) => setDiaryForm({ ...diaryForm, title: e.target.value })}
-                      placeholder="E.g., Osun Gubernatorial Polls"
-                      className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-semibold"
+                  <div className="space-y-3">
+                    <label className="block text-xs font-mono font-bold uppercase text-ink">Paste Spreadsheet Rows or Upload File:</label>
+                    <textarea
+                      rows={6}
+                      value={diarySpreadsheetText}
+                      onChange={(e) => setDiarySpreadsheetText(e.target.value)}
+                      placeholder={`Title\tDate\tSubtitle\tStatus\tCategory\tCountry\tLocation\tElectoral Body\tRegistered Voters\tPolling Units\nOsun Governorship\t15 Aug 2026\t30 LGAs\tScheduled\tnational\tNigeria\tOsun State\tINEC\t2,339,233\t3,763`}
+                      className="w-full text-xs p-3 font-mono border border-line rounded-xl bg-white text-ink focus:outline-none focus:ring-1 focus:ring-brand-purple"
                     />
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <label className="px-3 py-2 bg-white hover:bg-slate-50 border border-line rounded-lg text-xs font-mono font-semibold text-ink cursor-pointer flex items-center gap-1.5 shadow-sm">
+                          <UploadCloud className="w-4 h-4 text-brand-purple" />
+                          <span>Choose CSV / TSV File</span>
+                          <input
+                            type="file"
+                            accept=".csv,.tsv,.txt"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (evt) => {
+                                  const text = evt.target?.result as string;
+                                  if (text) {
+                                    setDiarySpreadsheetText(text);
+                                    showStatus(`Loaded ${file.name}`);
+                                  }
+                                };
+                                reader.readAsText(file);
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDiarySpreadsheetText('');
+                            setDiarySpreadsheetParsed(null);
+                          }}
+                          className="px-3 py-2 text-xs font-mono text-mut hover:text-rose-600 transition-colors"
+                        >
+                          Clear Text
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleProcessDiarySpreadsheet}
+                        className="px-5 py-2.5 bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
+                      >
+                        <Table className="w-4 h-4" />
+                        <span>Parse & Preview Grid</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Timeline Event</span>
-                  </button>
-                </form>
-              </div>
-
-              {/* Timeline Catalog Lists */}
-              <div className="lg:col-span-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-xs text-mut uppercase tracking-wider">Timeline Database</h3>
-                  <select 
-                    value={diaryCategory} 
-                    onChange={(e) => setDiaryCategory(e.target.value as any)}
-                    className="text-xs p-1 bg-paper border border-line rounded"
-                  >
-                    <option value="national">National List</option>
-                    <option value="local">Local List</option>
-                    <option value="africa">Africa List</option>
-                    <option value="other">Other List</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                  {((diaryCategory === 'national' ? diaryNat : 
-                     diaryCategory === 'local' ? diaryLoc :
-                     diaryCategory === 'africa' ? diaryAfr : diaryOth)).map(d => (
-                    <div key={d.id} className="bg-paper border border-line rounded-xl p-3 flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-[10px] font-mono font-bold text-brand-blue bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">{d.date}</span>
-                        <h4 className="font-semibold text-xs text-ink mt-1.5 leading-snug">{d.title}</h4>
-                        <span className="text-[10px] text-mut block">{d.subtitle}</span>
+                  {/* PARSED GRID PREVIEW */}
+                  {diarySpreadsheetParsed && (
+                    <div className="space-y-4 pt-4 border-t border-line">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-display font-bold text-xs text-ink uppercase tracking-wider flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Parsed Preview ({diarySpreadsheetParsed.rows.length} Records)</span>
+                        </h5>
+                        <button
+                          onClick={handleImportDiarySpreadsheetToDB}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
+                        >
+                          <Save className="w-4 h-4" />
+                          <span>Import All Rows into Diary Database</span>
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditingId(d.id);
-                            setDiaryForm(d);
-                          }}
-                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerConfirm(`Delete timeline "${d.title}"?`, () => {
-                              deleteDiaryItem(diaryCategory, d.id);
-                              showStatus(`Timeline item deleted.`);
-                            });
-                          }}
-                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                      <div className="overflow-x-auto border border-line rounded-xl bg-white max-h-80 overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-paper border-b border-line text-[10px] font-mono font-bold text-mut uppercase">
+                              <th className="p-3">#</th>
+                              {diarySpreadsheetParsed.headers.map((h, i) => (
+                                <th key={i} className="p-3 font-bold text-ink whitespace-nowrap">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line font-sans">
+                            {diarySpreadsheetParsed.rows.map((row, rIdx) => (
+                              <tr key={rIdx} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono text-[10px] text-mut">{rIdx + 1}</td>
+                                {diarySpreadsheetParsed.headers.map((h, cIdx) => (
+                                  <td key={cIdx} className="p-3 text-ink max-w-xs truncate font-mono text-[11px]">
+                                    {row[h] || '-'}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
+              )}
 
+              {/* FORM EDITOR MODE */}
+              {diarySubMode === 'form' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  
+                  {/* Timeline Detailed Form */}
+                  <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-5">
+                    <div className="flex items-center justify-between pb-3 border-b border-line">
+                      <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
+                        <Plus className="w-4.5 h-4.5 text-brand-purple" />
+                        <span>{editingId ? 'Edit Electoral Diary Entry' : 'Add Electoral Diary Entry'}</span>
+                      </h3>
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(null);
+                            setDiaryForm(EMPTY_DIARY_FORM);
+                          }}
+                          className="text-xs font-mono text-rose-600 hover:underline cursor-pointer"
+                        >
+                          Cancel Edit
+                        </button>
+                      )}
+                    </div>
+
+                    <form onSubmit={handleSaveDiary} className="space-y-4">
+                      {/* Row 1: Category & Status & Election Type */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Database Category *</label>
+                          <select 
+                            value={diaryCategory} 
+                            onChange={(e) => setDiaryCategory(e.target.value as any)}
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white text-ink font-semibold"
+                          >
+                            <option value="national">Nigeria — National</option>
+                            <option value="local">Local Government councils</option>
+                            <option value="africa">Africa Referrals</option>
+                            <option value="other">Other Global Countries</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Timeline Status *</label>
+                          <select 
+                            value={diaryForm.status || 'In view'} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, status: e.target.value as any })}
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono font-semibold"
+                          >
+                            <option value="In view">In view</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Provisional">Provisional</option>
+                            <option value="Tracking">Tracking</option>
+                            <option value="Concluded">Concluded</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Poll Classification</label>
+                          <select 
+                            value={diaryForm.type || 'governorship'} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, type: e.target.value as any })}
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                          >
+                            <option value="presidential">Presidential / General</option>
+                            <option value="governorship">Governorship / State</option>
+                            <option value="local_government">Local Government Council</option>
+                            <option value="other">Other Poll</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Title & Subtitle */}
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Event Title *</label>
+                        <input 
+                          type="text" 
+                          value={diaryForm.title || ''} 
+                          onChange={(e) => setDiaryForm({ ...diaryForm, title: e.target.value })}
+                          placeholder="E.g., Osun State Governorship Election 2026"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-bold text-ink"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Date String *</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.date || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, date: e.target.value })}
+                            placeholder="E.g., Aug 15, 2026 or 15 August 2026"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Poll Subtitle / Context</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.subtitle || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, subtitle: e.target.value })}
+                            placeholder="E.g., 30 LGAs + Area Office"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3: Country, Location, Electoral Body & State Code */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-line">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Country</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.country || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, country: e.target.value })}
+                            placeholder="Nigeria"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Location / State</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.location || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, location: e.target.value })}
+                            placeholder="Osun State"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Body</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.electoralBody || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, electoralBody: e.target.value })}
+                            placeholder="INEC"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">State Code</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.stateCode || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, stateCode: e.target.value.toUpperCase() })}
+                            placeholder="OS"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white font-mono uppercase"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 4: Voter Stats & Logistics */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Registered Voters</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.registeredVoters || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, registeredVoters: e.target.value })}
+                            placeholder="2,339,233"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Polling Units</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.pollingUnits || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, pollingUnits: e.target.value })}
+                            placeholder="3,763"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">LGAs Count</label>
+                          <input 
+                            type="text" 
+                            value={diaryForm.lgasCount || ''} 
+                            onChange={(e) => setDiaryForm({ ...diaryForm, lgasCount: e.target.value })}
+                            placeholder="30"
+                            className="w-full text-xs p-2 border border-line rounded-lg bg-white font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Sitting Executive Section */}
+                      <div className="p-3.5 bg-slate-50 border border-line rounded-xl space-y-2">
+                        <span className="block text-[10px] font-mono uppercase font-bold text-brand-purple">Sitting Executive / Incumbent Details</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Executive Name (e.g. Ademola Adeleke)"
+                            value={diaryForm.sittingExecutive?.name || ''}
+                            onChange={(e) => setDiaryForm({
+                              ...diaryForm,
+                              sittingExecutive: { ...diaryForm.sittingExecutive, name: e.target.value, title: diaryForm.sittingExecutive?.title || 'Governor', party: diaryForm.sittingExecutive?.party || 'PDP' }
+                            })}
+                            className="text-xs p-2 border border-line rounded-lg bg-white"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Official Title (e.g. Governor)"
+                            value={diaryForm.sittingExecutive?.title || ''}
+                            onChange={(e) => setDiaryForm({
+                              ...diaryForm,
+                              sittingExecutive: { ...diaryForm.sittingExecutive, title: e.target.value, name: diaryForm.sittingExecutive?.name || '', party: diaryForm.sittingExecutive?.party || 'PDP' }
+                            })}
+                            className="text-xs p-2 border border-line rounded-lg bg-white"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Party (e.g. PDP)"
+                            value={diaryForm.sittingExecutive?.party || ''}
+                            onChange={(e) => setDiaryForm({
+                              ...diaryForm,
+                              sittingExecutive: { ...diaryForm.sittingExecutive, party: e.target.value.toUpperCase(), name: diaryForm.sittingExecutive?.name || '', title: diaryForm.sittingExecutive?.title || 'Governor' }
+                            })}
+                            className="text-xs p-2 border border-line rounded-lg bg-white font-mono uppercase"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Key Issues */}
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Key Electoral Issues (Semicolon separated)</label>
+                        <input
+                          type="text"
+                          value={Array.isArray(diaryForm.keyIssues) ? diaryForm.keyIssues.join('; ') : ''}
+                          onChange={(e) => setDiaryForm({
+                            ...diaryForm,
+                            keyIssues: e.target.value.split(/;|\|/).map(s => s.trim()).filter(Boolean)
+                          })}
+                          placeholder="BVAS Machine Calibration; IReV Server Latency; Security Neutrality"
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                        />
+                      </div>
+
+                      {/* Participating Candidates Editor */}
+                      <div className="space-y-2 pt-2 border-t border-line">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono uppercase font-bold text-ink">Participating Candidates & Parties</span>
+                          <button
+                            type="button"
+                            onClick={handleAddCandidateToDiary}
+                            className="text-[10px] font-mono font-bold text-brand-purple hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>Add Candidate</span>
+                          </button>
+                        </div>
+
+                        {diaryForm.participants && diaryForm.participants.length > 0 ? (
+                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                            {diaryForm.participants.map((p, pIdx) => (
+                              <div key={pIdx} className="p-2 bg-white border border-line rounded-lg grid grid-cols-12 gap-2 items-center">
+                                <input
+                                  type="text"
+                                  placeholder="Candidate Name"
+                                  value={p.name}
+                                  onChange={(e) => handleCandidateChange(pIdx, 'name', e.target.value)}
+                                  className="col-span-4 text-xs p-1.5 border border-line rounded"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Party (e.g. APC)"
+                                  value={p.party}
+                                  onChange={(e) => handleCandidateChange(pIdx, 'party', e.target.value.toUpperCase())}
+                                  className="col-span-3 text-xs p-1.5 border border-line rounded font-mono uppercase"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Role / Office"
+                                  value={p.role || ''}
+                                  onChange={(e) => handleCandidateChange(pIdx, 'role', e.target.value)}
+                                  className="col-span-4 text-xs p-1.5 border border-line rounded"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCandidateFromDiary(pIdx)}
+                                  className="col-span-1 text-red-500 hover:text-red-700 flex justify-center cursor-pointer"
+                                  title="Remove Candidate"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-2.5 bg-slate-50 border border-dashed border-line rounded-lg text-center text-[11px] text-mut">
+                            No candidates added yet. Click "+ Add Candidate" above to list key contenders.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Detailed Description */}
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Election Description & Observation Scope</label>
+                        <textarea 
+                          rows={3} 
+                          value={diaryForm.description || ''} 
+                          onChange={(e) => setDiaryForm({ ...diaryForm, description: e.target.value })}
+                          placeholder="Provide detailed analytical summary for this election..."
+                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-brand-purple hover:bg-purple-700 text-white font-mono font-bold text-xs uppercase tracking-wider py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>{editingId ? 'Update Diary Record' : 'Save Diary Record to Database'}</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Timeline Catalog Lists with Search */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-paper border border-line rounded-2xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-display font-bold text-xs text-ink uppercase tracking-wider">Diary Database Catalog</h3>
+                        <span className="text-[10px] font-mono font-bold text-brand-purple bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                          {(diaryCategory === 'national' ? diaryNat : diaryCategory === 'local' ? diaryLoc : diaryCategory === 'africa' ? diaryAfr : diaryOth).length} Items
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <select 
+                          value={diaryCategory} 
+                          onChange={(e) => setDiaryCategory(e.target.value as any)}
+                          className="text-xs p-2 bg-white border border-line rounded-lg font-semibold text-ink"
+                        >
+                          <option value="national">Nigeria — National</option>
+                          <option value="local">Local Government</option>
+                          <option value="africa">Africa Referrals</option>
+                          <option value="other">Other Countries</option>
+                        </select>
+
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-mut absolute left-2.5 top-2.5" />
+                          <input
+                            type="text"
+                            value={diarySearchQuery}
+                            onChange={(e) => setDiarySearchQuery(e.target.value)}
+                            placeholder="Filter timeline..."
+                            className="w-full pl-8 pr-2 py-1.5 text-xs bg-white border border-line rounded-lg text-ink"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1 pt-1">
+                        {sortItemsByDate<DiaryItem>((diaryCategory === 'national' ? diaryNat : 
+                           diaryCategory === 'local' ? diaryLoc :
+                           diaryCategory === 'africa' ? diaryAfr : diaryOth), 'date', 'asc')
+                          .filter(d => !diarySearchQuery || d.title.toLowerCase().includes(diarySearchQuery.toLowerCase()) || (d.country || '').toLowerCase().includes(diarySearchQuery.toLowerCase()) || d.date.toLowerCase().includes(diarySearchQuery.toLowerCase()))
+                          .map(d => (
+                            <div key={d.id} className="bg-white border border-line rounded-xl p-3.5 space-y-2 hover:shadow-sm transition-all">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] font-mono font-bold text-brand-blue bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">{d.date}</span>
+                                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                                      d.status === 'Concluded' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                      d.status === 'Scheduled' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                      'bg-amber-50 text-amber-700 border-amber-200'
+                                    }`}>
+                                      {d.status}
+                                    </span>
+                                    {d.country && <span className="text-[9px] font-mono text-mut uppercase">· {d.country}</span>}
+                                  </div>
+                                  <h4 className="font-semibold text-xs text-ink leading-snug">{d.title}</h4>
+                                  <p className="text-[10px] text-mut truncate">{d.subtitle}</p>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => {
+                                      setEditingId(d.id);
+                                      setDiaryForm(d);
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="p-1 hover:bg-purple-50 rounded text-ink2 hover:text-brand-purple cursor-pointer"
+                                    title="Edit Diary Record"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      triggerConfirm(`Delete timeline "${d.title}"?`, () => {
+                                        deleteDiaryItem(diaryCategory, d.id);
+                                        if (editingId === d.id) {
+                                          setEditingId(null);
+                                          setDiaryForm(EMPTY_DIARY_FORM);
+                                        }
+                                        showStatus(`Timeline item deleted.`);
+                                      });
+                                    }}
+                                    className="p-1 hover:bg-rose-50 rounded text-red-500 hover:text-red-700 cursor-pointer"
+                                    title="Delete Record"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Metadata indicators */}
+                              {(d.registeredVoters || d.pollingUnits || d.participants?.length) && (
+                                <div className="pt-2 border-t border-line flex items-center gap-3 text-[10px] text-mut font-mono">
+                                  {d.registeredVoters && <span>Voters: {d.registeredVoters}</span>}
+                                  {d.pollingUnits && <span>PUs: {d.pollingUnits}</span>}
+                                  {d.participants && d.participants.length > 0 && <span>Candidates: {d.participants.length}</span>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                        {sortItemsByDate<DiaryItem>((diaryCategory === 'national' ? diaryNat : 
+                           diaryCategory === 'local' ? diaryLoc :
+                           diaryCategory === 'africa' ? diaryAfr : diaryOth), 'date', 'asc').length === 0 && (
+                          <div className="p-8 text-center text-xs text-mut font-mono">
+                            No diary records found in this category.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
             </div>
           )}
 
@@ -1717,10 +2477,24 @@ export default function CMSPanel({
               
               {/* Event Editor */}
               <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                  <Plus className="w-4.5 h-4.5 text-brand-blue" />
-                  <span>{editingId ? 'Edit Event Detail' : 'Create Event Row'}</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus className="w-4.5 h-4.5 text-brand-blue" />
+                    <span>{editingId ? 'Edit Event Detail' : 'Create Event Row'}</span>
+                  </h3>
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEventForm(EMPTY_EVENT_FORM);
+                      }}
+                      className="text-xs text-red-600 hover:underline font-semibold font-mono cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
 
                 <form onSubmit={handleSaveEvent} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -1938,8 +2712,10 @@ export default function CMSPanel({
                           onClick={() => {
                             setEditingId(evt.id);
                             setEventForm(evt);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
+                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple cursor-pointer"
+                          title="Edit Event"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -1947,10 +2723,15 @@ export default function CMSPanel({
                           onClick={() => {
                             triggerConfirm(`Delete event "${evt.title}"?`, () => {
                               deleteEvent(evt.id);
+                              if (editingId === evt.id) {
+                                setEditingId(null);
+                                setEventForm(EMPTY_EVENT_FORM);
+                              }
                               showStatus(`Event deleted.`);
                             });
                           }}
-                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
+                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700 cursor-pointer"
+                          title="Delete Event"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1969,10 +2750,24 @@ export default function CMSPanel({
               
               {/* Team Editor */}
               <div className="lg:col-span-7 bg-paper border border-line rounded-2xl p-5 space-y-4">
-                <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
-                  <Plus className="w-4.5 h-4.5 text-brand-blue" />
-                  <span>{editingId ? 'Edit Team Member' : 'Add Team Member'}</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus className="w-4.5 h-4.5 text-brand-blue" />
+                    <span>{editingId ? 'Edit Team Member' : 'Add Team Member'}</span>
+                  </h3>
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setTeamForm(EMPTY_TEAM_FORM);
+                      }}
+                      className="text-xs text-red-600 hover:underline font-semibold font-mono cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
 
                 <form onSubmit={handleSaveTeam} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -2040,8 +2835,10 @@ export default function CMSPanel({
                           onClick={() => {
                             setEditingId(member.id);
                             setTeamForm(member);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple"
+                          className="p-1 hover:bg-line rounded text-ink2 hover:text-brand-purple cursor-pointer"
+                          title="Edit Team Member"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -2049,10 +2846,15 @@ export default function CMSPanel({
                           onClick={() => {
                             triggerConfirm(`Delete team member "${member.name}"?`, () => {
                               deleteTeamMember(member.id);
+                              if (editingId === member.id) {
+                                setEditingId(null);
+                                setTeamForm(EMPTY_TEAM_FORM);
+                              }
                               showStatus(`Team member deleted.`);
                             });
                           }}
-                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700"
+                          className="p-1 hover:bg-line rounded text-red-500 hover:text-red-700 cursor-pointer"
+                          title="Delete Team Member"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2931,12 +3733,168 @@ export default function CMSPanel({
 
           {activeTab === 'elections' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-ink mb-1">Elections & Political Parties Registry</h3>
-                <p className="text-xs text-mut">Register new political parties, upload brand logos, and customize electoral standings or accredited voter counts across states.</p>
+              <div className="bg-paper border border-line rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-bold font-display text-ink uppercase tracking-wider">Elections & Political Parties Data Engine</h3>
+                    <p className="text-xs text-mut mt-1">Register political parties, upload logos, customize state election standings, or bulk import election results via spreadsheet.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setElectionsSubMode('manual')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        electionsSubMode === 'manual' 
+                          ? 'bg-indigo-600 text-white shadow-sm' 
+                          : 'bg-white border border-line text-mut hover:text-ink'
+                      }`}
+                    >
+                      <Database className="w-3.5 h-3.5" />
+                      <span>Party & State Registry</span>
+                    </button>
+                    <button
+                      onClick={() => setElectionsSubMode('spreadsheet')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        electionsSubMode === 'spreadsheet' 
+                          ? 'bg-indigo-600 text-white shadow-sm' 
+                          : 'bg-white border border-line text-mut hover:text-ink'
+                      }`}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Spreadsheet Bulk Import</span>
+                    </button>
+                    <button
+                      onClick={downloadElectionDataCSVTemplate}
+                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                      title="Download Election CSV Template"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>CSV Template</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* SPREADSHEET BULK UPLOAD MODE */}
+              {electionsSubMode === 'spreadsheet' && (
+                <div className="bg-paper border border-line rounded-2xl p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="font-display font-bold text-sm text-ink uppercase tracking-wider flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4 text-indigo-600" />
+                      <span>Bulk Upload State Election Results Data</span>
+                    </h4>
+                    <p className="text-xs text-mut leading-relaxed">
+                      Upload or paste election data rows directly from <strong>Excel</strong> or <strong>CSV</strong>. Supported columns: <code>State Code, State Name, Election Title, Status, Date, Registered Voters, Accredited Voters, Polling Units, LGAs, Wards, Valid Votes, Rejected Votes, Total Votes, Reconciliation Rate, APC Votes, PDP Votes, LP Votes, NNPP Votes, SDP Votes</code>.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-xs font-mono font-bold uppercase text-ink">Paste Spreadsheet Rows or Upload File:</label>
+                    <textarea
+                      rows={6}
+                      value={electionsSpreadsheetText}
+                      onChange={(e) => setElectionsSpreadsheetText(e.target.value)}
+                      placeholder={`State Code\tState Name\tElection Title\tStatus\tDate\tRegistered Voters\tAccredited Voters\tPolling Units\tValid Votes\tAPC Votes\tPDP Votes\tLP Votes\nON\tOndo\tOndo Gubernatorial Poll 2024\tConcluded\t16 Nov 2024\t2,053,061\t508,962\t3,933\t489,120\t366612\t117845\t4743`}
+                      className="w-full text-xs p-3 font-mono border border-line rounded-xl bg-white text-ink focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                    />
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <label className="px-3 py-2 bg-white hover:bg-slate-50 border border-line rounded-lg text-xs font-mono font-semibold text-ink cursor-pointer flex items-center gap-1.5 shadow-sm">
+                          <UploadCloud className="w-4 h-4 text-indigo-600" />
+                          <span>Choose CSV / TSV File</span>
+                          <input
+                            type="file"
+                            accept=".csv,.tsv,.txt"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (evt) => {
+                                  const text = evt.target?.result as string;
+                                  if (text) {
+                                    setElectionsSpreadsheetText(text);
+                                    showStatus(`Loaded ${file.name}`);
+                                  }
+                                };
+                                reader.readAsText(file);
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setElectionsSpreadsheetText('');
+                            setElectionsSpreadsheetParsed(null);
+                          }}
+                          className="px-3 py-2 text-xs font-mono text-mut hover:text-rose-600 transition-colors"
+                        >
+                          Clear Text
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleProcessElectionsSpreadsheet}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
+                      >
+                        <Table className="w-4 h-4" />
+                        <span>Parse & Preview Results Grid</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PARSED GRID PREVIEW */}
+                  {electionsSpreadsheetParsed && (
+                    <div className="space-y-4 pt-4 border-t border-line">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-display font-bold text-xs text-ink uppercase tracking-wider flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Parsed Preview ({electionsSpreadsheetParsed.rows.length} State Records)</span>
+                        </h5>
+                        <button
+                          onClick={handleImportElectionsSpreadsheetToDB}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
+                        >
+                          <Save className="w-4 h-4" />
+                          <span>Apply Spreadsheet Data to Live Elections</span>
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto border border-line rounded-xl bg-white max-h-80 overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-paper border-b border-line text-[10px] font-mono font-bold text-mut uppercase">
+                              <th className="p-3">#</th>
+                              {electionsSpreadsheetParsed.headers.map((h, i) => (
+                                <th key={i} className="p-3 font-bold text-ink whitespace-nowrap">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line font-sans">
+                            {electionsSpreadsheetParsed.rows.map((row, rIdx) => (
+                              <tr key={rIdx} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono text-[10px] text-mut">{rIdx + 1}</td>
+                                {electionsSpreadsheetParsed.headers.map((h, cIdx) => (
+                                  <td key={cIdx} className="p-3 text-ink max-w-xs truncate font-mono text-[11px]">
+                                    {row[h] || '-'}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MANUAL REGISTRY & STANDINGS MODE */}
+              {electionsSubMode === 'manual' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* 1. Political Parties & Logo Registry */}
                 <div className="lg:col-span-5 bg-paper p-5 border border-line rounded-xl space-y-4">
@@ -3038,6 +3996,7 @@ export default function CMSPanel({
                                     setPartyCodeForm(party);
                                     setPartyFullNameForm(fullName);
                                     if (partyLogos[party]) setPartyLogoForm(partyLogos[party]);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }}
                                   className="text-[10px] px-2 py-1 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded font-mono font-semibold cursor-pointer"
                                   title="Edit party details"
@@ -3046,7 +4005,11 @@ export default function CMSPanel({
                                 </button>
                                 {hasCustomLogo && (
                                   <button 
-                                    onClick={() => handleDeletePartyLogo(party)}
+                                    onClick={() => {
+                                      triggerConfirm(`Restore default vector logo for ${party}?`, () => {
+                                        handleDeletePartyLogo(party);
+                                      });
+                                    }}
                                     className="text-[10px] px-1.5 py-1 text-rose-600 hover:underline font-mono cursor-pointer"
                                     title="Restore default icon"
                                   >
@@ -3273,7 +4236,7 @@ export default function CMSPanel({
                                 placeholder="Full Name"
                               />
                             </div>
-                            <div className="col-span-3">
+                            <div className="col-span-2">
                               <input 
                                 type="text"
                                 value={p.votes || ''}
@@ -3302,11 +4265,33 @@ export default function CMSPanel({
                               />
                               <span>%</span>
                             </div>
-                            <div className="col-span-1 flex justify-end">
+                            <div className="col-span-2 flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleMovePartyInState(idx, 'up')}
+                                disabled={idx === 0}
+                                className="p-1 text-slate-400 hover:text-brand-blue disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                title="Move Up"
+                              >
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMovePartyInState(idx, 'down')}
+                                disabled={idx === activeCMSState.topParties.length - 1}
+                                className="p-1 text-slate-400 hover:text-brand-blue disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                title="Move Down"
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
                               <button 
                                 type="button"
-                                onClick={() => handleRemovePartyFromState(p.name)}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                onClick={() => {
+                                  triggerConfirm(`Remove ${p.name} from ${activeCMSState.name} election standings?`, () => {
+                                    handleRemovePartyFromState(p.name);
+                                  });
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer ml-1"
                                 title={`Remove ${p.name} from state`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -3383,10 +4368,10 @@ export default function CMSPanel({
                     </div>
                   </form>
                 </div>
-
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
         </div>
 

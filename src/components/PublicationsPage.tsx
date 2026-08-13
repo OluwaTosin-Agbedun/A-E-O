@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download, Award, MapPin, Users, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, parseDateValue, sortItemsByDate } from '../utils/date';
 import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
 
@@ -10,6 +10,8 @@ export const triggerPdfDownload = (title: string, summary: string, author: strin
     if (pdfUrl.startsWith('data:') || pdfUrl.startsWith('blob:') || pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
       const link = document.createElement('a');
       link.href = pdfUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       link.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`;
       document.body.appendChild(link);
       link.click();
@@ -124,7 +126,7 @@ export default function PublicationsPage() {
       const pA = statusPriority[a.status] || 99;
       const pB = statusPriority[b.status] || 99;
       if (pA !== pB) return pA - pB;
-      return a.date.localeCompare(b.date);
+      return parseDateValue(a.date) - parseDateValue(b.date);
     }).slice(0, 3);
   }, [allDiaryItems]);
 
@@ -254,13 +256,13 @@ export default function PublicationsPage() {
     return p.type === pageMode;
   });
 
-  // Sort publications: show specific items at the top or newest
+  // Sort publications: show specific items at the top or newest by date
   const sortedPublications = [...scopedPublications].sort((a, b) => {
     if (a.id === 'kaduna-security') return -1;
     if (b.id === 'kaduna-security') return 1;
     if (a.id === 'hospitals-reform') return -1;
     if (b.id === 'hospitals-reform') return 1;
-    return b.date.localeCompare(a.date);
+    return parseDateValue(b.date) - parseDateValue(a.date);
   });
 
   // Extract year helper

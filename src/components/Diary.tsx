@@ -6,6 +6,7 @@ import {
 import { useCMS } from '../context/CMSContext';
 import { DiaryItem } from '../types';
 import DiaryElectionDetail from './DiaryElectionDetail';
+import { sortItemsByDate } from '../utils/date';
 
 export default function Diary() {
   const { diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
@@ -48,9 +49,9 @@ export default function Diary() {
     return [...nat, ...loc, ...afr, ...oth];
   }, [diaryNat, diaryLoc, diaryAfr, diaryOth]);
 
-  // Filtered List based on criteria
+  // Filtered and Date-Sorted List based on criteria
   const filteredData = useMemo(() => {
-    return allDiaryItems.filter(item => {
+    const list = allDiaryItems.filter(item => {
       // 1. Region filter
       if (regionFilter !== 'all' && item.region !== regionFilter) {
         return false;
@@ -80,6 +81,9 @@ export default function Diary() {
 
       return true;
     });
+
+    // Always sort by date chronologically
+    return sortItemsByDate(list, 'date', 'asc');
   }, [allDiaryItems, regionFilter, typeFilter, statusFilter, searchQuery]);
 
   const getStatusColor = (status: DiaryItem['status']) => {

@@ -73,3 +73,111 @@ export function formatReportDate(dateStr: any): string {
   });
   return formatted;
 }
+
+export function parseDateValue(dateVal: any): number {
+  if (!dateVal) return 0;
+
+  if (dateVal instanceof Date) {
+    return dateVal.getTime();
+  }
+
+  if (typeof dateVal === 'object') {
+    if (typeof dateVal.seconds === 'number') {
+      return dateVal.seconds * 1000;
+    }
+    if (typeof dateVal.toDate === 'function') {
+      try {
+        return dateVal.toDate().getTime();
+      } catch (e) {}
+    }
+  }
+
+  let str = String(dateVal).trim();
+  if (!str) return 0;
+
+  // Standardize unicode dashes & slashes
+  str = str.replace(/[–—]/g, '-');
+
+  // Direct ISO/standard parse
+  const directTimestamp = Date.parse(str);
+  if (!isNaN(directTimestamp) && !/^\d{4}$/.test(str) && !str.includes('-')) {
+    return directTimestamp;
+  }
+
+  // Handle day ranges like "18-20 Sep 2026" or "09-10 Oct 2026" -> take "18 Sep 2026"
+  const dayRangeMatch = str.match(/^(\d{1,2})\s*-\s*\d{1,2}\s+([a-zA-Z]+\s+\d{4})$/);
+  if (dayRangeMatch) {
+    str = `${dayRangeMatch[1]} ${dayRangeMatch[2]}`;
+  }
+
+  // Handle slash range like "Late 2027 / Early 2028" -> take "Late 2027"
+  if (str.includes('/')) {
+    const firstPart = str.split('/')[0].trim();
+    if (firstPart) str = firstPart;
+  }
+
+  // Handle Quarters: "Q1 2026", "Q3 2026"
+  const qMatch = str.match(/^Q([1-4])\s+(\d{4})$/i);
+  if (qMatch) {
+    const q = parseInt(qMatch[1], 10);
+    const yr = qMatch[2];
+    const month = (q - 1) * 3 + 1;
+    str = `1 ${month} ${yr}`;
+  }
+
+  // Handle relative time indicators: Mid-2027, Late 2027, Early 2027, Mid-to-Late 2027
+  if (/^early\b/i.test(str)) {
+    const yr = str.match(/\d{4}/)?.[0] || '2026';
+    str = `1 Jan ${yr}`;
+  } else if (/^mid-to-late\b/i.test(str)) {
+    const yr = str.match(/\d{4}/)?.[0] || '2026';
+    str = `1 Sep ${yr}`;
+  } else if (/^mid\b/i.test(str)) {
+    const yr = str.match(/\d{4}/)?.[0] || '2026';
+    str = `1 Jun ${yr}`;
+  } else if (/^late\b/i.test(str)) {
+    const yr = str.match(/\d{4}/)?.[0] || '2026';
+    str = `1 Nov ${yr}`;
+  }
+
+  // Handle year range like "2026-2027"
+  const yrRange = str.match(/^(\d{4})\s*-\s*\d{4}$/);
+  if (yrRange) {
+    str = `1 Jan ${yrRange[1]}`;
+  }
+
+  // Handle Month + Year like "August 2026", "Aug 2026"
+  const monthYr = str.match(/^([a-zA-Z]+)\s+(\d{4})$/);
+  if (monthYr) {
+    str = `1 ${monthYr[1]} ${monthYr[2]}`;
+  }
+
+  // Handle pure year e.g. "2026"
+  if (/^\d{4}$/.test(str)) {
+    str = `1 Jan ${str}`;
+  }
+
+  // Handle Day Month Year e.g. "17 Aug 2026", "08 Nov 2025"
+  const dmy = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/);
+  if (dmy) {
+    const t = Date.parse(`${dmy[1]} ${dmy[2]} ${dmy[3]}`);
+    if (!isNaN(t)) return t;
+  }
+
+  const finalParsed = Date.parse(str);
+  return isNaN(finalParsed) ? 0 : finalParsed;
+}
+
+export function sortItemsByDate<T>(
+  items: T[], 
+  dateField: keyof T | string = 'date', 
+  direction: 'asc' | 'desc' = 'asc'
+): T[] {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a: any, b: any) => {
+    const tA = parseDateValue(a?.[dateField]);
+    const tB = parseDateValue(b?.[dateField]);
+    if (tA === tB) return 0;
+    return direction === 'asc' ? tA - tB : tB - tA;
+  });
+}

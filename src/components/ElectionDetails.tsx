@@ -109,19 +109,16 @@ export default function ElectionDetails({
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data?.items) {
-          const formatted = data.items.map((s: any) => {
-            if (s.code === 'OS') {
-              const currentCount = s.topParties?.length || 0;
-              if (currentCount < 14) {
-                return {
-                  ...s,
-                  voters: '2,339,233',
-                  topParties: INITIAL_STATES[0].topParties
-                };
-              }
+          let formatted = data.items.map((s: any) => {
+            if (s.code === 'OS' && (!s.voters || s.voters === '1,955,657')) {
               return { ...s, voters: '2,339,233' };
             }
             return s;
+          });
+          INITIAL_STATES.forEach(init => {
+            if (!formatted.some((s: any) => s.code === init.code)) {
+              formatted.push(init);
+            }
           });
           setStates(formatted);
         }
@@ -131,7 +128,19 @@ export default function ElectionDetails({
     return () => unsub();
   }, []);
 
-  const election = states.find(s => s.code.toUpperCase() === electionCode.toUpperCase()) || INITIAL_STATES[0];
+  const reqNorm = electionCode.toUpperCase().replace(/[^A-Z]/g, '');
+  const election = states.find(s => {
+    const codeNorm = s.code.toUpperCase().replace(/[^A-Z]/g, '');
+    const nameNorm = s.name.toUpperCase().replace(/[^A-Z]/g, '');
+    return (
+      codeNorm === reqNorm ||
+      nameNorm === reqNorm ||
+      reqNorm.startsWith(codeNorm) ||
+      codeNorm.startsWith(reqNorm) ||
+      reqNorm.includes(codeNorm) ||
+      reqNorm.includes(nameNorm)
+    );
+  }) || INITIAL_STATES[0];
 
   const [activeTab, setActiveTab] = useState<'standings' | 'lgas'>('standings');
   const [lgaSearch, setLgaSearch] = useState('');
@@ -146,7 +155,7 @@ export default function ElectionDetails({
 
   // Associated reports mapping
   const associatedReports = {
-    EK: { type: 'report', id: 'rep-ekiti-2024', label: 'View Ekiti State Post-Election Forensic Audit' },
+    EK: { type: 'report', id: 'rep-ekiti-2026', label: 'View Ekiti State Post-Election Forensic Audit' },
     AN: { type: 'weekly', id: 'issue-6', label: 'Anambra Biometric Auditing & Over-Accreditation Analysis' },
     OD: { type: 'report', id: 'rep-ondo-2024', label: 'Ondo State Form EC8A Verification Report' },
   };
@@ -329,16 +338,16 @@ export default function ElectionDetails({
 
         </div>
 
-        {/* Form EC8A Reconciliation Rate Alert / Bar */}
+        {/* IREV Upload Rate Alert / Bar */}
         <div className="bg-slate-50 border border-line rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-white rounded-lg border border-line text-emerald-600 shadow-sm">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-ink">Form EC8A Upload & Verification Rate</h4>
+              <h4 className="text-xs font-bold text-ink">IREV upload rate</h4>
               <p className="text-[11px] text-mut mt-0.5 leading-normal">
-                Electoral integrity is anchored on raw results. We reconciled polling unit ballots against verified database records.
+                Data gotten from INEC IReV
               </p>
             </div>
           </div>

@@ -40,21 +40,21 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     title: 'Ekiti State Governorship Election',
     subtitle: 'South West, Nigeria · Concluded & Verified',
     category: 'Off-Cycle',
-    date: 'June 2024',
+    date: 'June 2026',
     region: 'South West',
     status: 'Concluded',
-    voters: '988,923',
-    accreditedVoters: '345,100',
-    validVotes: '336,718',
-    pollingUnits: '2,445',
+    voters: '1,019,592',
+    accreditedVoters: '373,981',
+    validVotes: '361,578',
+    pollingUnits: '2,440',
     reconciledRate: '98.2%',
     summary: 'Full post-election audit completed. High IReV upload fidelity recorded with minor ad-hoc administrative delays in Ekiti East LGA.',
     winner: { candidate: 'Biodun Oyebanji', party: 'APC' },
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '187,057 votes', percentage: 52.3, color: 'bg-emerald-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '82,211 votes', percentage: 23.0, color: 'bg-amber-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '67,454 votes', percentage: 18.9, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '11,450 votes', percentage: 3.2, color: 'bg-rose-500' }
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '308,958 votes', percentage: 85.4, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '39,173 votes', percentage: 10.8, color: 'bg-red-600' },
+      { name: 'ADC', fullName: 'African Democratic Congress', votes: '12,223 votes', percentage: 3.4, color: 'bg-blue-500' },
+      { name: 'ADP', fullName: 'Action Democratic Party', votes: '1,998 votes', percentage: 0.6, color: 'bg-teal-600' }
     ]
   },
   {
@@ -66,16 +66,17 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     region: 'South West',
     status: 'Concluded',
     voters: '2,053,061',
-    accreditedVoters: '495,800',
-    validVotes: '489,155',
+    accreditedVoters: '506,149',
+    validVotes: '495,844',
     pollingUnits: '3,933',
     reconciledRate: '99.4%',
     summary: 'All polling unit results parsed. Forensic audit confirmed declared results match verified Form EC8A uploads.',
     winner: { candidate: 'Lucky Aiyedatiwa', party: 'APC' },
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '366,612 votes', percentage: 74.8, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 24.1, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '4,743 votes', percentage: 1.0, color: 'bg-rose-500' }
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '366,612 votes', percentage: 73.9, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 23.8, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '4,743 votes', percentage: 1.0, color: 'bg-rose-500' },
+      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '1,214 votes', percentage: 0.2, color: 'bg-indigo-600' }
     ]
   },
   {
@@ -86,17 +87,18 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     date: 'November 2025',
     region: 'South East',
     status: 'Concluded',
-    voters: '2,533,722',
-    accreditedVoters: '195,500',
-    validVotes: '191,823',
+    voters: '2,781,299',
+    accreditedVoters: '615,630',
+    validVotes: '583,797',
     pollingUnits: '5,720',
     reconciledRate: '100%',
     summary: 'Comprehensive audit report published. Verified 5,720 PUs with specific legal findings on over-accreditation patterns.',
     winner: { candidate: 'Charles Soludo', party: 'APGA' },
     topParties: [
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '112,229 votes', percentage: 56.7, color: 'bg-indigo-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '43,285 votes', percentage: 21.9, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '33,074 votes', percentage: 16.7, color: 'bg-red-600' }
+      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '312,229 votes', percentage: 53.5, color: 'bg-indigo-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '143,285 votes', percentage: 24.5, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '103,074 votes', percentage: 17.7, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '25,209 votes', percentage: 4.3, color: 'bg-rose-500' }
     ]
   },
   {
@@ -107,17 +109,18 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     date: 'September 2024',
     region: 'South South',
     status: 'Concluded',
-    voters: '2,629,025',
-    accreditedVoters: '568,693',
-    validVotes: '561,700',
+    voters: '2,610,730',
+    accreditedVoters: '604,134',
+    validVotes: '570,690',
     pollingUnits: '4,519',
     reconciledRate: '98.6%',
     summary: 'Rigorous forensic audit across 18 LGAs. High transmission accuracy recorded on the IReV portal.',
     winner: { candidate: 'Monday Okpebholo', party: 'APC' },
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.2, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.4, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' }
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.1, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.3, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' },
+      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '2,009 votes', percentage: 0.4, color: 'bg-sky-600' }
     ]
   },
   {
@@ -128,17 +131,18 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     date: 'November 2023',
     region: 'North Central',
     status: 'Concluded',
-    voters: '1,932,474',
-    accreditedVoters: '784,305',
-    validVotes: '776,168',
+    voters: '1,932,692',
+    accreditedVoters: '656,313',
+    validVotes: '771,715',
     pollingUnits: '3,508',
     reconciledRate: '97.1%',
     summary: 'Pre-filled result sheets identified in Ogori/Magongo LGA were flagged and excluded from official tallies during audit.',
     winner: { candidate: 'Ahmed Usman Ododo', party: 'APC' },
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '426,237 votes', percentage: 55.4, color: 'bg-emerald-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 33.7, color: 'bg-amber-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '77,882 votes', percentage: 10.1, color: 'bg-red-600' }
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '426,237 votes', percentage: 55.2, color: 'bg-emerald-600' },
+      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 33.6, color: 'bg-amber-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '77,882 votes', percentage: 10.1, color: 'bg-red-600' },
+      { name: 'AA', fullName: 'Action Alliance', votes: '1,438 votes', percentage: 0.2, color: 'bg-indigo-500' }
     ]
   },
   {
@@ -150,16 +154,17 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     region: 'South South',
     status: 'Concluded',
     voters: '1,056,862',
-    accreditedVoters: '328,120',
-    validVotes: '323,209',
-    pollingUnits: '2,242',
+    accreditedVoters: '253,520',
+    validVotes: '312,397',
+    pollingUnits: '2,244',
     reconciledRate: '96.8%',
     summary: 'Post-election forensics verified polling unit returns across riverine communities in Nembe and Southern Ijaw LGAs.',
     winner: { candidate: 'Douye Diri', party: 'PDP' },
     topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '175,196 votes', percentage: 54.1, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '110,108 votes', percentage: 34.0, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '905 votes', percentage: 0.3, color: 'bg-rose-500' }
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '173,310 votes', percentage: 55.5, color: 'bg-red-600' },
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '136,609 votes', percentage: 43.7, color: 'bg-emerald-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '1,027 votes', percentage: 0.3, color: 'bg-rose-500' },
+      { name: 'SDP', fullName: 'Social Democratic Party', votes: '193 votes', percentage: 0.1, color: 'bg-amber-600' }
     ]
   },
   {
@@ -170,226 +175,18 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     date: 'November 2023',
     region: 'South East',
     status: 'Concluded',
-    voters: '2,419,922',
-    accreditedVoters: '694,892',
-    validVotes: '685,892',
+    voters: '2,420,840',
+    accreditedVoters: '541,049',
+    validVotes: '696,056',
     pollingUnits: '4,758',
-    reconciledRate: '95.4%',
-    summary: 'Audit identified transmission delays in Orlu zone. Final dataset reconciles 27 LGAs with BVAS hardware logs.',
+    reconciledRate: '99.1%',
+    summary: 'Comprehensive election audit completed across all 27 LGAs in Imo State. Polling unit level EC8B and BVAS accreditation numbers reconciled.',
     winner: { candidate: 'Hope Uzodimma', party: 'APC' },
     topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '540,308 votes', percentage: 78.2, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '71,503 votes', percentage: 10.3, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '64,081 votes', percentage: 9.3, color: 'bg-rose-500' }
-    ]
-  },
-  {
-    code: 'OS_OFF',
-    title: 'Osun State Off-Cycle Governorship Poll',
-    subtitle: 'South West, Nigeria · Concluded & Audited',
-    category: 'Off-Cycle',
-    date: 'July 2022',
-    region: 'South West',
-    status: 'Concluded',
-    voters: '1,955,657',
-    accreditedVoters: '827,218',
-    validVotes: '804,450',
-    pollingUnits: '3,763',
-    reconciledRate: '99.1%',
-    summary: 'Historic early deployment of BVAS technology. Supreme Court confirmed election outcome following forensic scrutiny.',
-    winner: { candidate: 'Ademola Adeleke', party: 'PDP' },
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '403,371 votes', percentage: 50.1, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '375,027 votes', percentage: 46.6, color: 'bg-emerald-600' }
-    ]
-  },
-
-  // --- PRESIDENTIAL ---
-  {
-    code: 'NG_PRES_2023',
-    title: '2023 Nigeria Presidential Election',
-    subtitle: 'National (36 States & FCT) · Concluded & Audited',
-    category: 'Presidential',
-    date: 'February 25, 2023',
-    region: 'National (Nigeria)',
-    status: 'Concluded',
-    voters: '93,469,008',
-    accreditedVoters: '25,286,616',
-    validVotes: '24,025,940',
-    pollingUnits: '176,846',
-    reconciledRate: '94.8%',
-    summary: 'Full national forensic audit. Audited IReV portal uploads, BVAS machine logs, and state-level collation spreadsheets.',
-    winner: { candidate: 'Bola Ahmed Tinubu', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '8,794,726 votes', percentage: 36.6, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '6,984,520 votes', percentage: 29.1, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '6,101,533 votes', percentage: 25.4, color: 'bg-rose-500' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '1,496,687 votes', percentage: 6.2, color: 'bg-blue-600' }
-    ]
-  },
-  {
-    code: 'SN_PRES_2024',
-    title: '2024 Senegal Presidential Election',
-    subtitle: 'Republic of Senegal · Continental Reference',
-    category: 'Presidential',
-    date: 'March 24, 2024',
-    region: 'West Africa (Senegal)',
-    status: 'Concluded',
-    voters: '7,371,890',
-    accreditedVoters: '4,520,100',
-    validVotes: '4,480,120',
-    pollingUnits: '15,633',
-    reconciledRate: '100%',
-    summary: 'High transparency election featuring rapid digital publication of constituency tally sheets.',
-    winner: { candidate: 'Bassirou Diomaye Faye', party: 'PASTEF' },
-    topParties: [
-      { name: 'PASTEF', fullName: 'Patriotes du Sénégal', votes: '2,434,751 votes', percentage: 54.3, color: 'bg-emerald-700' },
-      { name: 'BBY', fullName: 'Benno Bokk Yakaar', votes: '1,605,086 votes', percentage: 35.8, color: 'bg-amber-600' }
-    ]
-  },
-  {
-    code: 'GH_PRES_2024',
-    title: '2024 Ghana Presidential Election',
-    subtitle: 'Republic of Ghana · Continental Benchmark',
-    category: 'Presidential',
-    date: 'December 7, 2024',
-    region: 'West Africa (Ghana)',
-    status: 'Concluded',
-    voters: '18,774,159',
-    accreditedVoters: '11,250,000',
-    validVotes: '11,180,000',
-    pollingUnits: '40,000',
-    reconciledRate: '99.7%',
-    summary: 'Peaceful political transition with verified polling station pink sheets verified across 275 constituencies.',
-    winner: { candidate: 'John Dramani Mahama', party: 'NDC' },
-    topParties: [
-      { name: 'NDC', fullName: 'National Democratic Congress', votes: '6,321,800 votes', percentage: 56.2, color: 'bg-emerald-600' },
-      { name: 'NPP', fullName: 'New Patriotic Party', votes: '4,601,200 votes', percentage: 40.9, color: 'bg-blue-600' }
-    ]
-  },
-  {
-    code: 'ZA_PRES_2024',
-    title: '2024 South Africa General & Presidential Election',
-    subtitle: 'Republic of South Africa · Continental Audit',
-    category: 'Presidential',
-    date: 'May 29, 2024',
-    region: 'Southern Africa',
-    status: 'Concluded',
-    voters: '27,782,477',
-    accreditedVoters: '16,290,000',
-    validVotes: '16,080,000',
-    pollingUnits: '23,296',
-    reconciledRate: '99.2%',
-    summary: 'Historic election leading to Government of National Unity (GNU). Audit confirmed IEC tally accuracy.',
-    winner: { candidate: 'Cyril Ramaphosa', party: 'ANC' },
-    topParties: [
-      { name: 'ANC', fullName: 'African National Congress', votes: '6,483,093 votes', percentage: 40.2, color: 'bg-amber-600' },
-      { name: 'DA', fullName: 'Democratic Alliance', votes: '3,550,448 votes', percentage: 21.8, color: 'bg-blue-600' },
-      { name: 'MK', fullName: 'uMkhonto weSizwe', votes: '2,344,309 votes', percentage: 14.6, color: 'bg-emerald-800' }
-    ]
-  },
-
-  // --- GOVERNORSHIP ---
-  {
-    code: 'LA_GOV_2023',
-    title: 'Lagos State Governorship Election',
-    subtitle: 'South West, Nigeria · Audited',
-    category: 'Governorship',
-    date: 'March 18, 2023',
-    region: 'South West',
-    status: 'Concluded',
-    voters: '7,060,195',
-    accreditedVoters: '1,182,620',
-    validVotes: '1,155,123',
-    pollingUnits: '13,325',
-    reconciledRate: '97.8%',
-    summary: 'Audited 13,325 polling units in Lagos State. Evaluated voter turnout and security incidents in key urban LGAs.',
-    winner: { candidate: 'Babajide Sanwo-Olu', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '762,134 votes', percentage: 64.9, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '312,329 votes', percentage: 26.6, color: 'bg-rose-500' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '62,449 votes', percentage: 5.3, color: 'bg-red-600' }
-    ]
-  },
-  {
-    code: 'KN_GOV_2023',
-    title: 'Kano State Governorship Election',
-    subtitle: 'North West, Nigeria · Audited',
-    category: 'Governorship',
-    date: 'March 18, 2023',
-    region: 'North West',
-    status: 'Concluded',
-    voters: '5,921,370',
-    accreditedVoters: '1,780,200',
-    validVotes: '1,755,531',
-    pollingUnits: '1,755,531',
-    reconciledRate: '98.5%',
-    summary: 'Audit scrutinized 44 LGAs in Kano. Supreme Court judgment validated initial election observer findings.',
-    winner: { candidate: 'Abba Kabir Yusuf', party: 'NNPP' },
-    topParties: [
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '864,826 votes', percentage: 51.8, color: 'bg-blue-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '890,705 votes', percentage: 46.2, color: 'bg-emerald-600' }
-    ]
-  },
-  {
-    code: 'RV_GOV_2023',
-    title: 'Rivers State Governorship Election',
-    subtitle: 'South South, Nigeria · Audited',
-    category: 'Governorship',
-    date: 'March 18, 2023',
-    region: 'South South',
-    status: 'Concluded',
-    voters: '3,537,190',
-    accreditedVoters: '490,200',
-    validVotes: '483,170',
-    pollingUnits: '6,868',
-    reconciledRate: '96.1%',
-    summary: 'Detailed polling unit analysis across Obio/Akpor and Port Harcourt LGAs with observer reports.',
-    winner: { candidate: 'Siminalayi Fubara', party: 'PDP' },
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '302,614 votes', percentage: 62.5, color: 'bg-red-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '95,474 votes', percentage: 19.7, color: 'bg-amber-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '50,082 votes', percentage: 10.3, color: 'bg-emerald-600' }
-    ]
-  },
-  {
-    code: 'KD_GOV_2023',
-    title: 'Kaduna State Governorship Election',
-    subtitle: 'North West, Nigeria · Audited',
-    category: 'Governorship',
-    date: 'March 18, 2023',
-    region: 'North West',
-    status: 'Concluded',
-    voters: '4,335,208',
-    accreditedVoters: '1,470,200',
-    validVotes: '1,456,990',
-    pollingUnits: '8,012',
-    reconciledRate: '97.4%',
-    summary: 'Audited close margin election across 23 LGAs. Reconciled BVAS logs against local collation center sheets.',
-    winner: { candidate: 'Uba Sani', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '737,610 votes', percentage: 50.4, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '719,380 votes', percentage: 49.1, color: 'bg-red-600' }
-    ]
-  },
-  {
-    code: 'OY_GOV_2023',
-    title: 'Oyo State Governorship Election',
-    subtitle: 'South West, Nigeria · Audited',
-    category: 'Governorship',
-    date: 'March 18, 2023',
-    region: 'South West',
-    status: 'Concluded',
-    voters: '3,276,675',
-    accreditedVoters: '890,500',
-    validVotes: '882,438',
-    pollingUnits: '6,390',
-    reconciledRate: '98.9%',
-    summary: 'Audit confirmed high electoral compliance and peaceful polling across Ibadan and Ibarapa zones.',
-    winner: { candidate: 'Seyi Makinde', party: 'PDP' },
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '563,756 votes', percentage: 63.3, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '256,682 votes', percentage: 28.8, color: 'bg-emerald-600' }
+      { name: 'APC', fullName: 'All Progressives Congress', votes: '544,337 votes', percentage: 78.2, color: 'bg-emerald-600' },
+      { name: 'PDP', fullName: "People's Democratic Party", votes: '70,909 votes', percentage: 10.2, color: 'bg-red-600' },
+      { name: 'LP', fullName: 'Labour Party', votes: '64,530 votes', percentage: 9.3, color: 'bg-rose-500' },
+      { name: 'AA', fullName: 'Action Alliance', votes: '8,148 votes', percentage: 1.2, color: 'bg-indigo-500' }
     ]
   }
 ];
@@ -597,7 +394,7 @@ export default function PastElectionsArchive() {
                   {/* Summary & Reconciled Bar */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-slate-500 font-medium">IReV Audit Reconciliation</span>
+                      <span className="text-slate-500 font-medium">IREV upload rate</span>
                       <span className="font-bold text-emerald-600">{item.reconciledRate}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -607,7 +404,7 @@ export default function PastElectionsArchive() {
                       ></div>
                     </div>
                     <p className="text-xs text-ink2 line-clamp-2 leading-relaxed pt-1">
-                      {item.summary}
+                      Data gotten from INEC IReV
                     </p>
                   </div>
 
