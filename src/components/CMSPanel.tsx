@@ -204,20 +204,19 @@ export default function CMSPanel({
         colorClass: 'text-amber-500 border-amber-500 bg-amber-50',
         bgGradient: 'from-amber-100 to-amber-200/50 border-amber-200',
         topParties: [
-          { name: 'Accord', fullName: 'Accord (Ademola Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
-          { name: 'AA', fullName: 'Action Alliance (Olanrewaju Farinloye)', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
-          { name: 'AAC', fullName: 'African Action Congress (Olajide Esan)', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
-          { name: 'ADC', fullName: 'African Democratic Congress (Najeem Folasayo Salaam)', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
-          { name: 'ADP', fullName: 'Action Democratic Party (Yemisi Adeagbo Opawoye)', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
-          { name: 'APC', fullName: 'All Progressives Congress (Bola Oyebamiji)', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
-          { name: 'APGA', fullName: 'All Progressives Grand Alliance (Adesina Adeyemi-Doro)', votes: 'Pending', percentage: 0, color: 'bg-indigo-600' },
-          { name: 'APM', fullName: 'Allied Peoples Movement (Adewale Adebayo)', votes: 'Pending', percentage: 0, color: 'bg-yellow-600' },
-          { name: 'APP', fullName: 'Action Peoples Party (Clement Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
-          { name: 'BP', fullName: 'Boot Party (Masilo Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-pink-600' },
-          { name: 'NNPP', fullName: 'New Nigeria Peoples Party (Taofeek Adeleke)', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
-          { name: 'PRP', fullName: 'Peoples Redemption Party (Saliu Oyelami)', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
-          { name: 'YPP', fullName: 'Young Progressives Party (Olalekan Ogunsakin)', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
-          { name: 'ZLP', fullName: 'Zenith Labour Party (Adefemi Adesuyi)', votes: 'Pending', percentage: 0, color: 'bg-rose-700' }
+          { name: 'A', fullName: 'Accord', candidate: 'Ademola Adeleke', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+          { name: 'AA', fullName: 'Action Alliance', candidate: 'Olanrewaju Farinloye', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
+          { name: 'AAC', fullName: 'African Action Congress', candidate: 'Olajide Esan', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
+          { name: 'ADC', fullName: 'African Democratic Congress', candidate: 'Najeem Salaam', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
+          { name: 'ADP', fullName: 'Action Democratic Party', candidate: 'Yemisi Opawoye', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
+          { name: 'APC', fullName: 'All Progressives Congress', candidate: 'Bola Oyebamiji', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
+          { name: 'APM', fullName: 'Allied Peoples Movement', candidate: 'Adewale Adebayo', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
+          { name: 'APP', fullName: 'Action Peoples Party', candidate: 'Clement Adesuyi', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+          { name: 'BP', fullName: 'Boot Party', candidate: 'Masilo Adeleke', votes: 'Pending', percentage: 0, color: 'bg-lime-600' },
+          { name: 'NNPP', fullName: 'New Nigeria Peoples Party', candidate: 'Taofeek Adeleke', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
+          { name: 'PRP', fullName: 'Peoples Redemption Party', candidate: 'Saliu Oyelami', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
+          { name: 'YPP', fullName: 'Young Progressives Party', candidate: 'Olalekan Ogunsakin', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
+          { name: 'ZLP', fullName: 'Zenith Labour Party', candidate: 'Olufemi Adesuyi', votes: 'Pending', percentage: 0, color: 'bg-teal-600' }
         ]
       },
       {

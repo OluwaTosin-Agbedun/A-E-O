@@ -16,6 +16,7 @@ import { FULL_ELECTION_STATES } from '../data/allElectionData';
 export interface PartyVote {
   name: string;
   fullName: string;
+  candidate?: string;
   votes: string;
   percentage: number;
   color: string;

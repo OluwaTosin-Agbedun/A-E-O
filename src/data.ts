@@ -29,20 +29,19 @@ export const DIARY_NATIONAL: DiaryItem[] = [
       notes: 'Seeking re-election for a second four-year term under the People\'s Democratic Party banner.'
     },
     participants: [
-      { name: 'Ademola Adeleke', party: 'Accord', role: 'Flagbearer', platform: 'Public worker welfare, infrastructure expansion & economic development' },
+      { name: 'Ademola Adeleke', party: 'Accord (A)', role: 'Flagbearer', platform: 'Public worker welfare, infrastructure expansion & economic development' },
       { name: 'Olanrewaju Farinloye', party: 'Action Alliance (AA)', role: 'Candidate', platform: 'Youth employment, agricultural revitalization & governance reform' },
       { name: 'Olajide Esan', party: 'African Action Congress (AAC)', role: 'Candidate', platform: 'Social justice, education access & public transparency' },
-      { name: 'Najeem Folasayo Salaam', party: 'African Democratic Congress (ADC)', role: 'Candidate', platform: 'Healthcare improvement, human capital & institutional autonomy' },
-      { name: 'Yemisi Adeagbo Opawoye', party: 'Action Democratic Party (ADP)', role: 'Candidate', platform: 'Women empowerment, MSME credit support & community development' },
+      { name: 'Najeem Salaam', party: 'African Democratic Congress (ADC)', role: 'Candidate', platform: 'Healthcare improvement, human capital & institutional autonomy' },
+      { name: 'Yemisi Opawoye', party: 'Action Democratic Party (ADP)', role: 'Candidate', platform: 'Women empowerment, MSME credit support & community development' },
       { name: 'Bola Oyebamiji', party: 'All Progressives Congress (APC)', role: 'Candidate', platform: 'Fiscal consolidation, state infrastructure & industrial growth' },
-      { name: 'Adesina Adeyemi-Doro', party: 'All Progressives Grand Alliance (APGA)', role: 'Candidate', platform: 'Regional integration, security technology & civic education' },
       { name: 'Adewale Adebayo', party: 'Allied Peoples Movement (APM)', role: 'Candidate', platform: 'Grassroots development, social welfare & rural connectivity' },
       { name: 'Clement Adesuyi', party: 'Action Peoples Party (APP)', role: 'Candidate', platform: 'Civil service welfare, job creation & local economy support' },
       { name: 'Masilo Adeleke', party: 'Boot Party (BP)', role: 'Candidate', platform: 'Technology integration, youth innovation & digital governance' },
       { name: 'Taofeek Adeleke', party: 'New Nigeria Peoples Party (NNPP)', role: 'Candidate', platform: 'Free quality education, healthcare & agricultural hubs' },
       { name: 'Saliu Oyelami', party: 'Peoples Redemption Party (PRP)', role: 'Candidate', platform: 'Pro-people economic policy, anti-corruption & social equity' },
       { name: 'Olalekan Ogunsakin', party: 'Young Progressives Party (YPP)', role: 'Candidate', platform: 'Youth political participation, creative industry & tech hubs' },
-      { name: 'Adefemi Adesuyi', party: 'Zenith Labour Party (ZLP)', role: 'Candidate', platform: 'Labor rights, local industry promotion & primary health' }
+      { name: 'Olufemi Adesuyi', party: 'Zenith Labour Party (ZLP)', role: 'Candidate', platform: 'Labor rights, local industry promotion & primary health' }
     ],
     keyIssues: [
       'BVAS startup latency and biometric accreditation rates across rural LGAs',

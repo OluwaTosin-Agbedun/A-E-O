@@ -1,4 +1,4 @@
-import { StateMonitor, LgaPartyStanding } from '../components/LiveDashboard';
+import { StateMonitor, LgaPartyStanding, PartyVote } from '../components/LiveDashboard';
 
 // Helper for party full names and color classes
 const PARTY_INFO: Record<string, { fullName: string; color: string }> = {
@@ -185,6 +185,22 @@ function lga(
   };
 }
 
+export const OSUN_2026_PARTIES: PartyVote[] = [
+  { name: 'A', fullName: 'Accord', candidate: 'Ademola Adeleke', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+  { name: 'AA', fullName: 'Action Alliance', candidate: 'Olanrewaju Farinloye', votes: 'Pending', percentage: 0, color: 'bg-indigo-500' },
+  { name: 'AAC', fullName: 'African Action Congress', candidate: 'Olajide Esan', votes: 'Pending', percentage: 0, color: 'bg-orange-600' },
+  { name: 'ADC', fullName: 'African Democratic Congress', candidate: 'Najeem Salaam', votes: 'Pending', percentage: 0, color: 'bg-blue-500' },
+  { name: 'ADP', fullName: 'Action Democratic Party', candidate: 'Yemisi Opawoye', votes: 'Pending', percentage: 0, color: 'bg-teal-600' },
+  { name: 'APC', fullName: 'All Progressives Congress', candidate: 'Bola Oyebamiji', votes: 'Pending', percentage: 0, color: 'bg-emerald-600' },
+  { name: 'APM', fullName: 'Allied Peoples Movement', candidate: 'Adewale Adebayo', votes: 'Pending', percentage: 0, color: 'bg-cyan-600' },
+  { name: 'APP', fullName: 'Action Peoples Party', candidate: 'Clement Adesuyi', votes: 'Pending', percentage: 0, color: 'bg-purple-600' },
+  { name: 'BP', fullName: 'Boot Party', candidate: 'Masilo Adeleke', votes: 'Pending', percentage: 0, color: 'bg-lime-600' },
+  { name: 'NNPP', fullName: 'New Nigeria Peoples Party', candidate: 'Taofeek Adeleke', votes: 'Pending', percentage: 0, color: 'bg-sky-600' },
+  { name: 'PRP', fullName: 'Peoples Redemption Party', candidate: 'Saliu Oyelami', votes: 'Pending', percentage: 0, color: 'bg-red-700' },
+  { name: 'YPP', fullName: 'Young Progressives Party', candidate: 'Olalekan Ogunsakin', votes: 'Pending', percentage: 0, color: 'bg-emerald-800' },
+  { name: 'ZLP', fullName: 'Zenith Labour Party', candidate: 'Olufemi Adesuyi', votes: 'Pending', percentage: 0, color: 'bg-teal-600' }
+];
+
 export const FULL_ELECTION_STATES: StateMonitor[] = [
   {
     code: 'OS',
@@ -201,43 +217,38 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Off-cycle governorship election for Osun State, monitored live across 30 Local Government Areas.',
     colorClass: 'text-amber-500 bg-amber-500/10 border-amber-300',
     bgGradient: 'from-amber-900/20 to-slate-900',
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: 'Registered', percentage: 0, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: 'Registered', percentage: 0, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: 'Registered', percentage: 0, color: 'bg-rose-500' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: 'Registered', percentage: 0, color: 'bg-amber-600' }
-    ],
+    topParties: OSUN_2026_PARTIES,
     lgaStandings: [
-      { lgaName: 'Osogbo', accreditedVoters: 68400, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Olorunda', accreditedVoters: 59800, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Ede South', accreditedVoters: 45200, first: lead('PDP', 0), second: lead('APC', 0), third: lead('LP', 0) },
-      { lgaName: 'Ede North', accreditedVoters: 42600, first: lead('PDP', 0), second: lead('APC', 0), third: lead('SDP', 0) },
-      { lgaName: 'Ife Central', accreditedVoters: 82100, first: lead('APC', 0), second: lead('PDP', 0), third: lead('APGA', 0) },
-      { lgaName: 'Ife East', accreditedVoters: 58200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('YPP', 0) },
-      { lgaName: 'Ife North', accreditedVoters: 39400, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Ife South', accreditedVoters: 36100, first: lead('APC', 0), second: lead('PDP', 0), third: lead('ADC', 0) },
-      { lgaName: 'Ilesa East', accreditedVoters: 54300, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Ilesa West', accreditedVoters: 47200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Ila', accreditedVoters: 38100, first: lead('APC', 0), second: lead('PDP', 0), third: lead('ADC', 0) },
-      { lgaName: 'Ejigbo', accreditedVoters: 49200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Iwo', accreditedVoters: 61500, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Irepodun', accreditedVoters: 36400, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Boripe', accreditedVoters: 33200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('APGA', 0) },
-      { lgaName: 'Ayedaade', accreditedVoters: 41800, first: lead('PDP', 0), second: lead('APC', 0), third: lead('LP', 0) },
-      { lgaName: 'Ayedire', accreditedVoters: 28900, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Obokun', accreditedVoters: 35900, first: lead('PDP', 0), second: lead('APC', 0), third: lead('SDP', 0) },
-      { lgaName: 'Egbedore', accreditedVoters: 31400, first: lead('PDP', 0), second: lead('APC', 0), third: lead('LP', 0) },
-      { lgaName: 'Atakumosa East', accreditedVoters: 26500, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Atakumosa West', accreditedVoters: 29100, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Irewole', accreditedVoters: 43200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Isokan', accreditedVoters: 27800, first: lead('APC', 0), second: lead('PDP', 0), third: lead('APGA', 0) },
-      { lgaName: 'Odo Otin', accreditedVoters: 37600, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Ola Oluwa', accreditedVoters: 24500, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Orolu', accreditedVoters: 29800, first: lead('APC', 0), second: lead('PDP', 0), third: lead('LP', 0) },
-      { lgaName: 'Boluwaduro', accreditedVoters: 22100, first: lead('APC', 0), second: lead('PDP', 0), third: lead('ADC', 0) },
-      { lgaName: 'Ifedayo', accreditedVoters: 18400, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) },
-      { lgaName: 'Oriade', accreditedVoters: 38900, first: lead('PDP', 0), second: lead('APC', 0), third: lead('LP', 0) },
-      { lgaName: 'Ifelodun', accreditedVoters: 46200, first: lead('APC', 0), second: lead('PDP', 0), third: lead('SDP', 0) }
+      { lgaName: 'Osogbo', accreditedVoters: 68400, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Olorunda', accreditedVoters: 59800, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ede South', accreditedVoters: 45200, first: lead('A', 0), second: lead('APC', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ede North', accreditedVoters: 42600, first: lead('A', 0), second: lead('APC', 0), third: lead('AA', 0) },
+      { lgaName: 'Ife Central', accreditedVoters: 82100, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ife East', accreditedVoters: 58200, first: lead('APC', 0), second: lead('A', 0), third: lead('YPP', 0) },
+      { lgaName: 'Ife North', accreditedVoters: 39400, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ife South', accreditedVoters: 36100, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ilesa East', accreditedVoters: 54300, first: lead('APC', 0), second: lead('A', 0), third: lead('AA', 0) },
+      { lgaName: 'Ilesa West', accreditedVoters: 47200, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ila', accreditedVoters: 38100, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ejigbo', accreditedVoters: 49200, first: lead('APC', 0), second: lead('A', 0), third: lead('ADP', 0) },
+      { lgaName: 'Iwo', accreditedVoters: 61500, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Irepodun', accreditedVoters: 36400, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Boripe', accreditedVoters: 33200, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ayedaade', accreditedVoters: 41800, first: lead('A', 0), second: lead('APC', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ayedire', accreditedVoters: 28900, first: lead('APC', 0), second: lead('A', 0), third: lead('AA', 0) },
+      { lgaName: 'Obokun', accreditedVoters: 35900, first: lead('A', 0), second: lead('APC', 0), third: lead('ADC', 0) },
+      { lgaName: 'Egbedore', accreditedVoters: 31400, first: lead('A', 0), second: lead('APC', 0), third: lead('ADC', 0) },
+      { lgaName: 'Atakumosa East', accreditedVoters: 26500, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Atakumosa West', accreditedVoters: 29100, first: lead('APC', 0), second: lead('A', 0), third: lead('AA', 0) },
+      { lgaName: 'Irewole', accreditedVoters: 43200, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Isokan', accreditedVoters: 27800, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Odo Otin', accreditedVoters: 37600, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ola Oluwa', accreditedVoters: 24500, first: lead('APC', 0), second: lead('A', 0), third: lead('AA', 0) },
+      { lgaName: 'Orolu', accreditedVoters: 29800, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Boluwaduro', accreditedVoters: 22100, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ifedayo', accreditedVoters: 18400, first: lead('APC', 0), second: lead('A', 0), third: lead('AA', 0) },
+      { lgaName: 'Oriade', accreditedVoters: 38900, first: lead('A', 0), second: lead('APC', 0), third: lead('ADC', 0) },
+      { lgaName: 'Ifelodun', accreditedVoters: 46200, first: lead('APC', 0), second: lead('A', 0), third: lead('ADC', 0) }
     ]
   },
   {
