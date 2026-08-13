@@ -18,7 +18,129 @@ const PARTY_INFO: Record<string, { fullName: string; color: string }> = {
   BP: { fullName: 'Boot Party', color: 'bg-lime-600' },
   PRP: { fullName: 'Peoples Redemption Party', color: 'bg-red-700' },
   A: { fullName: 'Accord', color: 'bg-purple-600' },
+  AAC: { fullName: 'African Action Congress', color: 'bg-orange-600' },
+  NRM: { fullName: 'National Rescue Movement', color: 'bg-yellow-600' },
+  BOOT: { fullName: 'Boot Party', color: 'bg-lime-600' },
 };
+
+export function buildPartyBreakdown(entries: [string, number][]) {
+  const total = entries.reduce((sum, [_, v]) => sum + v, 0);
+  return entries.map(([name, votesNum], idx) => {
+    const info = PARTY_INFO[name] || { fullName: name, color: 'bg-slate-600' };
+    const percentage = total > 0 ? Number(((votesNum / total) * 100).toFixed(1)) : 0;
+    return {
+      name,
+      fullName: info.fullName,
+      votes: votesNum.toLocaleString(),
+      percentage,
+      color: info.color,
+      rank: idx + 1
+    };
+  });
+}
+
+export const IMO_2023_PARTIES: [string, number][] = [
+  ['APC', 544337],
+  ['PDP', 70909],
+  ['LP', 64530],
+  ['AA', 8148]
+];
+
+export const BAYELSA_2023_PARTIES: [string, number][] = [
+  ['PDP', 173310],
+  ['APC', 136609],
+  ['LP', 1027],
+  ['SDP', 193]
+];
+
+export const KOGI_2023_PARTIES: [string, number][] = [
+  ['APC', 445259],
+  ['SDP', 260937],
+  ['PDP', 45937],
+  ['LP', 892]
+];
+
+export const EDO_2024_PARTIES: [string, number][] = [
+  ['APC', 291658],
+  ['PDP', 233482],
+  ['LP', 22763],
+  ['ADC', 1956],
+  ['APGA', 1234],
+  ['ADP', 1099],
+  ['NNPP', 1034],
+  ['NRM', 720],
+  ['PRP', 635],
+  ['SDP', 537],
+  ['AAC', 373],
+  ['YPP', 296],
+  ['ZLP', 254],
+  ['A', 222],
+  ['BP', 217],
+  ['AA', 206],
+  ['APM', 151],
+  ['APP', 144]
+];
+
+export const ONDO_2025_PARTIES: [string, number][] = [
+  ['APC', 364648],
+  ['PDP', 117442],
+  ['ADC', 4573],
+  ['ZLP', 2711],
+  ['ADP', 1701],
+  ['LP', 1156],
+  ['APGA', 767],
+  ['NRM', 509],
+  ['SDP', 432],
+  ['APM', 322],
+  ['AAC', 305],
+  ['NNPP', 304],
+  ['PRP', 284],
+  ['YPP', 226],
+  ['A', 183],
+  ['BP', 130],
+  ['APP', 83],
+  ['AA', 58]
+];
+
+export const ANAMBRA_2025_PARTIES: [string, number][] = [
+  ['APGA', 422029],
+  ['APC', 99778],
+  ['YPP', 37538],
+  ['LP', 10660],
+  ['ADC', 8154],
+  ['PDP', 1355],
+  ['AA', 1140],
+  ['APM', 639],
+  ['ZLP', 571],
+  ['NNPP', 525],
+  ['AAC', 274],
+  ['SDP', 257],
+  ['A', 228],
+  ['BP', 149],
+  ['APP', 77],
+  ['NRM', 68]
+];
+
+export const EKITI_2026_PARTIES: [string, number][] = [
+  ['APC', 308958],
+  ['PDP', 39173],
+  ['ADC', 12223],
+  ['ADP', 1998],
+  ['A', 687],
+  ['APM', 318],
+  ['APGA', 269],
+  ['AA', 240],
+  ['LP', 225],
+  ['AAC', 191],
+  ['PRP', 177],
+  ['SDP', 168],
+  ['ZLP', 102],
+  ['YPP', 94],
+  ['NRM', 60],
+  ['APP', 49],
+  ['NNPP', 29],
+  ['BOOT', 4]
+];
 
 function lead(name: string, votes: number) {
   const info = PARTY_INFO[name] || { fullName: name, color: 'bg-slate-600' };
@@ -137,16 +259,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Ekiti State with 16 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-emerald-900/20 to-slate-900',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '305,497 votes', percentage: 84.8, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '36,448 votes', percentage: 10.1, color: 'bg-red-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '12,058 votes', percentage: 3.4, color: 'bg-blue-500' },
-      { name: 'LP', fullName: 'Labour Party', votes: '1,950 votes', percentage: 0.5, color: 'bg-rose-500' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '1,420 votes', percentage: 0.4, color: 'bg-amber-600' },
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '1,100 votes', percentage: 0.3, color: 'bg-indigo-600' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '820 votes', percentage: 0.2, color: 'bg-sky-600' },
-      { name: 'PRP', fullName: 'Peoples Redemption Party', votes: '771 votes', percentage: 0.2, color: 'bg-red-700' }
-    ],
+    topParties: buildPartyBreakdown(EKITI_2026_PARTIES),
     lgaStandings: [
       lga('ADO EKITI', 45099, 42421, 1206, 43627, 'APC', 36827, 'PDP', 3720, 'ADC', 1030, 1011),
       lga('EFON', 11212, 10998, 325, 11323, 'APC', 8688, 'PDP', 2159, 'ADC', 202, 67),
@@ -185,15 +298,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Ondo State with 18 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-blue-900/20 to-slate-900',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '366,781 votes', percentage: 74.4, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 23.9, color: 'bg-red-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '4,510 votes', percentage: 0.9, color: 'bg-blue-500' },
-      { name: 'ZLP', fullName: 'Zenith Labour Party', votes: '2,217 votes', percentage: 0.5, color: 'bg-teal-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '238 votes', percentage: 0.1, color: 'bg-rose-500' },
-      { name: 'ADP', fullName: 'Action Democratic Party', votes: '151 votes', percentage: 0.1, color: 'bg-teal-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '983 votes', percentage: 0.1, color: 'bg-amber-600' }
-    ],
+    topParties: buildPartyBreakdown(ONDO_2025_PARTIES),
     lgaStandings: [
       lga('AKOKO NORTH EAST', 31187, 31180, 692, 31697, 'APC', 25657, 'PDP', 5071, 'ADC', 250, 213),
       lga('AKOKO NORTH WEST', 31007, 30413, 317, 31122, 'APC', 24678, 'PDP', 5502, 'ADC', 270, 357),
@@ -234,14 +339,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Anambra State with 21 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-purple-900/20 to-slate-900',
-    topParties: [
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '431,048 votes', percentage: 74.3, color: 'bg-indigo-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '102,689 votes', percentage: 17.7, color: 'bg-emerald-600' },
-      { name: 'YPP', fullName: 'Young Progressives Party', votes: '32,152 votes', percentage: 5.5, color: 'bg-emerald-800' },
-      { name: 'LP', fullName: 'Labour Party', votes: '8,031 votes', percentage: 1.4, color: 'bg-rose-500' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '3,375 votes', percentage: 0.6, color: 'bg-blue-500' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '2,601 votes', percentage: 0.5, color: 'bg-red-600' }
-    ],
+    topParties: buildPartyBreakdown(ANAMBRA_2025_PARTIES),
     lgaStandings: [
       lga('AGUATA', 43716, 42978, 613, 43653, 'APGA', 35746, 'APC', 4027, 'YPP', 2786, 645),
       lga('ANAMBRA EAST', 26478, 24719, 581, 25297, 'APGA', 14707, 'YPP', 6154, 'APC', 3112, 836),
@@ -285,13 +383,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Edo State with 18 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-amber-900/20 to-slate-900',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.8, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.9, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '1,100 votes', percentage: 0.2, color: 'bg-sky-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '699 votes', percentage: 0.1, color: 'bg-blue-500' }
-    ],
+    topParties: buildPartyBreakdown(EDO_2024_PARTIES),
     lgaStandings: [
       lga('Akoko Edo', 54395, 53547, 331, 53878, 'APC', 34847, 'PDP', 15865, 'LP', 2239, 596),
       lga('Egor', 35465, 34022, 1018, 35040, 'APC', 16760, 'PDP', 14658, 'LP', 1966, 638),
@@ -332,13 +424,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Kogi State with 21 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-amber-900/20 to-slate-900',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '446,237 votes', percentage: 54.5, color: 'bg-emerald-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 31.6, color: 'bg-amber-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '51,919 votes', percentage: 6.3, color: 'bg-red-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '21,812 votes', percentage: 2.7, color: 'bg-blue-500' },
-      { name: 'LP', fullName: 'Labour Party', votes: '12,044 votes', percentage: 1.5, color: 'bg-rose-500' }
-    ],
+    topParties: buildPartyBreakdown(KOGI_2023_PARTIES),
     lgaStandings: [
       lga('ADAVI', 52003, 103019, 67, 103086, 'APC', 100725, 'PDP', 1022, 'SDP', 271, 16),
       lga('AJAOKUTA', 31997, 33215, 580, 33682, 'APC', 23251, 'SDP', 8881, 'PDP', 489, 20),
@@ -382,11 +468,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Bayelsa State with 8 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-blue-900/20 to-slate-900',
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '175,196 votes', percentage: 56.3, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '110,108 votes', percentage: 35.3, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '1,027 votes', percentage: 0.3, color: 'bg-rose-500' }
-    ],
+    topParties: buildPartyBreakdown(BAYELSA_2023_PARTIES),
     lgaStandings: [
       lga('BRASS', 16976, 31424, 411, 31833, 'APC', 18575, 'PDP', 12220, 'LP', 80, 7),
       lga('EKEREMOR', 32380, 31352, 269, 31607, 'PDP', 23110, 'APC', 8445, 'LP', 39, 0),
@@ -417,12 +499,7 @@ export const FULL_ELECTION_STATES: StateMonitor[] = [
     summary: 'Audited governorship election for Imo State with 27 LGAs fully reconciled from official IReV EC8A returns.',
     colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-300',
     bgGradient: 'from-purple-900/20 to-slate-900',
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '540,308 votes', percentage: 77.0, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '71,503 votes', percentage: 10.2, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '64,081 votes', percentage: 9.1, color: 'bg-rose-500' },
-      { name: 'AA', fullName: 'Action Alliance', votes: '2,473 votes', percentage: 0.4, color: 'bg-indigo-500' }
-    ],
+    topParties: buildPartyBreakdown(IMO_2023_PARTIES),
     lgaStandings: [
       lga('ABOH MBAISE', 15820, 15384, 496, 15927, 'APC', 9654, 'LP', 2353, 'PDP', 1720, 986),
       lga('AHIAZU MBAISE', 16083, 15350, 613, 15869, 'APC', 8387, 'PDP', 3502, 'LP', 2228, 689),

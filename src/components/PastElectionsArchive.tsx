@@ -5,6 +5,16 @@ import {
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
 import { getTop3AndOthersParties } from './LiveDashboard';
+import { 
+  buildPartyBreakdown,
+  EKITI_2026_PARTIES,
+  ONDO_2025_PARTIES,
+  ANAMBRA_2025_PARTIES,
+  EDO_2024_PARTIES,
+  KOGI_2023_PARTIES,
+  BAYELSA_2023_PARTIES,
+  IMO_2023_PARTIES
+} from '../data/allElectionData';
 
 export interface PastElectionItem {
   code: string;
@@ -50,12 +60,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '98.2%',
     summary: 'Full post-election audit completed. High IReV upload fidelity recorded with minor ad-hoc administrative delays in Ekiti East LGA.',
     winner: { candidate: 'Biodun Oyebanji', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '308,958 votes', percentage: 85.4, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '39,173 votes', percentage: 10.8, color: 'bg-red-600' },
-      { name: 'ADC', fullName: 'African Democratic Congress', votes: '12,223 votes', percentage: 3.4, color: 'bg-blue-500' },
-      { name: 'ADP', fullName: 'Action Democratic Party', votes: '1,998 votes', percentage: 0.6, color: 'bg-teal-600' }
-    ]
+    topParties: buildPartyBreakdown(EKITI_2026_PARTIES)
   },
   {
     code: 'OD',
@@ -72,12 +77,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '99.4%',
     summary: 'All polling unit results parsed. Forensic audit confirmed declared results match verified Form EC8A uploads.',
     winner: { candidate: 'Lucky Aiyedatiwa', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '366,612 votes', percentage: 73.9, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '117,845 votes', percentage: 23.8, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '4,743 votes', percentage: 1.0, color: 'bg-rose-500' },
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '1,214 votes', percentage: 0.2, color: 'bg-indigo-600' }
-    ]
+    topParties: buildPartyBreakdown(ONDO_2025_PARTIES)
   },
   {
     code: 'AN',
@@ -94,12 +94,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '100%',
     summary: 'Comprehensive audit report published. Verified 5,720 PUs with specific legal findings on over-accreditation patterns.',
     winner: { candidate: 'Charles Soludo', party: 'APGA' },
-    topParties: [
-      { name: 'APGA', fullName: 'All Progressives Grand Alliance', votes: '312,229 votes', percentage: 53.5, color: 'bg-indigo-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '143,285 votes', percentage: 24.5, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '103,074 votes', percentage: 17.7, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '25,209 votes', percentage: 4.3, color: 'bg-rose-500' }
-    ]
+    topParties: buildPartyBreakdown(ANAMBRA_2025_PARTIES)
   },
   {
     code: 'ED_OFF',
@@ -116,12 +111,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '98.6%',
     summary: 'Rigorous forensic audit across 18 LGAs. High transmission accuracy recorded on the IReV portal.',
     winner: { candidate: 'Monday Okpebholo', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '291,667 votes', percentage: 51.1, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '247,274 votes', percentage: 43.3, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '22,763 votes', percentage: 4.0, color: 'bg-rose-500' },
-      { name: 'NNPP', fullName: 'New Nigeria Peoples Party', votes: '2,009 votes', percentage: 0.4, color: 'bg-sky-600' }
-    ]
+    topParties: buildPartyBreakdown(EDO_2024_PARTIES)
   },
   {
     code: 'KG_OFF',
@@ -138,12 +128,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '97.1%',
     summary: 'Pre-filled result sheets identified in Ogori/Magongo LGA were flagged and excluded from official tallies during audit.',
     winner: { candidate: 'Ahmed Usman Ododo', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '426,237 votes', percentage: 55.2, color: 'bg-emerald-600' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '259,052 votes', percentage: 33.6, color: 'bg-amber-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '77,882 votes', percentage: 10.1, color: 'bg-red-600' },
-      { name: 'AA', fullName: 'Action Alliance', votes: '1,438 votes', percentage: 0.2, color: 'bg-indigo-500' }
-    ]
+    topParties: buildPartyBreakdown(KOGI_2023_PARTIES)
   },
   {
     code: 'BY_OFF',
@@ -160,12 +145,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '96.8%',
     summary: 'Post-election forensics verified polling unit returns across riverine communities in Nembe and Southern Ijaw LGAs.',
     winner: { candidate: 'Douye Diri', party: 'PDP' },
-    topParties: [
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '173,310 votes', percentage: 55.5, color: 'bg-red-600' },
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '136,609 votes', percentage: 43.7, color: 'bg-emerald-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '1,027 votes', percentage: 0.3, color: 'bg-rose-500' },
-      { name: 'SDP', fullName: 'Social Democratic Party', votes: '193 votes', percentage: 0.1, color: 'bg-amber-600' }
-    ]
+    topParties: buildPartyBreakdown(BAYELSA_2023_PARTIES)
   },
   {
     code: 'IM_OFF',
@@ -182,12 +162,7 @@ export const PAST_ELECTIONS_DATA: PastElectionItem[] = [
     reconciledRate: '99.1%',
     summary: 'Comprehensive election audit completed across all 27 LGAs in Imo State. Polling unit level EC8B and BVAS accreditation numbers reconciled.',
     winner: { candidate: 'Hope Uzodimma', party: 'APC' },
-    topParties: [
-      { name: 'APC', fullName: 'All Progressives Congress', votes: '544,337 votes', percentage: 78.2, color: 'bg-emerald-600' },
-      { name: 'PDP', fullName: "People's Democratic Party", votes: '70,909 votes', percentage: 10.2, color: 'bg-red-600' },
-      { name: 'LP', fullName: 'Labour Party', votes: '64,530 votes', percentage: 9.3, color: 'bg-rose-500' },
-      { name: 'AA', fullName: 'Action Alliance', votes: '8,148 votes', percentage: 1.2, color: 'bg-indigo-500' }
-    ]
+    topParties: buildPartyBreakdown(IMO_2023_PARTIES)
   }
 ];
 
