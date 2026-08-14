@@ -48,10 +48,10 @@ export default function ReportsArchive() {
           <div className="max-w-3xl mb-12">
             <span className="eyebrow text-brand-blue font-semibold">Publications Archive</span>
             <h1 className="font-display font-bold text-4xl sm:text-5xl text-ink mt-2 mb-4 leading-tight">
-              All Forensic Audit Reports
+              Reports and Briefs
             </h1>
             <p className="text-ink2 text-base">
-              The complete archival registry of forensic auditing. Every report rigorously scores electoral administration against primary source evidence including BVAS registers, Forms EC8A–EC8D, and official uploads.
+              The complete archival registry of election audit reports, technology assessments, democracy briefs, and policy analyses. Every publication rigorously scores electoral processes against primary source evidence.
             </p>
           </div>
 

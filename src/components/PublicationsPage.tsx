@@ -141,8 +141,9 @@ export default function PublicationsPage() {
 
   // Determine current path to set mode
   const currentPath = window.location.pathname;
-  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' = 'all';
-  if (currentPath === '/post-election-audits') pageMode = 'audit';
+  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'reports-briefs' = 'all';
+  if (currentPath === '/reports-and-briefs' || currentPath === '/reports-briefs') pageMode = 'reports-briefs';
+  else if (currentPath === '/post-election-audits') pageMode = 'audit';
   else if (currentPath === '/political-landscape-monitor') pageMode = 'assessment';
   else if (currentPath === '/democracy-competitive-index') pageMode = 'dci';
   else if (currentPath === '/aeo-weekly-digest') pageMode = 'weekly';
@@ -253,6 +254,7 @@ export default function PublicationsPage() {
   // Scope publications by the current page mode
   const scopedPublications = unifiedPublications.filter(p => {
     if (pageMode === 'all') return true;
+    if (pageMode === 'reports-briefs') return p.type === 'audit' || p.type === 'assessment' || p.type === 'dci';
     return p.type === pageMode;
   });
 
@@ -328,6 +330,12 @@ export default function PublicationsPage() {
   // Page texts depending on the Mode
   const getPageInfo = () => {
     switch (pageMode) {
+      case 'reports-briefs':
+        return {
+          title: "Reports and Briefs",
+          description: "Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs.",
+          icon: <FileText className="w-8 h-8 text-brand-blue" />
+        };
       case 'audit':
         return {
           title: "Post-Election Audit Reports",

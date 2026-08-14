@@ -103,6 +103,17 @@ export default function Header() {
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-0 w-[30rem] bg-white text-ink border border-line rounded-xl shadow-custom p-3 animate-fade-in z-50">
                     <a 
+                      href="/reports-and-briefs" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/reports-and-briefs'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
+                    >
+                      <FileText className="w-6 h-6 text-brand-blue mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="block text-base font-bold text-brand-blue leading-snug">Reports and Briefs</span>
+                      </div>
+                    </a>
+
+                    <a 
                       href="/post-election-audits" 
                       onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
                       className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
@@ -217,6 +228,13 @@ export default function Header() {
             <div className="pt-2 pb-1 px-3">
               <span className="text-[10px] font-bold font-mono tracking-wider text-white/40 uppercase">Publications</span>
             </div>
+            <a 
+              href="/reports-and-briefs" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/reports-and-briefs'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
+            >
+              Reports and Briefs
+            </a>
             <a 
               href="/post-election-audits" 
               onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}

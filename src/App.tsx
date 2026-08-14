@@ -126,6 +126,8 @@ export default function App() {
 
   if (
     path === '/publications' ||
+    path === '/reports-and-briefs' ||
+    path === '/reports-briefs' ||
     path === '/post-election-audits' ||
     path === '/political-landscape-monitor' ||
     path === '/democracy-competitive-index' ||
