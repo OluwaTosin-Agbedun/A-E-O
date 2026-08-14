@@ -53,7 +53,7 @@ Verification pipeline: AEO-SECURE-2026-X.
 
 interface UnifiedPublication {
   id: string;
-  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci';
+  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'brief';
   typeName: string;
   category: string;
   title: string;
@@ -78,6 +78,7 @@ export default function PublicationsPage() {
   const [isTypesExpanded, setIsTypesExpanded] = useState(true);
 
   const publicationTypes = [
+    { value: 'brief', label: 'Reports and Briefs' },
     { value: 'audit', label: 'Post-Election Audits' },
     { value: 'assessment', label: 'Political Landscape Monitor' },
     { value: 'dci', label: 'Democracy Competitive Index (DCI) Report' },
@@ -213,6 +214,25 @@ export default function PublicationsPage() {
     });
   });
 
+  // 2.6 Reports & Briefs (tagType === 'brief')
+  reports.filter(r => r.tagType === 'brief').forEach(r => {
+    unifiedPublications.push({
+      id: r.id,
+      type: 'brief',
+      typeName: 'Reports & Briefs',
+      category: r.tag || 'REPORTS & BRIEFS',
+      title: r.title,
+      summary: r.summary,
+      author: r.author || '',
+      authorsList: r.authorsList || r.author || '',
+      date: formatReportDate(r.date),
+      image: r.image || '',
+      readTimeOrSize: r.size,
+      originalItem: r,
+      pdfUrl: r.pdfUrl
+    });
+  });
+
   // 3. Weekly issues
   weekly.forEach(w => {
     unifiedPublications.push({
@@ -254,7 +274,7 @@ export default function PublicationsPage() {
   // Scope publications by the current page mode
   const scopedPublications = unifiedPublications.filter(p => {
     if (pageMode === 'all') return true;
-    if (pageMode === 'reports-briefs') return p.type === 'audit' || p.type === 'assessment' || p.type === 'dci';
+    if (pageMode === 'reports-briefs') return p.type === 'brief';
     return p.type === pageMode;
   });
 
@@ -318,7 +338,7 @@ export default function PublicationsPage() {
   };
 
   const handleItemClick = (pub: UnifiedPublication) => {
-    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci') {
+    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci' || pub.type === 'brief') {
       navigateTo(`/report/${pub.id}`);
     } else if (pub.type === 'weekly') {
       navigateTo(`/weekly/${pub.id}`);

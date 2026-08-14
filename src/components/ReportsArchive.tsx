@@ -6,7 +6,7 @@ import { formatReportDate } from '../utils/date';
 export default function ReportsArchive() {
   const { reports } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<'all' | 'analysis' | 'tech' | 'dci'>('all');
+  const [selectedTag, setSelectedTag] = useState<'all' | 'brief' | 'analysis' | 'tech' | 'dci'>('all');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,6 +69,16 @@ export default function ReportsArchive() {
                 }`}
               >
                 All Reports ({reports.length})
+              </button>
+              <button
+                onClick={() => setSelectedTag('brief')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedTag === 'brief' 
+                    ? 'bg-brand-blue text-white' 
+                    : 'bg-paper text-ink2 hover:bg-line border border-line'
+                }`}
+              >
+                Reports & Briefs ({reports.filter(r => r.tagType === 'brief').length})
               </button>
               <button
                 onClick={() => setSelectedTag('analysis')}
