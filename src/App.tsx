@@ -48,6 +48,19 @@ export default function App() {
 
   const [path, setPath] = useState(getInitialPath());
 
+  // Track virtual page views in Google Tag Manager (dataLayer) for SPA routing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).dataLayer.push({
+        event: 'page_view',
+        page_path: path,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
+  }, [path]);
+
   useEffect(() => {
     const handleNavigation = () => {
       setPath(getInitialPath());
