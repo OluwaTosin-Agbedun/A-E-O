@@ -1,5 +1,6 @@
 import { useState, useEffect, MouseEvent } from 'react';
 import { ArrowLeft, Calendar, MapPin, Tag, Share2, ExternalLink, Link2, Clock, Users } from 'lucide-react';
+import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 
 interface EventReaderProps {
@@ -143,6 +144,13 @@ export default function EventReader({ eventId, onClose }: EventReaderProps) {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans">
+      <SEO 
+        title={`${evt.title} | Events`}
+        description={evt.description}
+        canonicalPath={`/event/${evt.id}`}
+        ogType="article"
+        ogImage={details.banner}
+      />
       
       {/* Reader header navigation */}
       <div className="bg-white/95 border-b border-line shadow-sm sticky top-0 z-40 backdrop-blur">

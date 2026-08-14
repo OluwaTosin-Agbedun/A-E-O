@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Database } from 'lucide-react';
+import SEO from './components/SEO';
 import { CMSProvider } from './context/CMSContext';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
@@ -123,6 +124,7 @@ export default function App() {
   }
 
   let content = null;
+  let seo = null;
 
   if (
     path === '/publications' ||
@@ -134,18 +136,39 @@ export default function App() {
     path === '/aeo-weekly-digest' ||
     path === '/announcements'
   ) {
+    if (path === '/reports-and-briefs' || path === '/reports-briefs') {
+      seo = <SEO title="Reports and Briefs" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/reports-and-briefs" />;
+    } else if (path === '/post-election-audits') {
+      seo = <SEO title="Post-Election Audit Reports" description="Explore independent forensic audits scoring electoral administration against primary source evidence." canonicalPath="/post-election-audits" />;
+    } else if (path === '/political-landscape-monitor') {
+      seo = <SEO title="Political Landscape Monitor" description="Sub-national technological assessments and electoral health monitoring across Nigerian states." canonicalPath="/political-landscape-monitor" />;
+    } else if (path === '/democracy-competitive-index') {
+      seo = <SEO title="Democracy Competitive Index" description="Evaluating democratic competitiveness, voting access, and electoral fairness across sub-national jurisdictions." canonicalPath="/democracy-competitive-index" />;
+    } else if (path === '/aeo-weekly-digest') {
+      seo = <SEO title="AEO Weekly Digest" description="Weekly intelligence bulletins, electoral timeline updates, and democratic health monitoring." canonicalPath="/aeo-weekly-digest" />;
+    } else if (path === '/announcements') {
+      seo = <SEO title="Press Bulletins & Announcements" description="Official press statements, bulletins, and observer deployment notices from the Athena Election Observatory." canonicalPath="/announcements" />;
+    } else {
+      seo = <SEO title="Publications & Research" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/publications" />;
+    }
     content = <PublicationsPage />;
   } else if (path === '/reports-archive') {
+    seo = <SEO title="Reports Archive" description="The complete archival registry of election audit reports, technology assessments, and policy research." canonicalPath="/reports-archive" />;
     content = <ReportsArchive />;
   } else if (path === '/weekly-archive') {
+    seo = <SEO title="Weekly Digest Archive" description="Comprehensive archive of AEO weekly intelligence bulletins." canonicalPath="/weekly-archive" />;
     content = <WeeklyArchive />;
   } else if (path === '/press-bulletins') {
+    seo = <SEO title="Press Bulletins" description="Official press statements, bulletins, and observer deployment notices." canonicalPath="/press-bulletins" />;
     content = <AnnouncementsArchive />;
   } else if (path === '/events') {
+    seo = <SEO title="Events" description="Upcoming and past election monitoring briefings, policy dialogues, and electoral technology workshops." canonicalPath="/events" />;
     content = <EventsArchive />;
   } else if (path === '/past-elections') {
+    seo = <SEO title="Past Elections Archive" description="Historical election monitoring data, voter turnout records, and electoral audit scorecards." canonicalPath="/past-elections" />;
     content = <PastElectionsArchive />;
   } else if (path === '/elections') {
+    seo = <SEO title="Elections & Electoral Data" description="Explore real-time election monitoring, voter turnouts, polling unit statistics, and election results across Nigeria." canonicalPath="/elections" />;
     content = <LiveDashboard isPreview={false} />;
   } else if (path.startsWith('/election/')) {
     const electionCode = path.substring('/election/'.length);
@@ -158,8 +181,10 @@ export default function App() {
       />
     );
   } else if (path === '/ehii') {
+    seo = <SEO title="Electoral Health & Integrity Index (EHII)" description="Comprehensive assessment scoring election integrity, INEC performance, voter access, and security across Nigerian elections." canonicalPath="/ehii" />;
     content = <EhiiIndex />;
   } else if (path === '/diary') {
+    seo = <SEO title="Electoral Diary & Timeline" description="Chronological timeline of electoral events, INEC deadlines, observer deployments, and key legal milestones." canonicalPath="/diary" />;
     content = <DiaryPage />;
   } else if (path.startsWith('/report/')) {
     const reportId = path.substring('/report/'.length);
@@ -174,6 +199,7 @@ export default function App() {
     const eventId = path.substring('/event/'.length);
     content = <EventReader eventId={eventId} onClose={() => navigate('/')} />;
   } else {
+    seo = <SEO title="Athena Election Observatory (AEO) | Election Integrity, Data & Accountability" description="Independent, non-partisan election data, audits and democratic health insights from the Athena Election Observatory, an initiative of the Athena Centre for Policy and Leadership." canonicalPath="/" />;
     content = (
       <>
         <Hero />
@@ -190,6 +216,7 @@ export default function App() {
 
   return (
     <CMSProvider>
+      {seo}
       <div className="min-h-screen flex flex-col bg-panel text-ink antialiased selection:bg-brand-blue/20">
         <Header />
         <main className="flex-grow">

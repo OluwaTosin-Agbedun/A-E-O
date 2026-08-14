@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Download, CheckCircle2, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
+import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
@@ -62,6 +63,13 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
 
   return (
     <div className="bg-white min-h-screen font-sans animate-fade-in">
+      <SEO 
+        title={report.title}
+        description={report.summary || report.sections?.[0]?.content?.substring(0, 160) || 'Forensic audit report by Athena Election Observatory.'}
+        canonicalPath={`/report/${report.id}`}
+        ogType="article"
+        ogImage={report.image}
+      />
       
       {/* Reader Navigation Bar */}
       <div className="bg-white/95 border-b border-line shadow-sm">

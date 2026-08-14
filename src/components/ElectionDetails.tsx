@@ -3,6 +3,7 @@ import {
   ArrowLeft, Users, MapPin, CheckCircle2, AlertCircle, Search, Calendar, Landmark, 
   FileText, ClipboardCheck, Clock, ShieldCheck, BarChart3, Info
 } from 'lucide-react';
+import SEO from './SEO';
 import { PartyLogo } from './PartyLogo';
 import { INITIAL_STATES, StateMonitor, PartyVote, LgaPartyStanding, getLgaOthersVotes, getLgaValidVotes } from './LiveDashboard';
 import { db } from '../lib/firebase';
@@ -201,8 +202,21 @@ export default function ElectionDetails({
     }
   };
 
+  const electionTitle = election.name.toLowerCase().includes('election')
+    ? election.name
+    : `${election.year || '2026'} ${election.name} ${election.type || 'Governorship Election'}`;
+
+  const electionDescription = election.description || 
+    `Explore verified election data, registered voters, LGAs, wards, polling units, party standings and electoral analysis for the ${electionTitle}.`;
+
   return (
     <div className="py-12 bg-slate-50 min-h-screen">
+      <SEO 
+        title={electionTitle}
+        description={electionDescription}
+        canonicalPath={`/election/${electionCode}`}
+        ogImage={`https://aeo.athenacentre.org/og/elections/${electionCode}.jpg`}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
         {/* Election Identity Banner */}

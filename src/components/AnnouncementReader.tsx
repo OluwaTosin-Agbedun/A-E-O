@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Download, CheckCircle2, Loader2, Bell, Share2, Calendar, User } from 'lucide-react';
+import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
@@ -112,6 +113,12 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
 
   return (
     <div className="bg-white min-h-screen font-sans animate-fade-in">
+      <SEO 
+        title={announcement ? announcement.title : 'Official Bulletin'}
+        description={announcement ? announcement.summary : 'Official press bulletin from Athena Election Observatory.'}
+        canonicalPath={`/announcement/${announcementId}`}
+        ogType="article"
+      />
       {/* Reader Top Bar */}
       <div className="bg-white/95 backdrop-blur-md border-b border-line sticky top-0 z-30 shadow-xs">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">

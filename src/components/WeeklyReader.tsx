@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText, Download } from 'lucide-react';
+import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -146,6 +147,13 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
   return (
     <div className="bg-white min-h-screen font-sans animate-fade-in">
+      <SEO 
+        title={`${issue.title} | AEO Weekly Digest`}
+        description={issue.summary}
+        canonicalPath={`/weekly/${issue.id}`}
+        ogType="article"
+        ogImage={issue.image}
+      />
       
       {/* Reader header navigation */}
       <div className="bg-white/95 border-b border-line shadow-sm">
