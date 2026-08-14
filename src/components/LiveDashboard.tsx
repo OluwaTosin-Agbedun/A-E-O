@@ -478,62 +478,104 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     </div>
 
                     <div className="space-y-3">
-                      {getTop3AndOthersParties(liveState.topParties).map((party) => (
-                        <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-3 min-w-0">
-                              {party.isOthers ? (
-                                <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
-                                  OTH
-                                </div>
-                              ) : (
-                                <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
-                              )}
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                                  {party.name}
-                                  {party.isOthers && (
-                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                                      Combined
+                      {(() => {
+                        const allLiveParties = getTop3AndOthersParties(liveState.topParties);
+                        const displayedLiveParties = allLiveParties.slice(0, 3);
+                        const hasMoreLiveParties = allLiveParties.length > 3;
+
+                        return (
+                          <>
+                            {displayedLiveParties.map((party) => (
+                              <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {party.isOthers ? (
+                                      <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
+                                        OTH
+                                      </div>
+                                    ) : (
+                                      <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
+                                    )}
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="text-xs font-bold text-ink flex items-center gap-1.5">
+                                        {party.name}
+                                        {party.isOthers && (
+                                          <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                            Combined
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
+                                        {party.fullName}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {liveState.status === 'Upcoming' && !party.isOthers ? (
+                                    <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                                      Votes: Pending
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                                      {party.votes.toLowerCase().startsWith('votes:')
+                                        ? party.votes
+                                        : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
+                                        ? party.votes
+                                        : `Votes: ${party.votes}`}
                                     </span>
                                   )}
-                                </span>
-                                <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
-                                  {party.fullName}
-                                </span>
-                              </div>
-                            </div>
-                            {liveState.status === 'Upcoming' && !party.isOthers ? (
-                              <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
-                                Votes: Pending
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
-                                {party.votes.toLowerCase().startsWith('votes:')
-                                  ? party.votes
-                                  : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
-                                  ? party.votes
-                                  : `Votes: ${party.votes}`}
-                              </span>
-                            )}
-                          </div>
+                                </div>
 
-                          {liveState.status !== 'Upcoming' && (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-[10px] font-mono text-mut">
-                                <span>{party.isOthers ? 'Combined Share' : 'Estimated Leverage'}</span>
-                                <span>{party.percentage}%</span>
+                                {liveState.status !== 'Upcoming' && (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-[10px] font-mono text-mut">
+                                      <span>{party.isOthers ? 'Combined Share' : 'Estimated Leverage'}</span>
+                                      <span>{party.percentage}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full rounded-full ${party.color}`} 
+                                        style={{ width: `${party.percentage}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full ${party.color}`} 
-                                  style={{ width: `${party.percentage}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            ))}
+
+                            {hasMoreLiveParties && (
+                              <a
+                                href={`/election/${liveState.code}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const targetUrl = `/election/${liveState.code}`;
+                                  if (window.location.hash) {
+                                    window.location.hash = targetUrl;
+                                  } else {
+                                    window.history.pushState({}, '', targetUrl);
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                  }
+                                }}
+                                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-dashed border-slate-300 flex items-center justify-between text-xs font-mono font-bold text-brand-blue transition-all cursor-pointer group shadow-2xs"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-brand-blue font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                                    +{allLiveParties.length - 3}
+                                  </div>
+                                  <div className="flex flex-col text-left">
+                                    <span className="text-xs font-bold text-brand-blue flex items-center gap-1 uppercase tracking-wider">
+                                      VIEW ALL
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-normal">
+                                      See all {allLiveParties.length} contesting parties
+                                    </span>
+                                  </div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-brand-blue transition-transform group-hover:translate-x-0.5" />
+                              </a>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -1011,54 +1053,96 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     </div>
 
                     <div className="space-y-3">
-                      {getTop3AndOthersParties(activePastState.topParties).map((party) => (
-                        <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-3 min-w-0">
-                              {party.isOthers ? (
-                                <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
-                                  OTH
-                                </div>
-                              ) : (
-                                <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
-                              )}
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                                  {party.name}
-                                  {party.isOthers && (
-                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                                      Combined
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
-                                  {party.fullName}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-xs font-mono font-bold text-ink shrink-0">
-                              {party.votes.toLowerCase().startsWith('votes:')
-                                ? party.votes
-                                : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
-                                ? party.votes
-                                : `${party.votes} votes`}
-                            </span>
-                          </div>
+                      {(() => {
+                        const allPastParties = getTop3AndOthersParties(activePastState.topParties);
+                        const displayedPastParties = allPastParties.slice(0, 3);
+                        const hasMorePastParties = allPastParties.length > 3;
 
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] font-mono text-mut">
-                              <span>{party.isOthers ? 'Combined Share' : 'Vote Share'}</span>
-                              <span>{party.percentage}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${party.color}`} 
-                                style={{ width: `${party.percentage}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        return (
+                          <>
+                            {displayedPastParties.map((party) => (
+                              <div key={party.name} className="p-3 bg-paper rounded-xl border border-line space-y-2 hover:shadow-sm transition-shadow">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {party.isOthers ? (
+                                      <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-300">
+                                        OTH
+                                      </div>
+                                    ) : (
+                                      <PartyLogo name={party.name} className="w-8 h-8 rounded-lg shrink-0" />
+                                    )}
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="text-xs font-bold text-ink flex items-center gap-1.5">
+                                        {party.name}
+                                        {party.isOthers && (
+                                          <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                            Combined
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-[10px] text-mut truncate max-w-[140px]" title={party.fullName}>
+                                        {party.fullName}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs font-mono font-bold text-ink shrink-0">
+                                    {party.votes.toLowerCase().startsWith('votes:')
+                                      ? party.votes
+                                      : party.votes.toLowerCase().includes('votes') || party.votes === 'Pending' || party.votes === 'Registered'
+                                      ? party.votes
+                                      : `${party.votes} votes`}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[10px] font-mono text-mut">
+                                    <span>{party.isOthers ? 'Combined Share' : 'Vote Share'}</span>
+                                    <span>{party.percentage}%</span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full ${party.color}`} 
+                                      style={{ width: `${party.percentage}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+
+                            {hasMorePastParties && (
+                              <a
+                                href={`/election/${activePastState.code}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const targetUrl = `/election/${activePastState.code}`;
+                                  if (window.location.hash) {
+                                    window.location.hash = targetUrl;
+                                  } else {
+                                    window.history.pushState({}, '', targetUrl);
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                  }
+                                }}
+                                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-dashed border-slate-300 flex items-center justify-between text-xs font-mono font-bold text-brand-blue transition-all cursor-pointer group shadow-2xs"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-brand-blue font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                                    +{allPastParties.length - 3}
+                                  </div>
+                                  <div className="flex flex-col text-left">
+                                    <span className="text-xs font-bold text-brand-blue flex items-center gap-1 uppercase tracking-wider">
+                                      VIEW ALL
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-normal">
+                                      See all {allPastParties.length} participating parties
+                                    </span>
+                                  </div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-brand-blue transition-transform group-hover:translate-x-0.5" />
+                              </a>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
