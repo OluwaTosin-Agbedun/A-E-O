@@ -293,11 +293,11 @@ export default function ElectionDetails({
                     <span>Official Vote Collation Ongoing</span>
                   </h4>
                   <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                    {election.reconciledRate || '84.8%'} IReV Uploaded
+                    {election.reconciledRate || '87.48%'} IReV Uploaded
                   </span>
                 </div>
                 <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                  Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '3,191 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 8:18:05 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
+                  Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
                 </p>
               </div>
             </div>

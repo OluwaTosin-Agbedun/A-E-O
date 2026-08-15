@@ -365,11 +365,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                       <span>Official Vote Collation Ongoing</span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                      {liveState.reconciledRate || '84.8%'} IReV Uploaded
+                      {liveState.reconciledRate || '87.48%'} IReV Uploaded
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '3,191 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 8:18:05 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
+                    Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
                   </p>
                 </div>
               </div>
@@ -430,7 +430,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-paper rounded-xl border border-line">
                     <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Voter Turnout</span>
                     <span className="block text-sm font-semibold text-indigo-600 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <Users className="w-3.5 h-3.5 text-indigo-500" /> {liveState.voterTurnout || (liveState.accreditedVoters ? '42.53%' : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A'))}
+                      <Users className="w-3.5 h-3.5 text-indigo-500" /> {liveState.voterTurnout || (liveState.accreditedVoters ? '44.1%' : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A'))}
                     </span>
                   </div>
                   <div className="p-3 bg-paper rounded-xl border border-line">
@@ -454,7 +454,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/90 shadow-2xs transition-all hover:shadow-sm">
                     <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">IReV Upload</span>
                     <span className="block text-sm font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {(liveState.reconciledRate && liveState.reconciledRate !== '0.0%' ? liveState.reconciledRate : '84.8%')}
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {(liveState.reconciledRate && liveState.reconciledRate !== '0.0%' ? liveState.reconciledRate : '87.48%')}
                     </span>
                   </div>
                 </div>
