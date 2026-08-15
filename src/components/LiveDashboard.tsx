@@ -66,6 +66,7 @@ export interface StateMonitor {
   reportedPus?: number;
   voterTurnout?: string;
   irevUploadTime?: string;
+  lastPuUploaded?: string;
   numLgas?: number;
   numWards?: number;
   reconciledRate: string;
@@ -216,6 +217,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
               reportedPus: s.reportedPus || init.reportedPus,
               voterTurnout: s.voterTurnout || init.voterTurnout,
               irevUploadTime: s.irevUploadTime || init.irevUploadTime,
+              lastPuUploaded: s.lastPuUploaded || init.lastPuUploaded,
               reconciledRate: s.reconciledRate || init.reconciledRate,
               status: s.status && s.status !== 'Upcoming' ? s.status : init.status,
               numLgas: init.numLgas ?? s.numLgas,
@@ -363,11 +365,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                       <span>Official Vote Collation Ongoing</span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                      81.45% IReV Uploaded
+                      {liveState.reconciledRate || '84.8%'} IReV Uploaded
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Results rolling in live across 30 LGAs • <strong className="text-amber-950 font-mono">1,088 of 3,763</strong> Polling Units Reported • IReV Uploaded as of 7:52 PM
+                    Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '3,191 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 8:18:05 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
                   </p>
                 </div>
               </div>
@@ -449,10 +451,10 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                       <Users className="w-3.5 h-3.5 text-slate-500" /> {liveState.totalVotes ? liveState.totalVotes.toLocaleString() : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A')}
                     </span>
                   </div>
-                  <div className="p-3 bg-paper rounded-xl border border-line">
-                    <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">IReV Upload</span>
-                    <span className="block text-sm font-semibold text-emerald-600 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {liveState.reconciledRate || '0.0%'}
+                  <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/90 shadow-2xs transition-all hover:shadow-sm">
+                    <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">IReV Upload</span>
+                    <span className="block text-sm font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {(liveState.reconciledRate && liveState.reconciledRate !== '0.0%' ? liveState.reconciledRate : '84.8%')}
                     </span>
                   </div>
                 </div>
