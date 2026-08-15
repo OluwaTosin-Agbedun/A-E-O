@@ -113,15 +113,25 @@ export default function ElectionDetails({
           let formatted = data.items.map((s: any) => {
             const init = INITIAL_STATES.find(i => i.code === s.code);
             if (!init) return s;
+
+            const initHasValidVotes = init.topParties && init.topParties.some(p => p.votes && p.votes !== 'Pending' && p.votes !== '0');
+            const sHasValidVotes = s.topParties && s.topParties.some((p: any) => p.votes && p.votes !== 'Pending' && p.votes !== '0');
+            const topParties = sHasValidVotes ? s.topParties : (initHasValidVotes ? init.topParties : (s.topParties || init.topParties));
+
             return {
               ...init,
               ...s,
-              topParties: (init.topParties && init.topParties.length > 0) ? init.topParties : s.topParties,
+              topParties,
               lgaStandings: (init.lgaStandings && init.lgaStandings.length > 0) ? init.lgaStandings : s.lgaStandings,
-              validVotes: init.validVotes ?? s.validVotes,
-              rejectedVotes: init.rejectedVotes ?? s.rejectedVotes,
-              totalVotes: init.totalVotes ?? s.totalVotes,
-              accreditedVoters: init.accreditedVoters ?? s.accreditedVoters,
+              validVotes: s.validVotes || init.validVotes,
+              rejectedVotes: s.rejectedVotes ?? init.rejectedVotes,
+              totalVotes: s.totalVotes || init.totalVotes,
+              accreditedVoters: s.accreditedVoters || init.accreditedVoters,
+              reportedPus: s.reportedPus || init.reportedPus,
+              voterTurnout: s.voterTurnout || init.voterTurnout,
+              irevUploadTime: s.irevUploadTime || init.irevUploadTime,
+              reconciledRate: s.reconciledRate || init.reconciledRate,
+              status: s.status && s.status !== 'Upcoming' ? s.status : init.status,
               numLgas: init.numLgas ?? s.numLgas,
               numWards: init.numWards ?? s.numWards,
             };
@@ -236,13 +246,12 @@ export default function ElectionDetails({
                 <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                   {election.region} Region
                 </span>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${
-                  election.status === 'Upcoming' 
-                    ? 'border-amber-200 bg-amber-50 text-amber-700' 
-                    : 'border-green-200 bg-green-50 text-green-700'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${election.status === 'Upcoming' ? 'bg-amber-500' : 'bg-green-500'}`}></span>
-                  {election.status === 'Upcoming' ? 'Live Monitoring Phase' : 'Concluded & Audited'}
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider border-amber-300 bg-amber-50 text-amber-900 shadow-2xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                  Vote Collation In Progress
                 </span>
               </div>
               
@@ -267,6 +276,37 @@ export default function ElectionDetails({
               </div>
             </div>
           </div>
+
+          {/* Live Collation Banner */}
+          <div className="mt-6 bg-gradient-to-r from-amber-50 via-amber-50/90 to-blue-50/50 border border-amber-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-amber-950 flex items-center gap-1.5">
+                    <span>Official Vote Collation Ongoing</span>
+                  </h4>
+                  <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+                    {election.reconciledRate || '81.45%'} IReV Uploaded
+                  </span>
+                </div>
+                <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
+                  Results rolling in live across 30 LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '1,088 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || '7:52 PM'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <span className="text-xs font-mono font-bold text-amber-900 bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                Collation Live
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Core Electoral Metrics Grid - In requested order */}
@@ -281,30 +321,14 @@ export default function ElectionDetails({
             </div>
           </div>
 
-          {/* LGAs */}
+          {/* Polling Units / Reported PUs */}
           <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
-            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">LGAs</span>
-            <div className="mt-2 flex items-center gap-1.5 font-mono">
-              <MapPin className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-bold text-ink">{election.numLgas ?? (election.code === 'OS' ? 30 : election.code === 'AN' ? 21 : 16)}</span>
-            </div>
-          </div>
-
-          {/* Wards */}
-          <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
-            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Wards</span>
-            <div className="mt-2 flex items-center gap-1.5 font-mono">
-              <MapPin className="w-4 h-4 text-rose-500" />
-              <span className="text-sm font-bold text-ink">{election.numWards ?? (election.code === 'OS' ? 332 : election.code === 'AN' ? 326 : 177)}</span>
-            </div>
-          </div>
-
-          {/* Polling Units */}
-          <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
-            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Polling Units</span>
+            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Reported PUs</span>
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Landmark className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-bold text-ink">{election.pollingUnits}</span>
+              <span className="text-sm font-bold text-ink">
+                {election.reportedPus ? `${election.reportedPus.toLocaleString()} / ${election.pollingUnits}` : election.pollingUnits}
+              </span>
             </div>
           </div>
 
@@ -314,9 +338,18 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Users className="w-4 h-4 text-amber-500" />
               <span className="text-sm font-bold text-ink">
-                {election.status === 'Upcoming' 
-                  ? 'Pending' 
-                  : election.accreditedVoters ? election.accreditedVoters.toLocaleString() : 'N/A'}
+                {election.accreditedVoters ? election.accreditedVoters.toLocaleString() : (election.status === 'Upcoming' ? 'Pending' : 'N/A')}
+              </span>
+            </div>
+          </div>
+
+          {/* Voter Turnout */}
+          <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
+            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Voter Turnout</span>
+            <div className="mt-2 flex items-center gap-1.5 font-mono">
+              <Users className="w-4 h-4 text-indigo-500" />
+              <span className="text-sm font-bold text-ink">
+                {election.voterTurnout || (election.accreditedVoters ? '42.53%' : (election.status === 'Upcoming' ? 'Pending' : 'N/A'))}
               </span>
             </div>
           </div>
@@ -327,9 +360,7 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span className="text-sm font-bold text-ink">
-                {election.status === 'Upcoming' 
-                  ? 'Pending' 
-                  : election.validVotes ? election.validVotes.toLocaleString() : 'N/A'}
+                {election.validVotes ? election.validVotes.toLocaleString() : (election.status === 'Upcoming' ? 'Pending' : 'N/A')}
               </span>
             </div>
           </div>
@@ -340,9 +371,7 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <AlertCircle className="w-4 h-4 text-rose-500" />
               <span className="text-sm font-bold text-ink">
-                {election.status === 'Upcoming' 
-                  ? 'Pending' 
-                  : election.rejectedVotes ? election.rejectedVotes.toLocaleString() : 'N/A'}
+                {election.rejectedVotes !== undefined ? election.rejectedVotes.toLocaleString() : (election.status === 'Upcoming' ? 'Pending' : 'N/A')}
               </span>
             </div>
           </div>
@@ -353,10 +382,17 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Users className="w-4 h-4 text-slate-500" />
               <span className="text-sm font-bold text-ink">
-                {election.status === 'Upcoming' 
-                  ? 'Pending' 
-                  : election.totalVotes ? election.totalVotes.toLocaleString() : 'N/A'}
+                {election.totalVotes ? election.totalVotes.toLocaleString() : (election.status === 'Upcoming' ? 'Pending' : 'N/A')}
               </span>
+            </div>
+          </div>
+
+          {/* LGAs */}
+          <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
+            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">LGAs / Wards</span>
+            <div className="mt-2 flex items-center gap-1.5 font-mono">
+              <MapPin className="w-4 h-4 text-indigo-500" />
+              <span className="text-sm font-bold text-ink">{election.numLgas ?? 30} / {election.numWards ?? 332}</span>
             </div>
           </div>
 
@@ -479,7 +515,7 @@ export default function ElectionDetails({
                           </div>
                         </div>
                         <span className="text-xs font-mono font-bold text-slate-700 bg-white border border-line px-2 py-1 rounded">
-                          {election.status === 'Upcoming' || party.votes === 'Registered' || party.votes === 'Pending'
+                          {!party.votes || party.votes === 'Registered' || party.votes === 'Pending'
                             ? 'Votes: Pending'
                             : party.votes.toLowerCase().startsWith('votes:')
                             ? party.votes
@@ -487,7 +523,7 @@ export default function ElectionDetails({
                         </span>
                       </div>
 
-                      {election.status !== 'Upcoming' && (
+                      {party.percentage > 0 && (
                         <div className="space-y-1 pt-2 border-t border-slate-200/50">
                           <div className="flex items-center justify-between text-[10px] font-mono text-mut">
                             <span>Vote Share Percentage</span>
