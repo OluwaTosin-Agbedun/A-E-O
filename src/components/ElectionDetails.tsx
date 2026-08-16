@@ -313,11 +313,11 @@ export default function ElectionDetails({
                       <span>INEC Announced Result</span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
-                      {election.reconciledRate || '100%'} IReV Completed
+                      {election.reconciledRate || '98.43%'} IReV Uploaded
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>3,763 of 3,763</strong> Polling Units Reported • Declared on {election.date || '16 August 2026'}
+                    Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({election.reconciledRate || '98.43%'} IReV Uploaded) • Declared on {election.date || '16 August 2026'}
                   </p>
                 </div>
               </div>
@@ -390,7 +390,7 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Landmark className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-bold text-ink">
-                {election.reportedPus ? `${election.reportedPus.toLocaleString()} / ${election.pollingUnits}` : election.pollingUnits}
+                {election.reportedPus ? `${election.reportedPus}/${election.pollingUnits.replace(/,/g, '')}` : '3704/3763'}
               </span>
             </div>
           </div>

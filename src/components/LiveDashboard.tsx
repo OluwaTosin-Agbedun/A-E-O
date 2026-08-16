@@ -386,11 +386,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                         <span>INEC Announced Result</span>
                       </h4>
                       <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
-                        {liveState.reconciledRate || '100%'} IReV Completed
+                        {liveState.reconciledRate || '98.43%'} IReV Uploaded
                       </span>
                     </div>
                     <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                      Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>3,763 of 3,763</strong> Polling Units Reported • Declared on {liveState.date || '16 August 2026'}
+                      Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({liveState.reconciledRate || '98.43%'} IReV Uploaded) • Declared on {liveState.date || '16 August 2026'}
                     </p>
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-paper rounded-xl border border-line">
                     <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Reported PUs</span>
                     <span className="block text-sm font-semibold text-brand-blue mt-0.5 flex items-center gap-1.5 font-mono">
-                      <MapPin className="w-3.5 h-3.5 text-brand-blue" /> {liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} / ${liveState.pollingUnits}` : liveState.pollingUnits}
+                      <MapPin className="w-3.5 h-3.5 text-brand-blue" /> {liveState.reportedPus ? `${liveState.reportedPus}/${liveState.pollingUnits.replace(/,/g, '')}` : '3704/3763'}
                     </span>
                   </div>
                   <div className="p-3 bg-paper rounded-xl border border-line">
@@ -514,7 +514,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/90 shadow-2xs transition-all hover:shadow-sm">
                     <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">IReV Upload</span>
                     <span className="block text-sm font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {liveState.reconciledRate || '100%'}
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {liveState.reconciledRate || '98.43%'}
                     </span>
                   </div>
                 </div>
