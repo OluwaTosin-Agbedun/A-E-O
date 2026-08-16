@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Users, MapPin, CheckCircle2, AlertCircle, Search, Calendar, Landmark, 
-  FileText, ClipboardCheck, Clock, ShieldCheck, BarChart3, Info
+  FileText, ClipboardCheck, Clock, ShieldCheck, BarChart3, Info, CreditCard
 } from 'lucide-react';
 import SEO from './SEO';
 import { PartyLogo } from './PartyLogo';
@@ -117,6 +117,28 @@ export default function ElectionDetails({
             const initHasValidVotes = init.topParties && init.topParties.some(p => p.votes && p.votes !== 'Pending' && p.votes !== '0');
             const sHasValidVotes = s.topParties && s.topParties.some((p: any) => p.votes && p.votes !== 'Pending' && p.votes !== '0');
             const topParties = sHasValidVotes ? s.topParties : (initHasValidVotes ? init.topParties : (s.topParties || init.topParties));
+
+            if (init.code === 'OS' || init.status === 'INEC Announced Result') {
+              return {
+                ...s,
+                ...init,
+                topParties: init.topParties,
+                lgaStandings: (init.lgaStandings && init.lgaStandings.length > 0) ? init.lgaStandings : s.lgaStandings,
+                validVotes: init.validVotes,
+                rejectedVotes: init.rejectedVotes,
+                totalVotes: init.totalVotes,
+                accreditedVoters: init.accreditedVoters,
+                reportedPus: init.reportedPus,
+                voterTurnout: init.voterTurnout,
+                irevUploadTime: init.irevUploadTime,
+                lastPuUploaded: init.lastPuUploaded,
+                reconciledRate: init.reconciledRate,
+                status: init.status,
+                voters: init.voters,
+                pvcCollected: init.pvcCollected,
+                summary: init.summary,
+              };
+            }
 
             return {
               ...init,
@@ -278,36 +300,65 @@ export default function ElectionDetails({
             </div>
           </div>
 
-          {/* Live Collation Banner */}
-          <div className="mt-6 bg-gradient-to-r from-amber-50 via-amber-50/90 to-blue-50/50 border border-amber-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+          {/* Live Collation / Announced Result Banner */}
+          {election.status === 'INEC Announced Result' ? (
+            <div className="mt-6 bg-gradient-to-r from-emerald-50 via-emerald-50/90 to-blue-50/50 border border-emerald-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-emerald-950 flex items-center gap-1.5">
+                      <span>INEC Announced Result</span>
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
+                      {election.reconciledRate || '100%'} IReV Completed
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
+                    Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>3,763 of 3,763</strong> Polling Units Reported • Declared on {election.date || '16 August 2026'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <span className="text-xs font-mono font-bold text-emerald-900 bg-white border border-emerald-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Result Declared
                 </span>
               </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-amber-950 flex items-center gap-1.5">
-                    <span>Official Vote Collation Ongoing</span>
-                  </h4>
-                  <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                    {election.reconciledRate || '87.48%'} IReV Uploaded
+            </div>
+          ) : (
+            <div className="mt-6 bg-gradient-to-r from-amber-50 via-amber-50/90 to-blue-50/50 border border-amber-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="p-2.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
                   </span>
                 </div>
-                <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                  Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-amber-950 flex items-center gap-1.5">
+                      <span>Official Vote Collation Ongoing</span>
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+                      {election.reconciledRate || '87.48%'} IReV Uploaded
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
+                    Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <span className="text-xs font-mono font-bold text-amber-900 bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  Collation Live
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <span className="text-xs font-mono font-bold text-amber-900 bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                Collation Live
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Core Electoral Metrics Grid - In requested order */}
@@ -321,6 +372,17 @@ export default function ElectionDetails({
               <span className="text-sm font-bold text-ink">{election.voters}</span>
             </div>
           </div>
+
+          {/* PVC Collected (if available) */}
+          {election.pvcCollected && (
+            <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
+              <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">PVC Collected</span>
+              <div className="mt-2 flex items-center gap-1.5 font-mono">
+                <CreditCard className="w-4 h-4 text-emerald-600" />
+                <span className="text-sm font-bold text-emerald-700">{election.pvcCollected}</span>
+              </div>
+            </div>
+          )}
 
           {/* Polling Units / Reported PUs */}
           <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
@@ -350,7 +412,7 @@ export default function ElectionDetails({
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Users className="w-4 h-4 text-indigo-500" />
               <span className="text-sm font-bold text-ink">
-                {election.voterTurnout || (election.accreditedVoters ? '42.53%' : (election.status === 'Upcoming' ? 'Pending' : 'N/A'))}
+                {election.voterTurnout || (election.accreditedVoters ? '43.20%' : (election.status === 'Upcoming' ? 'Pending' : 'N/A'))}
               </span>
             </div>
           </div>
@@ -377,9 +439,9 @@ export default function ElectionDetails({
             </div>
           </div>
 
-          {/* Total Votes */}
+          {/* Total Vote Cast */}
           <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
-            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Total Votes</span>
+            <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Total Vote Cast</span>
             <div className="mt-2 flex items-center gap-1.5 font-mono">
               <Users className="w-4 h-4 text-slate-500" />
               <span className="text-sm font-bold text-ink">

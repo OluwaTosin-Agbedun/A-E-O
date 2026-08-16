@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowRight, ArrowLeft, Users, AlertCircle, Search, MapPin, CheckCircle2,
-  Calendar, ShieldCheck, X, ChevronRight
+  Calendar, ShieldCheck, X, ChevronRight, CreditCard
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
 import { db } from '../lib/firebase';
@@ -58,9 +58,10 @@ export interface StateMonitor {
   name: string;
   region: string;
   election: string;
-  status: 'Upcoming' | 'Concluded' | 'Audit phase' | 'Collation in progress' | string;
+  status: 'Upcoming' | 'Concluded' | 'Audit phase' | 'Collation in progress' | 'INEC Announced Result' | string;
   date: string;
   voters: string;
+  pvcCollected?: string;
   accreditedVoters?: number;
   pollingUnits: string;
   reportedPus?: number;
@@ -204,6 +205,28 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
             const initHasValidVotes = init.topParties && init.topParties.some(p => p.votes && p.votes !== 'Pending' && p.votes !== '0');
             const sHasValidVotes = s.topParties && s.topParties.some((p: any) => p.votes && p.votes !== 'Pending' && p.votes !== '0');
             const topParties = sHasValidVotes ? s.topParties : (initHasValidVotes ? init.topParties : (s.topParties || init.topParties));
+
+            if (init.code === 'OS' || init.status === 'INEC Announced Result') {
+              return {
+                ...s,
+                ...init,
+                topParties: init.topParties,
+                lgaStandings: (init.lgaStandings && init.lgaStandings.length > 0) ? init.lgaStandings : s.lgaStandings,
+                validVotes: init.validVotes,
+                rejectedVotes: init.rejectedVotes,
+                totalVotes: init.totalVotes,
+                accreditedVoters: init.accreditedVoters,
+                reportedPus: init.reportedPus,
+                voterTurnout: init.voterTurnout,
+                irevUploadTime: init.irevUploadTime,
+                lastPuUploaded: init.lastPuUploaded,
+                reconciledRate: init.reconciledRate,
+                status: init.status,
+                voters: init.voters,
+                pvcCollected: init.pvcCollected,
+                summary: init.summary,
+              };
+            }
 
             return {
               ...init,
@@ -350,36 +373,65 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
           {/* Live Election Details Panel */}
           <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-custom space-y-6">
             
-            {/* Live Collation Status Banner */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="p-2.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            {/* Live Collation / Announced Result Status Banner */}
+            {liveState.status === 'INEC Announced Result' ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-emerald-950 flex items-center gap-1.5">
+                        <span>INEC Announced Result</span>
+                      </h4>
+                      <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
+                        {liveState.reconciledRate || '100%'} IReV Completed
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
+                      Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>3,763 of 3,763</strong> Polling Units Reported • Declared on {liveState.date || '16 August 2026'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <span className="text-xs font-mono font-bold text-emerald-900 bg-white border border-emerald-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Result Declared
                   </span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-amber-950 flex items-center gap-1.5">
-                      <span>Official Vote Collation Ongoing</span>
-                    </h4>
-                    <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                      {liveState.reconciledRate || '87.48%'} IReV Uploaded
+              </div>
+            ) : (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="p-2.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
                     </span>
                   </div>
-                  <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-amber-950 flex items-center gap-1.5">
+                        <span>Official Vote Collation Ongoing</span>
+                      </h4>
+                      <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+                        {liveState.reconciledRate || '87.48%'} IReV Uploaded
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
+                      Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Active Live Collation
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                <span className="text-xs font-mono font-bold text-amber-900 bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-2xs flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  Active Live Collation
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
@@ -415,6 +467,14 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                       <Users className="w-3.5 h-3.5 text-brand-blue" /> {liveState.voters}
                     </span>
                   </div>
+                  {liveState.pvcCollected && (
+                    <div className="p-3 bg-paper rounded-xl border border-line">
+                      <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">PVC Collected</span>
+                      <span className="block text-sm font-semibold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
+                        <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> {liveState.pvcCollected}
+                      </span>
+                    </div>
+                  )}
                   <div className="p-3 bg-paper rounded-xl border border-line">
                     <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Reported PUs</span>
                     <span className="block text-sm font-semibold text-brand-blue mt-0.5 flex items-center gap-1.5 font-mono">
@@ -430,7 +490,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-paper rounded-xl border border-line">
                     <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Voter Turnout</span>
                     <span className="block text-sm font-semibold text-indigo-600 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <Users className="w-3.5 h-3.5 text-indigo-500" /> {liveState.voterTurnout || (liveState.accreditedVoters ? '44.1%' : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A'))}
+                      <Users className="w-3.5 h-3.5 text-indigo-500" /> {liveState.voterTurnout || (liveState.accreditedVoters ? '43.20%' : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A'))}
                     </span>
                   </div>
                   <div className="p-3 bg-paper rounded-xl border border-line">
@@ -446,7 +506,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     </span>
                   </div>
                   <div className="p-3 bg-paper rounded-xl border border-line">
-                    <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Total Votes</span>
+                    <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">Total Vote Cast</span>
                     <span className="block text-sm font-semibold text-ink mt-0.5 flex items-center gap-1.5 font-mono">
                       <Users className="w-3.5 h-3.5 text-slate-500" /> {liveState.totalVotes ? liveState.totalVotes.toLocaleString() : (liveState.status === 'Upcoming' ? 'Pending' : 'N/A')}
                     </span>
@@ -454,7 +514,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/90 shadow-2xs transition-all hover:shadow-sm">
                     <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">IReV Upload</span>
                     <span className="block text-sm font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {(liveState.reconciledRate && liveState.reconciledRate !== '0.0%' ? liveState.reconciledRate : '87.48%')}
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {liveState.reconciledRate || '100%'}
                     </span>
                   </div>
                 </div>
