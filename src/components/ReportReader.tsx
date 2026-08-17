@@ -96,35 +96,6 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             <ArrowLeft className="w-4 h-4" />
             <span>← All audit reports</span>
           </button>
-
-          {/* Interactive Download Action */}
-          {report.pdfUrl && (
-            <div>
-              {downloadProgress !== null ? (
-                <div className="flex items-center gap-2 bg-paper border border-line px-4 py-2 rounded-lg text-xs font-semibold font-mono text-ink">
-                  {downloadProgress < 100 ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 text-brand-blue animate-spin" />
-                      <span>Compiling PDF... {downloadProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
-                      <span className="text-brand-green">Download Ready!</span>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <button 
-                  onClick={handleDownloadPDF}
-                  className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Report</span>
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -164,6 +135,39 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
               <FormattedText content={section.content} className="text-ink2 pl-0 sm:pl-5" />
             </section>
           ))}
+        </div>
+
+        {/* Download Action Box (Placed After Text Contents) */}
+        <div className="mt-12 pt-8 border-t border-line">
+          <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="font-display font-bold text-base text-ink">Official Publication Document</h4>
+              <p className="text-xs text-ink2 mt-0.5">Download a verified copy of this complete report for offline review and reference.</p>
+            </div>
+            {downloadProgress !== null ? (
+              <div className="flex items-center gap-2 bg-white border border-line px-5 py-2.5 rounded-xl text-xs font-semibold font-mono text-ink shrink-0">
+                {downloadProgress < 100 ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-brand-blue animate-spin" />
+                    <span>Compiling PDF... {downloadProgress}%</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-brand-green" />
+                    <span className="text-brand-green">Download Ready!</span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={handleDownloadPDF}
+                className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Report</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Visual Download Success Popover Toast */}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Eye, ArrowRight, BookOpen, MapPin, Users, Building, HelpCircle } from 'lucide-react';
+import { Calendar, ArrowRight, MapPin, Users, Building, CheckCircle2, ShieldCheck, Award } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 
 export default function Hero() {
@@ -107,91 +107,95 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Election spotlight countdown card */}
+          {/* Osun Election Assessment Snapshot Card */}
           <div className="lg:col-span-5">
-            <div className="bg-white/5 border border-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl relative backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono tracking-widest text-blue-300 font-bold uppercase flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  ◦ {heroConfig.spotlightBadgeText}
+            <div className="bg-white/5 border border-white/15 rounded-2xl p-6 sm:p-7 shadow-2xl relative backdrop-blur-md">
+              
+              {/* Card Header & Badge */}
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[10px] font-mono tracking-widest text-emerald-300 font-bold uppercase flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Osun Election Assessment
                 </span>
-                <span className="text-xs bg-brand-blue/30 text-blue-200 border border-brand-blue/40 px-2.5 py-0.5 rounded-full font-semibold">
-                  {heroConfig.spotlightStatusText}
+                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  INEC Declared
                 </span>
               </div>
               
-              <h3 className="font-display font-bold text-2xl sm:text-3xl mt-4 mb-1">
-                {heroConfig.spotlightTitle}
+              <h3 className="font-display font-bold text-xl sm:text-2xl text-white mb-1">
+                Osun 2026 Governorship Assessment
               </h3>
               
-              <div className="text-sm text-blue-200/90 font-medium mb-6">
-                {heroConfig.spotlightDateText}
+              <div className="text-xs text-blue-200/90 font-medium mb-5 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-300" />
+                Declared on 16 August 2026 · 30 LGAs Audited
               </div>
 
-              {/* Countdown Grid */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-center">
-                  <span className="block font-mono text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                    {timeLeft.days}
-                  </span>
-                  <span className="block text-[10px] uppercase font-mono font-bold text-blue-300 tracking-wider mt-1">
-                    days
-                  </span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-center">
-                  <span className="block font-mono text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                    {String(timeLeft.hours).padStart(2, '0')}
-                  </span>
-                  <span className="block text-[10px] uppercase font-mono font-bold text-blue-300 tracking-wider mt-1">
-                    hours
-                  </span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-center">
-                  <span className="block font-mono text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                    {String(timeLeft.minutes).padStart(2, '0')}
-                  </span>
-                  <span className="block text-[10px] uppercase font-mono font-bold text-blue-300 tracking-wider mt-1">
-                    min
-                  </span>
-                </div>
-              </div>
-
-              {/* Interactivity: Osun Spotlight Toggle */}
-              <div className="mt-6 pt-5 border-t border-white/10">
-                <button
-                  onClick={() => setShowOsunDetails(!showOsunDetails)}
-                  className="w-full flex items-center justify-between text-blue-300 hover:text-white font-semibold text-xs font-mono uppercase tracking-wider focus:outline-none transition-colors"
-                >
-                  <span>{showOsunDetails ? 'Hide Spotlight Specs' : 'Show Spotlight Specs'}</span>
-                  <span>{showOsunDetails ? '▲' : '▼'}</span>
-                </button>
-
-                {showOsunDetails && (
-                  <div className="mt-4 space-y-3 text-xs bg-white/5 p-4 rounded-xl border border-white/10 animate-fade-in text-blue-100">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-blue-300"><MapPin className="w-3.5 h-3.5" /> LGAs:</span>
-                      <span className="font-mono font-bold text-white">{heroConfig.lgasCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-blue-300"><Users className="w-3.5 h-3.5" /> Registered Voters:</span>
-                      <span className="font-mono font-bold text-white">{heroConfig.registeredVoters}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-blue-300"><Building className="w-3.5 h-3.5" /> Polling Units (PUs):</span>
-                      <span className="font-mono font-bold text-white">{heroConfig.pollingUnits}</span>
-                    </div>
+              {/* Vote Highlights Grid */}
+              <div className="space-y-2.5 mb-5">
+                {/* Winner */}
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+                      <Award className="w-3 h-3 text-emerald-400" /> Accord Party (Winner)
+                    </span>
+                    <p className="font-semibold text-xs text-white">Ademola Adeleke</p>
                   </div>
-                )}
+                  <div className="text-right">
+                    <span className="font-mono text-sm font-bold text-emerald-300 block">511,067</span>
+                    <span className="text-[10px] font-mono text-emerald-200/80">51.88% votes</span>
+                  </div>
+                </div>
+
+                {/* Runner up */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-300">
+                      APC (2nd Place)
+                    </span>
+                    <p className="font-semibold text-xs text-white">Bola Oyebamiji</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono text-sm font-bold text-white block">444,815</span>
+                    <span className="text-[10px] font-mono text-blue-200/80">45.16% votes</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-4 flex justify-center">
+              {/* Key Assessment Stats */}
+              <div className="grid grid-cols-2 gap-2.5 mb-6">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <span className="block font-mono text-lg font-bold text-emerald-300">
+                    98.43%
+                  </span>
+                  <span className="block text-[9px] uppercase font-mono font-bold text-blue-200/90 tracking-wider mt-0.5">
+                    IReV Transmission Rate
+                  </span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <span className="block font-mono text-lg font-bold text-white">
+                    1,010,684
+                  </span>
+                  <span className="block text-[9px] uppercase font-mono font-bold text-blue-200/90 tracking-wider mt-0.5">
+                    Accredited Voters
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button: Read More */}
+              <div className="pt-2 border-t border-white/10 text-center">
                 <button 
-                  onClick={() => handleScroll('diary')}
-                  className="inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white font-semibold transition-colors mt-2"
+                  onClick={() => {
+                    window.history.pushState({}, '', '/election/osun');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white font-semibold text-xs font-mono uppercase tracking-wider py-3 px-5 rounded-xl transition-all cursor-pointer shadow-lg shadow-brand-blue/20"
                 >
-                  {heroConfig.diaryLinkText} <ArrowRight className="w-3 h-3" />
+                  <span>Read More</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
+
             </div>
           </div>
 

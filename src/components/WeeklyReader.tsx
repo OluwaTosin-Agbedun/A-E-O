@@ -182,22 +182,6 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
           </button>
 
           <div className="flex items-center gap-2">
-            {issue.pdfUrl && (
-              <button
-                onClick={() => triggerPdfDownload(
-                  issue.title,
-                  issue.summary,
-                  articleDetails.author,
-                  formatReportDate(issue.date),
-                  issue.pdfUrl,
-                  (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
-                )}
-                className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download Report</span>
-              </button>
-            )}
             <button
               onClick={handleShare}
               className="inline-flex items-center gap-1.5 bg-paper hover:bg-line border border-line text-ink text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
@@ -287,6 +271,30 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                   Submit field report
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Download Action Box (Placed After Text Contents) */}
+          <div className="pt-8 border-t border-line">
+            <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-display font-bold text-base text-ink">Official Publication Document</h4>
+                <p className="text-xs text-ink2 mt-0.5">Download a verified copy of this newsletter for offline review and reference.</p>
+              </div>
+              <button 
+                onClick={() => triggerPdfDownload(
+                  issue.title,
+                  issue.summary,
+                  articleDetails.author,
+                  formatReportDate(issue.date),
+                  issue.pdfUrl,
+                  (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+                )}
+                className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Report</span>
+              </button>
             </div>
           </div>
 
