@@ -6,6 +6,8 @@ import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
+import { generateSlug, getItemSlug } from '../utils/url';
+import FormattedText from './FormattedText';
 
 interface WeeklyReaderProps {
   weeklyId: string | null;
@@ -20,6 +22,15 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   const [hasShared, setHasShared] = useState(false);
   const [fieldReportStatus, setFieldReportStatus] = useState<string | null>(null);
 
+  const decodedId = weeklyId ? decodeURIComponent(weeklyId) : '';
+  const issue = weekly.find(i => 
+    (i.slug && (i.slug === weeklyId || i.slug === decodedId)) ||
+    generateSlug(i.title) === weeklyId ||
+    generateSlug(i.title) === decodedId ||
+    i.id === weeklyId ||
+    i.id === decodedId
+  );
+
   useEffect(() => {
     if (weeklyId) {
       window.scrollTo(0, 0);
@@ -29,11 +40,15 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       setHasShared(false);
       setFieldReportStatus(null);
     }
-  }, [weeklyId]);
+    if (issue) {
+      const canonicalSlug = getItemSlug(issue);
+      if (canonicalSlug && window.location.pathname !== `/weekly/${canonicalSlug}`) {
+        window.history.replaceState({}, '', `/weekly/${canonicalSlug}`);
+      }
+    }
+  }, [weeklyId, issue]);
 
   if (!weeklyId) return null;
-
-  const issue = weekly.find(i => i.id === weeklyId);
   if (!issue) return null;
 
   const getFullContent = (id: string) => {
@@ -150,7 +165,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       <SEO 
         title={`${issue.title} | AEO Weekly Digest`}
         description={issue.summary}
-        canonicalPath={`/weekly/${issue.id}`}
+        canonicalPath={`/weekly/${getItemSlug(issue)}`}
         ogType="article"
         ogImage={issue.image}
       />
@@ -180,7 +195,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                 className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Download PDF</span>
+                <span>Download Report</span>
               </button>
             )}
             <button
@@ -245,9 +260,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                 <h2 className="font-display font-bold text-lg sm:text-xl text-ink">
                   {sec.title}
                 </h2>
-                <p>
-                  {sec.text}
-                </p>
+                <FormattedText content={sec.text} />
               </div>
             ))}
           </div>

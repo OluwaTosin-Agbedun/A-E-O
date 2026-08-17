@@ -19,6 +19,8 @@ export interface Report {
   image?: string;
   researchArea?: string;
   pdfUrl?: string;
+  slug?: string;
+  createdAt?: number;
 }
 
 export interface CandidateParticipant {
@@ -103,6 +105,8 @@ export interface WeeklyIssue {
   sections?: WeeklySection[];
   image?: string;
   pdfUrl?: string;
+  slug?: string;
+  createdAt?: number;
 }
 
 export interface HeroConfig {
@@ -173,5 +177,7 @@ export interface AnnouncementItem {
   authorsList?: string;
   image?: string;
   pdfUrl?: string;
+  slug?: string;
+  createdAt?: number;
 }
 

@@ -4,6 +4,8 @@ import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
+import { generateSlug, getItemSlug } from '../utils/url';
+import FormattedText from './FormattedText';
 
 interface ReportReaderProps {
   reportId: string | null;
@@ -15,18 +17,31 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
-  // Auto-scroll to top when a report is loaded
+  const decodedId = reportId ? decodeURIComponent(reportId) : '';
+  const report = reports.find(r => 
+    (r.slug && (r.slug === reportId || r.slug === decodedId)) ||
+    generateSlug(r.title) === reportId ||
+    generateSlug(r.title) === decodedId ||
+    r.id === reportId ||
+    r.id === decodedId
+  );
+
+  // Auto-scroll to top and synchronize canonical URL slug
   useEffect(() => {
     if (reportId) {
       window.scrollTo(0, 0);
       setDownloadProgress(null);
       setDownloadSuccess(false);
     }
-  }, [reportId]);
+    if (report) {
+      const canonicalSlug = getItemSlug(report);
+      if (canonicalSlug && window.location.pathname !== `/reports/${canonicalSlug}` && window.location.pathname !== `/report/${canonicalSlug}`) {
+        window.history.replaceState({}, '', `/reports/${canonicalSlug}`);
+      }
+    }
+  }, [reportId, report]);
 
   if (!reportId) return null;
-
-  const report = reports.find(r => r.id === reportId);
   if (!report) return null;
 
   const handleDownloadPDF = () => {
@@ -66,7 +81,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
       <SEO 
         title={report.title}
         description={report.summary || report.sections?.[0]?.content?.substring(0, 160) || 'Forensic audit report by Athena Election Observatory.'}
-        canonicalPath={`/report/${report.id}`}
+        canonicalPath={`/reports/${getItemSlug(report)}`}
         ogType="article"
         ogImage={report.image}
       />
@@ -105,7 +120,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
                   className="inline-flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-green-600/10"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF · {report.size}</span>
+                  <span>Download Report</span>
                 </button>
               )}
             </div>
@@ -146,9 +161,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
               <h2 className="font-display font-bold text-xl sm:text-2xl text-ink flex items-center gap-2">
                 {section.title}
               </h2>
-              <p className="text-ink2 pl-0 sm:pl-5">
-                {section.content}
-              </p>
+              <FormattedText content={section.content} className="text-ink2 pl-0 sm:pl-5" />
             </section>
           ))}
         </div>

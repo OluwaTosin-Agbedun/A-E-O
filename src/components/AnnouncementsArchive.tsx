@@ -1,26 +1,30 @@
 import { useState } from 'react';
 import { Search, Calendar, Tag, ArrowUpRight, ArrowLeft, Bell, FileText, AlertTriangle } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
 
 export default function AnnouncementsArchive() {
   const { announcements } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'press' | 'bulletin' | 'statement' | 'alert'>('all');
 
-  const filteredAnnouncements = announcements.filter((ann) => {
-    const titleText = ann.title || '';
-    const summaryText = ann.summary || '';
-    const contentText = ann.content || '';
-    const matchesSearch = 
-      titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      summaryText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contentText.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || ann.category === selectedCategory;
+  const filteredAnnouncements = sortItemsByDate(
+    announcements.filter((ann) => {
+      const titleText = ann.title || '';
+      const summaryText = ann.summary || '';
+      const contentText = ann.content || '';
+      const matchesSearch = 
+        titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        summaryText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contentText.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || ann.category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    }),
+    'date',
+    'desc'
+  );
 
   const getCategoryColor = (cat: string) => {
     switch (cat) {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
+import { getItemSlug } from '../utils/url';
 
 export default function ReportsArchive() {
   const { reports } = useCMS();
@@ -20,14 +21,18 @@ export default function ReportsArchive() {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
-  const filteredReports = reports.filter((report) => {
-    const matchesSearch = 
-      (report.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (report.summary || '').toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (selectedTag === 'all') return matchesSearch;
-    return matchesSearch && report.tagType === selectedTag;
-  });
+  const filteredReports = sortItemsByDate(
+    reports.filter((report) => {
+      const matchesSearch = 
+        (report.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (report.summary || '').toLowerCase().includes(searchQuery.toLowerCase());
+      
+      if (selectedTag === 'all') return matchesSearch;
+      return matchesSearch && report.tagType === selectedTag;
+    }),
+    'date',
+    'desc'
+  );
 
   return (
     <div className="py-12 sm:py-16">
@@ -134,7 +139,7 @@ export default function ReportsArchive() {
               {filteredReports.map((report) => (
                 <div 
                   key={report.id}
-                  onClick={() => navigateTo(`/report/${report.id}`)}
+                  onClick={() => navigateTo(`/reports/${getItemSlug(report)}`)}
                   className="bg-white border border-line rounded-xl p-6 shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group duration-200"
                 >
                   <div>

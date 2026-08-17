@@ -235,11 +235,12 @@ export default function ElectionDetails({
     }
   };
 
+  const electionObj = election as any;
   const electionTitle = election.name.toLowerCase().includes('election')
     ? election.name
-    : `${election.year || '2026'} ${election.name} ${election.type || 'Governorship Election'}`;
+    : `${electionObj.year || '2026'} ${election.name} ${electionObj.type || 'Governorship Election'}`;
 
-  const electionDescription = election.description || 
+  const electionDescription = electionObj.description || 
     `Explore verified election data, registered voters, LGAs, wards, polling units, party standings and electoral analysis for the ${electionTitle}.`;
 
   return (

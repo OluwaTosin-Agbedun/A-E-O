@@ -15,6 +15,7 @@ import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore } from '../lib/firebaseAssets';
 import { sortItemsByDate } from '../utils/date';
+import { generateSlug } from '../utils/url';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -166,7 +167,7 @@ const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 // Helper to apply remote collection updates from Firestore as authoritative source of truth,
 // while preserving in-memory base64 PDF/image data for items referencing asset docs until hydration completes.
-function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: string }>(
+function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: string; date?: string; title?: string }>(
   localItems: T[],
   remoteItems: T[]
 ): T[] {
@@ -174,9 +175,13 @@ function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: 
 
   const localMap = new Map((localItems || []).map(item => [item.id, item]));
 
-  return remoteItems.map(remoteItem => {
+  const merged = remoteItems.map(remoteItem => {
     const localMatch = localMap.get(remoteItem.id);
-    const itemCopy = { ...remoteItem };
+    const itemCopy = { ...remoteItem } as any;
+
+    if (itemCopy.title && !itemCopy.slug) {
+      itemCopy.slug = generateSlug(itemCopy.title);
+    }
 
     // If remote has a reference string like ref:pdf_123, check if local state already has the resolved Base64/URL
     if (itemCopy.pdfUrl && itemCopy.pdfUrl.startsWith('ref:')) {
@@ -192,8 +197,10 @@ function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: 
       }
     }
 
-    return itemCopy;
+    return itemCopy as T;
   });
+
+  return sortItemsByDate(merged, 'date', 'desc');
 }
 
 // Helper to save Firestore document cleanly with asset chunking
@@ -385,7 +392,15 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const saveReport = (report: Report) => {
     setReports(prev => {
       const exists = prev.some(r => r.id === report.id);
-      const next = exists ? prev.map(r => r.id === report.id ? report : r) : [...prev, report];
+      const reportWithSlug: Report = {
+        ...report,
+        slug: report.slug ? generateSlug(report.slug) : generateSlug(report.title),
+        createdAt: report.createdAt || Date.now()
+      };
+      const unsorted = exists 
+        ? prev.map(r => r.id === report.id ? reportWithSlug : r) 
+        : [reportWithSlug, ...prev];
+      const next = sortItemsByDate(unsorted, 'date', 'desc');
       syncToFirestore('reports', { items: next });
       return next;
     });
@@ -447,7 +462,15 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const saveAnnouncement = (announcement: AnnouncementItem) => {
     setAnnouncements(prev => {
       const exists = prev.some(a => a.id === announcement.id);
-      const next = exists ? prev.map(a => a.id === announcement.id ? announcement : a) : [...prev, announcement];
+      const annWithSlug: AnnouncementItem = {
+        ...announcement,
+        slug: announcement.slug ? generateSlug(announcement.slug) : generateSlug(announcement.title),
+        createdAt: announcement.createdAt || Date.now()
+      };
+      const unsorted = exists 
+        ? prev.map(a => a.id === announcement.id ? annWithSlug : a) 
+        : [annWithSlug, ...prev];
+      const next = sortItemsByDate(unsorted, 'date', 'desc');
       syncToFirestore('announcements', { items: next });
       return next;
     });
@@ -481,7 +504,15 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const saveWeeklyIssue = (issue: WeeklyIssue) => {
     setWeekly(prev => {
       const exists = prev.some(w => w.id === issue.id);
-      const next = exists ? prev.map(w => w.id === issue.id ? issue : w) : [...prev, issue];
+      const issueWithSlug: WeeklyIssue = {
+        ...issue,
+        slug: issue.slug ? generateSlug(issue.slug) : generateSlug(issue.title),
+        createdAt: issue.createdAt || Date.now()
+      };
+      const unsorted = exists 
+        ? prev.map(w => w.id === issue.id ? issueWithSlug : w) 
+        : [issueWithSlug, ...prev];
+      const next = sortItemsByDate(unsorted, 'date', 'desc');
       syncToFirestore('weekly', { items: next });
       return next;
     });

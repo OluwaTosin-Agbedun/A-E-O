@@ -20,6 +20,7 @@ import { PartyLogo } from './PartyLogo';
 import { INITIAL_STATES } from './LiveDashboard';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 import { prepareDocumentUrl } from '../utils/url';
+import { RichTextEditor } from './RichTextEditor';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -660,12 +661,13 @@ export default function CMSPanel({
     }
 
     const finalId = reportForm.id || generateId();
+    const defaultTagType: TagType = selectedPubType === 'brief' ? 'brief' : 'analysis';
     const finalReport: Report = {
       id: finalId,
       title: reportForm.title,
       summary: reportForm.summary,
-      tag: reportForm.tag || 'ELECTION AUDIT',
-      tagType: (reportForm.tagType as TagType) || 'analysis',
+      tag: reportForm.tag || (selectedPubType === 'brief' ? 'REPORTS & BRIEFS' : 'ELECTION AUDIT'),
+      tagType: (reportForm.tagType as TagType) || defaultTagType,
       date: reportForm.date || 'July 2026',
       size: reportForm.size || '1.0 MB',
       sections: reportForm.sections && reportForm.sections.length > 0 
@@ -679,8 +681,8 @@ export default function CMSPanel({
 
     saveReport(finalReport);
     setEditingId(null);
-    setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '' });
-    showStatus(`Report "${finalReport.title}" saved successfully!`);
+    setReportForm(EMPTY_REPORT_FORM);
+    showStatus(`Publication "${finalReport.title}" saved successfully!`);
   };
 
   const handleSaveDiary = (e: FormEvent) => {
@@ -1248,8 +1250,8 @@ export default function CMSPanel({
                       <Plus className="w-4.5 h-4.5 text-brand-blue" />
                       <span>
                         {editingId 
-                          ? `Edit ${selectedPubType === 'report' ? 'Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}` 
-                          : `Create ${selectedPubType === 'report' ? 'Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}`
+                          ? `Edit ${selectedPubType === 'report' || selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}` 
+                          : `Create ${selectedPubType === 'report' || selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'weekly' ? 'Weekly Digest' : 'Announcement'}`
                         }
                       </span>
                     </h3>
@@ -1454,11 +1456,11 @@ export default function CMSPanel({
                                 placeholder={`Chapter ${sIdx+1} Title`}
                                 className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
                               />
-                              <textarea 
-                                value={sec.content} 
-                                onChange={(e) => updateReportSection(sIdx, 'content', e.target.value)}
+                              <RichTextEditor 
+                                value={sec.content || ''} 
+                                onChange={(val) => updateReportSection(sIdx, 'content', val)}
                                 placeholder="Enter detailed forensic paragraphs here..."
-                                className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                                minHeight="120px"
                               />
                             </div>
                           ))}
@@ -1588,11 +1590,11 @@ export default function CMSPanel({
                                 placeholder={`Section ${sIdx+1} Title`}
                                 className="w-11/12 text-xs font-semibold p-1.5 border-b border-line"
                               />
-                              <textarea 
-                                value={sec.text} 
-                                onChange={(e) => updateWeeklySection(sIdx, 'text', e.target.value)}
+                              <RichTextEditor 
+                                value={sec.text || ''} 
+                                onChange={(val) => updateWeeklySection(sIdx, 'text', val)}
                                 placeholder="Enter section article text body paragraphs here..."
-                                className="w-full text-xs p-1.5 border border-line rounded bg-paper/30 h-16 resize-none"
+                                minHeight="120px"
                               />
                             </div>
                           ))}
@@ -1717,12 +1719,12 @@ export default function CMSPanel({
                       />
 
                       <div className="space-y-1">
-                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Optional Markdown/Text)</label>
-                        <textarea 
-                          value={announcementForm.content} 
-                          onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Rich Text / Formatted Document)</label>
+                        <RichTextEditor 
+                          value={announcementForm.content || ''} 
+                          onChange={(val) => setAnnouncementForm({ ...announcementForm, content: val })}
                           placeholder="E.g., Full detailed text of the announcement or statement."
-                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white h-32 resize-y font-mono focus:outline-none"
+                          minHeight="160px"
                         />
                       </div>
 
@@ -1763,7 +1765,7 @@ export default function CMSPanel({
                 {/* Combined list of publications filtered */}
                 <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
                   {(() => {
-                    const filtered = [
+                    const allCombined = [
                       ...reports.map(r => ({ 
                         ...r, 
                         unifiedType: r.tagType === 'brief' ? ('brief' as const) : ('report' as const), 
@@ -1771,7 +1773,9 @@ export default function CMSPanel({
                       })),
                       ...weekly.map(w => ({ ...w, unifiedType: 'weekly' as const, tagColor: 'text-brand-blue bg-blue-50 border-blue-100' })),
                       ...announcements.map(a => ({ ...a, unifiedType: 'announcement' as const, tagColor: 'text-emerald-600 bg-emerald-50 border-emerald-100' }))
-                    ].filter(item => pubFilter === 'all' || item.unifiedType === pubFilter);
+                    ];
+                    const sortedCombined = sortItemsByDate(allCombined, 'date', 'desc');
+                    const filtered = sortedCombined.filter(item => pubFilter === 'all' || item.unifiedType === pubFilter);
 
                     if (filtered.length === 0) {
                       return (
@@ -1786,7 +1790,7 @@ export default function CMSPanel({
                         <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border ${item.tagColor}`}>
-                              {item.unifiedType === 'report' ? (item as any).tag : item.unifiedType === 'weekly' ? 'Weekly Digest' : `Announcement (${(item as any).category})`}
+                              {item.unifiedType === 'report' || item.unifiedType === 'brief' ? (item as any).tag || 'Report' : item.unifiedType === 'weekly' ? 'Weekly Digest' : `Announcement (${(item as any).category})`}
                             </span>
                             {item.pdfUrl && (
                               <span className="text-[9px] font-mono font-bold text-brand-green bg-green-50 border border-green-100 px-1.5 py-0.5 rounded">
@@ -1796,7 +1800,7 @@ export default function CMSPanel({
                           </div>
                           <h4 className="font-semibold text-xs text-ink leading-snug truncate">{item.title}</h4>
                           <span className="text-[10px] text-mut font-mono block">
-                            {item.date} · {item.unifiedType === 'report' ? (item as any).size : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
+                            {item.date} · {item.unifiedType === 'report' || item.unifiedType === 'brief' ? (item as any).size || '1.0 MB' : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -1804,7 +1808,7 @@ export default function CMSPanel({
                             onClick={() => {
                               setEditingId(item.id);
                               setSelectedPubType(item.unifiedType);
-                              if (item.unifiedType === 'report') {
+                              if (item.unifiedType === 'report' || item.unifiedType === 'brief') {
                                 setReportForm(item);
                               } else if (item.unifiedType === 'weekly') {
                                 const weeklyItem = { ...item };
@@ -1870,7 +1874,7 @@ export default function CMSPanel({
                           <button
                             onClick={() => {
                               triggerConfirm(`Delete publication "${item.title}"?`, () => {
-                                if (item.unifiedType === 'report') {
+                                if (item.unifiedType === 'report' || item.unifiedType === 'brief') {
                                   deleteReport(item.id);
                                 } else if (item.unifiedType === 'weekly') {
                                   deleteWeeklyIssue(item.id);

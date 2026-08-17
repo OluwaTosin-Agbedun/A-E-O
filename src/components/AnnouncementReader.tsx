@@ -4,6 +4,8 @@ import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
+import { generateSlug, getItemSlug } from '../utils/url';
+import FormattedText from './FormattedText';
 
 interface AnnouncementReaderProps {
   announcementId: string | null;
@@ -15,17 +17,30 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [hasShared, setHasShared] = useState(false);
 
+  const decodedId = announcementId ? decodeURIComponent(announcementId) : '';
+  const announcement = announcements.find(a => 
+    (a.slug && (a.slug === announcementId || a.slug === decodedId)) ||
+    generateSlug(a.title) === announcementId ||
+    generateSlug(a.title) === decodedId ||
+    a.id === announcementId ||
+    a.id === decodedId
+  );
+
   useEffect(() => {
     if (announcementId) {
       window.scrollTo(0, 0);
       setDownloadProgress(null);
       setHasShared(false);
     }
-  }, [announcementId]);
+    if (announcement) {
+      const canonicalSlug = getItemSlug(announcement);
+      if (canonicalSlug && window.location.pathname !== `/announcement/${canonicalSlug}`) {
+        window.history.replaceState({}, '', `/announcement/${canonicalSlug}`);
+      }
+    }
+  }, [announcementId, announcement]);
 
   if (!announcementId) return null;
-
-  const announcement = announcements.find(a => a.id === announcementId);
 
   const getCategoryLabel = (cat: string) => {
     switch (cat) {
@@ -116,7 +131,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       <SEO 
         title={announcement ? announcement.title : 'Official Bulletin'}
         description={announcement ? announcement.summary : 'Official press bulletin from Athena Election Observatory.'}
-        canonicalPath={`/announcement/${announcementId}`}
+        canonicalPath={`/announcement/${getItemSlug(announcement)}`}
         ogType="article"
       />
       {/* Reader Top Bar */}
@@ -160,7 +175,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
                   className="inline-flex items-center gap-1.5 bg-brand-blue hover:bg-brand-blue-dark text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-600/10"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
+                  <span>Download Report</span>
                 </button>
               )
             )}
@@ -222,9 +237,10 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
 
         {/* Declaration Body / Content */}
         <div className="space-y-6 pt-2 text-ink2 leading-relaxed font-sans text-sm sm:text-base">
-          <div className="prose max-w-none text-ink2 whitespace-pre-wrap leading-relaxed space-y-4 text-base sm:text-lg">
-            {announcement.content || announcement.summary}
-          </div>
+          <FormattedText 
+            content={announcement.content || announcement.summary} 
+            className="text-base sm:text-lg text-ink2"
+          />
         </div>
 
         {/* Bottom Actions and Navigation */}

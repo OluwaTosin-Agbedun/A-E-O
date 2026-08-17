@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Search, AlertCircle, ArrowRight, FileText, Newspaper, HelpCircle, Mail, Bell, Calendar } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
+import { getItemSlug } from '../utils/url';
 
 interface AuditReportsProps {
   onOpenReport: (id: string) => void;
@@ -17,7 +18,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
   const [expandedAnn, setExpandedAnn] = useState<string | null>(null);
 
   // Search filter based on current tab
-  const getFilteredItems = () => {
+  const getFilteredItems = (): any[] => {
     const query = searchQuery.toLowerCase();
     
     if (selectedTag === 'audit') {
@@ -64,7 +65,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
     return [];
   };
 
-  const filteredItems = getFilteredItems();
+  const filteredItems = sortItemsByDate<any>(getFilteredItems(), 'date', 'desc');
   const displayedItems = filteredItems.slice(0, 3);
 
   const getCategoryLabel = (cat: string) => {
@@ -205,7 +206,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                 return (
                   <div 
                     key={report.id}
-                    onClick={() => onOpenReport(report.id)}
+                    onClick={() => onOpenReport(getItemSlug(report))}
                     className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group overflow-hidden"
                   >
                     <div>
@@ -264,7 +265,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                 return (
                   <div 
                     key={issue.id}
-                    onClick={() => onOpenWeekly(issue.id)}
+                    onClick={() => onOpenWeekly(getItemSlug(issue))}
                     className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group overflow-hidden"
                   >
                     <div>
@@ -318,7 +319,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                   <div 
                     key={ann.id}
                     onClick={() => {
-                      window.history.pushState({}, '', `/announcement/${ann.id}`);
+                      window.history.pushState({}, '', `/announcement/${getItemSlug(ann)}`);
                       window.dispatchEvent(new PopStateEvent('popstate'));
                     }}
                     className="bg-white border border-line rounded-xl shadow-custom hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
@@ -335,8 +336,8 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                       )}
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getCategoryColor(ann.category)}`}>
-                            {getCategoryLabel(ann.category)}
+                          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getCategoryColor((ann as any).category)}`}>
+                            {getCategoryLabel((ann as any).category)}
                           </span>
                           <span className="text-xs font-mono font-semibold text-mut flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />

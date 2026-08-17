@@ -1,6 +1,6 @@
 import { Mail, ArrowRight } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
 
 interface AeoWeeklyProps {
   onSelectIssue?: (id: string) => void;
@@ -8,6 +8,7 @@ interface AeoWeeklyProps {
 
 export default function AeoWeekly({ onSelectIssue }: AeoWeeklyProps) {
   const { weekly } = useCMS();
+  const sortedWeekly = sortItemsByDate(weekly, 'date', 'desc');
 
   return (
     <section className="py-16 bg-paper border-b border-line" id="weekly">
@@ -26,7 +27,7 @@ export default function AeoWeekly({ onSelectIssue }: AeoWeeklyProps) {
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {weekly.map((issue) => {
+          {sortedWeekly.map((issue) => {
             return (
               <div 
                 key={issue.id}

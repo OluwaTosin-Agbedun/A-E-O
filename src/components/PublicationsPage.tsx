@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ArrowLeft, BookOpen, FileText, Mail, Bell, Calendar, ChevronDown, ChevronUp, User, X, Download, Award, MapPin, Users, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { formatReportDate, parseDateValue, sortItemsByDate } from '../utils/date';
+import { getItemSlug } from '../utils/url';
 import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
 
@@ -278,14 +279,8 @@ export default function PublicationsPage() {
     return p.type === pageMode;
   });
 
-  // Sort publications: show specific items at the top or newest by date
-  const sortedPublications = [...scopedPublications].sort((a, b) => {
-    if (a.id === 'kaduna-security') return -1;
-    if (b.id === 'kaduna-security') return 1;
-    if (a.id === 'hospitals-reform') return -1;
-    if (b.id === 'hospitals-reform') return 1;
-    return parseDateValue(b.date) - parseDateValue(a.date);
-  });
+  // Sort publications: descending order by publication/upload date
+  const sortedPublications = sortItemsByDate(scopedPublications, 'date', 'desc');
 
   // Extract year helper
   const getYearFromDate = (dateStr: string) => {
@@ -338,12 +333,13 @@ export default function PublicationsPage() {
   };
 
   const handleItemClick = (pub: UnifiedPublication) => {
+    const slug = getItemSlug(pub);
     if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci' || pub.type === 'brief') {
-      navigateTo(`/report/${pub.id}`);
+      navigateTo(`/reports/${slug}`);
     } else if (pub.type === 'weekly') {
-      navigateTo(`/weekly/${pub.id}`);
+      navigateTo(`/weekly/${slug}`);
     } else if (pub.type === 'announcement') {
-      navigateTo(`/announcement/${pub.id}`);
+      navigateTo(`/announcement/${slug}`);
     }
   };
 

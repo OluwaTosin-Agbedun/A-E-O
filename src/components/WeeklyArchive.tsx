@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
-import { formatReportDate } from '../utils/date';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
 
 export default function WeeklyArchive() {
   const { weekly } = useCMS();
@@ -17,20 +17,24 @@ export default function WeeklyArchive() {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
-  const filteredWeekly = weekly.filter((issue) => {
-    const matchesSearch = 
-      issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.summary.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (selectedTag === 'all') return matchesSearch;
-    if (selectedTag === 'newsletter') {
-      return matchesSearch && issue.tag.toLowerCase().includes('newsletter');
-    }
-    if (selectedTag === 'analysis') {
-      return matchesSearch && issue.tag.toLowerCase().includes('analysis');
-    }
-    return matchesSearch;
-  });
+  const filteredWeekly = sortItemsByDate(
+    weekly.filter((issue) => {
+      const matchesSearch = 
+        issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        issue.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      if (selectedTag === 'all') return matchesSearch;
+      if (selectedTag === 'newsletter') {
+        return matchesSearch && issue.tag.toLowerCase().includes('newsletter');
+      }
+      if (selectedTag === 'analysis') {
+        return matchesSearch && issue.tag.toLowerCase().includes('analysis');
+      }
+      return matchesSearch;
+    }),
+    'date',
+    'desc'
+  );
 
   return (
     <div className="py-12 sm:py-16">

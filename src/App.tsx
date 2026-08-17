@@ -186,6 +186,9 @@ export default function App() {
   } else if (path === '/diary') {
     seo = <SEO title="Electoral Diary & Timeline" description="Chronological timeline of electoral events, INEC deadlines, observer deployments, and key legal milestones." canonicalPath="/diary" />;
     content = <DiaryPage />;
+  } else if (path.startsWith('/reports/')) {
+    const reportId = path.substring('/reports/'.length);
+    content = <ReportReader reportId={reportId} onClose={() => navigate('/publications')} />;
   } else if (path.startsWith('/report/')) {
     const reportId = path.substring('/report/'.length);
     content = <ReportReader reportId={reportId} onClose={() => navigate('/publications')} />;
