@@ -14,7 +14,7 @@ interface AnnouncementReaderProps {
 
 export default function AnnouncementReader({ announcementId, onClose }: AnnouncementReaderProps) {
   const { announcements } = useCMS();
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [isDownloaded, setIsDownloaded] = useState(false);
   const [hasShared, setHasShared] = useState(false);
 
   const decodedId = announcementId ? decodeURIComponent(announcementId) : '';
@@ -29,7 +29,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
   useEffect(() => {
     if (announcementId) {
       window.scrollTo(0, 0);
-      setDownloadProgress(null);
+      setIsDownloaded(false);
       setHasShared(false);
     }
     if (announcement) {
@@ -84,32 +84,18 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
   }
 
   const handleDownloadPDF = () => {
-    if (downloadProgress !== null) return;
-    setDownloadProgress(0);
-
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 15;
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setDownloadProgress(100);
-
-        triggerPdfDownload(
-          announcement.title,
-          announcement.summary,
-          announcement.authorsList || announcement.author || '',
-          announcement.date,
-          announcement.pdfUrl,
-          announcement.content
-        );
-
-        setTimeout(() => {
-          setDownloadProgress(null);
-        }, 2500);
-      } else {
-        setDownloadProgress(currentProgress);
-      }
-    }, 150);
+    setIsDownloaded(true);
+    triggerPdfDownload(
+      announcement.title,
+      announcement.summary,
+      announcement.authorsList || announcement.author || '',
+      announcement.date,
+      announcement.pdfUrl,
+      announcement.content
+    );
+    setTimeout(() => {
+      setIsDownloaded(false);
+    }, 4000);
   };
 
   const handleShare = () => {
@@ -221,22 +207,12 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
         <div className="pt-8 border-t border-line">
           <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-display font-bold text-base text-ink">Official Publication Document</h4>
-              <p className="text-xs text-ink2 mt-0.5">Download a verified copy of this official announcement for offline review and reference.</p>
+              <h4 className="font-display font-bold text-base text-ink">Download Official Statement</h4>
             </div>
-            {downloadProgress !== null ? (
-              <div className="flex items-center gap-2 bg-white border border-line px-5 py-2.5 rounded-xl text-xs font-semibold font-mono text-ink shrink-0">
-                {downloadProgress < 100 ? (
-                  <>
-                    <Loader2 className="w-4 h-4 text-brand-blue animate-spin" />
-                    <span>Compiling PDF... {downloadProgress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                    <span className="text-brand-green">Download Ready!</span>
-                  </>
-                )}
+            {isDownloaded ? (
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-brand-green text-xs font-semibold px-5 py-3 rounded-xl shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-brand-green" />
+                <span>Downloaded</span>
               </div>
             ) : (
               <button 

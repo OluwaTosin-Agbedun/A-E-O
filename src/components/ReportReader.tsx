@@ -14,8 +14,7 @@ interface ReportReaderProps {
 
 export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   const { reports } = useCMS();
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(false);
 
   const decodedId = reportId ? decodeURIComponent(reportId) : '';
   const report = reports.find(r => 
@@ -30,8 +29,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   useEffect(() => {
     if (reportId) {
       window.scrollTo(0, 0);
-      setDownloadProgress(null);
-      setDownloadSuccess(false);
+      setIsDownloaded(false);
     }
     if (report) {
       const canonicalSlug = getItemSlug(report);
@@ -45,35 +43,18 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   if (!report) return null;
 
   const handleDownloadPDF = () => {
-    if (downloadProgress !== null) return;
-    setDownloadProgress(0);
-    setDownloadSuccess(false);
-
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setDownloadProgress(100);
-        setDownloadSuccess(true);
-        
-        // Trigger the actual file download safely outside state updater
-        triggerPdfDownload(
-          report.title,
-          report.summary,
-          report.authorsList || report.author || 'AEO Research Team',
-          report.date,
-          report.pdfUrl,
-          (report.sections || []).map((s, idx) => `Chapter ${idx + 1}: ${s.title}\n${s.content}`).join('\n\n')
-        );
-
-        setTimeout(() => {
-          setDownloadProgress(null);
-        }, 2500);
-      } else {
-        setDownloadProgress(currentProgress);
-      }
-    }, 150);
+    setIsDownloaded(true);
+    triggerPdfDownload(
+      report.title,
+      report.summary,
+      report.authorsList || report.author || 'AEO Research Team',
+      report.date,
+      report.pdfUrl,
+      (report.sections || []).map((s, idx) => `Chapter ${idx + 1}: ${s.title}\n${s.content}`).join('\n\n')
+    );
+    setTimeout(() => {
+      setIsDownloaded(false);
+    }, 4000);
   };
 
   return (
@@ -141,22 +122,12 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
         <div className="mt-12 pt-8 border-t border-line">
           <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-display font-bold text-base text-ink">Official Publication Document</h4>
-              <p className="text-xs text-ink2 mt-0.5">Download a verified copy of this complete report for offline review and reference.</p>
+              <h4 className="font-display font-bold text-base text-ink">Download Official Statement</h4>
             </div>
-            {downloadProgress !== null ? (
-              <div className="flex items-center gap-2 bg-white border border-line px-5 py-2.5 rounded-xl text-xs font-semibold font-mono text-ink shrink-0">
-                {downloadProgress < 100 ? (
-                  <>
-                    <Loader2 className="w-4 h-4 text-brand-blue animate-spin" />
-                    <span>Compiling PDF... {downloadProgress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                    <span className="text-brand-green">Download Ready!</span>
-                  </>
-                )}
+            {isDownloaded ? (
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-brand-green text-xs font-semibold px-5 py-3 rounded-xl shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-brand-green" />
+                <span>Downloaded</span>
               </div>
             ) : (
               <button 
@@ -169,17 +140,6 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             )}
           </div>
         </div>
-
-        {/* Visual Download Success Popover Toast */}
-        {downloadSuccess && (
-          <div className="my-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-start gap-3 text-xs sm:text-sm animate-fade-in shadow-sm">
-            <CheckCircle2 className="w-5 h-5 text-brand-green shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold block mb-0.5">Dispatched to your download buffer!</span>
-              The live site serves the direct compiled binary database spreadsheet representation. This demo simulation verified the audit parameters successfully.
-            </div>
-          </div>
-        )}
 
       </article>
 

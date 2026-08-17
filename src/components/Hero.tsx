@@ -1,36 +1,45 @@
 import { useEffect, useState } from 'react';
-import { Calendar, ArrowRight, MapPin, Users, Building, CheckCircle2, ShieldCheck, Award } from 'lucide-react';
+import { Calendar, ArrowRight, User } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
+import { formatReportDate, sortItemsByDate } from '../utils/date';
+import { getItemSlug } from '../utils/url';
 
 export default function Hero() {
-  const { heroConfig } = useCMS();
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
-  const [showOsunDetails, setShowOsunDetails] = useState(false);
+  const { heroConfig, reports, weekly, announcements } = useCMS();
 
-  useEffect(() => {
-    const calculateTime = () => {
-      // Target date from CMS config
-      const targetDate = new Date(heroConfig.spotlightTargetDate || "2026-08-15T08:00:00+01:00").getTime();
-      const now = new Date().getTime();
-      const difference = targetDate - now;
+  // Combine all publication types into a unified list and get the single newest article
+  const combinedPublications = [
+    ...reports.map(r => ({ ...r, unifiedType: 'report' as const })),
+    ...weekly.map(w => ({ ...w, unifiedType: 'weekly' as const })),
+    ...announcements.map(a => ({ ...a, unifiedType: 'announcement' as const }))
+  ];
 
-      if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0 });
-        return;
-      }
+  const latestArticle = sortItemsByDate<any>(combinedPublications, 'date', 'desc')[0];
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+  const getCategoryText = (item: any) => {
+    if (!item) return 'Publication';
+    if (item.unifiedType === 'report') {
+      return item.tag || 'Election Audit';
+    }
+    if (item.unifiedType === 'weekly') {
+      return item.tag || 'Weekly Briefing';
+    }
+    return item.category || 'Announcement';
+  };
 
-      setTimeLeft({ days, hours, minutes });
-    };
-
-    calculateTime();
-    const interval = setInterval(calculateTime, 60000);
-
-    return () => clearInterval(interval);
-  }, [heroConfig.spotlightTargetDate]);
+  const handleReadLatest = () => {
+    if (!latestArticle) return;
+    let targetPath = '';
+    if (latestArticle.unifiedType === 'report') {
+      targetPath = `/report/${getItemSlug(latestArticle)}`;
+    } else if (latestArticle.unifiedType === 'weekly') {
+      targetPath = `/weekly/${getItemSlug(latestArticle)}`;
+    } else {
+      targetPath = `/announcement/${getItemSlug(latestArticle)}`;
+    }
+    window.history.pushState({}, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   const handleScroll = (id: string) => {
     const element = document.getElementById(id);
@@ -107,96 +116,82 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Osun Election Assessment Snapshot Card */}
+          {/* Latest Article Snapshot Card */}
           <div className="lg:col-span-5">
-            <div className="bg-white/5 border border-white/15 rounded-2xl p-6 sm:p-7 shadow-2xl relative backdrop-blur-md">
-              
-              {/* Card Header & Badge */}
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <span className="text-[10px] font-mono tracking-widest text-emerald-300 font-bold uppercase flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Osun Election Assessment
-                </span>
-                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                  INEC Declared
-                </span>
-              </div>
-              
-              <h3 className="font-display font-bold text-xl sm:text-2xl text-white mb-1">
-                Osun 2026 Governorship Assessment
-              </h3>
-              
-              <div className="text-xs text-blue-200/90 font-medium mb-5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-blue-300" />
-                Declared on 16 August 2026 · 30 LGAs Audited
-              </div>
-
-              {/* Vote Highlights Grid */}
-              <div className="space-y-2.5 mb-5">
-                {/* Winner */}
-                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
-                      <Award className="w-3 h-3 text-emerald-400" /> Accord Party (Winner)
+            {latestArticle ? (
+              <div 
+                onClick={handleReadLatest}
+                className="bg-white/5 border border-white/15 hover:border-white/30 rounded-2xl p-6 sm:p-7 shadow-2xl relative backdrop-blur-md transition-all cursor-pointer group flex flex-col justify-between"
+              >
+                <div>
+                  {/* Card Header & Badge */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[10px] font-mono tracking-widest text-emerald-300 font-bold uppercase flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Latest Article
                     </span>
-                    <p className="font-semibold text-xs text-white">Ademola Adeleke</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono text-sm font-bold text-emerald-300 block">511,067</span>
-                    <span className="text-[10px] font-mono text-emerald-200/80">51.88% votes</span>
-                  </div>
-                </div>
-
-                {/* Runner up */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-300">
-                      APC (2nd Place)
+                    <span className="text-[10px] font-mono bg-blue-500/20 text-blue-200 border border-blue-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      {getCategoryText(latestArticle)}
                     </span>
-                    <p className="font-semibold text-xs text-white">Bola Oyebamiji</p>
                   </div>
-                  <div className="text-right">
-                    <span className="font-mono text-sm font-bold text-white block">444,815</span>
-                    <span className="text-[10px] font-mono text-blue-200/80">45.16% votes</span>
+
+                  {/* Featured Image if available */}
+                  {latestArticle.image && (
+                    <div className="h-40 w-full overflow-hidden rounded-xl mb-4 bg-slate-900/50 border border-white/10 relative">
+                      <img 
+                        src={latestArticle.image} 
+                        alt={latestArticle.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
+                    </div>
+                  )}
+
+                  {/* Title */}
+                  <h3 className="font-display font-bold text-lg sm:text-xl text-white mb-2 group-hover:text-blue-200 transition-colors line-clamp-2 leading-snug">
+                    {latestArticle.title}
+                  </h3>
+
+                  {/* Date & Meta */}
+                  <div className="text-xs text-blue-200/80 font-medium mb-3 flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1 font-mono text-[11px]">
+                      <Calendar className="w-3.5 h-3.5 text-blue-300" />
+                      {formatReportDate(latestArticle.date)}
+                    </span>
+                    {latestArticle.author && (
+                      <span className="flex items-center gap-1 text-[11px]">
+                        <User className="w-3.5 h-3.5 text-blue-300" />
+                        {latestArticle.author}
+                      </span>
+                    )}
                   </div>
-                </div>
-              </div>
 
-              {/* Key Assessment Stats */}
-              <div className="grid grid-cols-2 gap-2.5 mb-6">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                  <span className="block font-mono text-lg font-bold text-emerald-300">
-                    98.43%
-                  </span>
-                  <span className="block text-[9px] uppercase font-mono font-bold text-blue-200/90 tracking-wider mt-0.5">
-                    IReV Transmission Rate
-                  </span>
+                  {/* Summary Excerpt */}
+                  <p className="text-xs text-blue-100/80 leading-relaxed mb-6 line-clamp-3">
+                    {latestArticle.summary}
+                  </p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                  <span className="block font-mono text-lg font-bold text-white">
-                    1,010,684
-                  </span>
-                  <span className="block text-[9px] uppercase font-mono font-bold text-blue-200/90 tracking-wider mt-0.5">
-                    Accredited Voters
-                  </span>
+
+                {/* Action Button: Read More */}
+                <div className="pt-3 border-t border-white/10">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReadLatest();
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white font-semibold text-xs font-mono uppercase tracking-wider py-3 px-5 rounded-xl transition-all cursor-pointer shadow-lg shadow-brand-blue/20 group-hover:bg-brand-blue-dark"
+                  >
+                    <span>Read More</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
                 </div>
-              </div>
 
-              {/* Action Button: Read More */}
-              <div className="pt-2 border-t border-white/10 text-center">
-                <button 
-                  onClick={() => {
-                    window.history.pushState({}, '', '/election/osun');
-                    window.dispatchEvent(new PopStateEvent('popstate'));
-                  }}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white font-semibold text-xs font-mono uppercase tracking-wider py-3 px-5 rounded-xl transition-all cursor-pointer shadow-lg shadow-brand-blue/20"
-                >
-                  <span>Read More</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
-
-            </div>
+            ) : (
+              <div className="bg-white/5 border border-white/15 rounded-2xl p-6 text-center text-blue-200">
+                <p className="text-sm">No publications available yet.</p>
+              </div>
+            )}
           </div>
 
         </div>

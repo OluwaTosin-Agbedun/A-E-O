@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText, Download, CheckCircle2 } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { db } from '../lib/firebase';
@@ -21,6 +21,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   const [subError, setSubError] = useState('');
   const [hasShared, setHasShared] = useState(false);
   const [fieldReportStatus, setFieldReportStatus] = useState<string | null>(null);
+  const [isDownloaded, setIsDownloaded] = useState(false);
 
   const decodedId = weeklyId ? decodeURIComponent(weeklyId) : '';
   const issue = weekly.find(i => 
@@ -278,23 +279,35 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
           <div className="pt-8 border-t border-line">
             <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h4 className="font-display font-bold text-base text-ink">Official Publication Document</h4>
-                <p className="text-xs text-ink2 mt-0.5">Download a verified copy of this newsletter for offline review and reference.</p>
+                <h4 className="font-display font-bold text-base text-ink">Download Official Statement</h4>
               </div>
-              <button 
-                onClick={() => triggerPdfDownload(
-                  issue.title,
-                  issue.summary,
-                  articleDetails.author,
-                  formatReportDate(issue.date),
-                  issue.pdfUrl,
-                  (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
-                )}
-                className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Report</span>
-              </button>
+              {isDownloaded ? (
+                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-brand-green text-xs font-semibold px-5 py-3 rounded-xl shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-brand-green" />
+                  <span>Downloaded</span>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setIsDownloaded(true);
+                    triggerPdfDownload(
+                      issue.title,
+                      issue.summary,
+                      articleDetails.author,
+                      formatReportDate(issue.date),
+                      issue.pdfUrl,
+                      (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+                    );
+                    setTimeout(() => {
+                      setIsDownloaded(false);
+                    }, 4000);
+                  }}
+                  className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Report</span>
+                </button>
+              )}
             </div>
           </div>
 
