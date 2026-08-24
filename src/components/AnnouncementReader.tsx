@@ -198,7 +198,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
         {/* Declaration Body / Content */}
         <div className="space-y-6 pt-2 text-ink2 leading-relaxed font-sans text-sm sm:text-base">
           <FormattedText 
-            content={announcement.content || announcement.summary} 
+            content={(announcement as any).content || (announcement as any).body || (announcement as any).richText || (announcement as any).html || announcement.summary} 
             className="text-base sm:text-lg text-ink2"
           />
         </div>

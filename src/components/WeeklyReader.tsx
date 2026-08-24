@@ -53,12 +53,27 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   if (!issue) return null;
 
   const getFullContent = (id: string) => {
-    // If sections and author are already defined on the issue itself (via CMS), use those!
-    if (issue.author && issue.readingTime && issue.sections) {
+    // If sections are defined on the issue itself (via CMS or data), use those
+    // We shouldn't strictly require author or readingTime to show sections.
+    if (issue.sections && issue.sections.length > 0) {
       return {
-        author: issue.author,
-        readingTime: issue.readingTime,
+        author: issue.author || issue.authorsList || "Athena Research",
+        readingTime: issue.readingTime || "5 min read",
         sections: issue.sections
+      };
+    }
+    
+    // Also check for 'content' or 'body' field if it was saved differently
+    if ((issue as any).content || (issue as any).body || (issue as any).richText || (issue as any).html) {
+      return {
+        author: issue.author || issue.authorsList || "Athena Research",
+        readingTime: issue.readingTime || "5 min read",
+        sections: [
+          {
+            title: "",
+            text: (issue as any).content || (issue as any).body || (issue as any).richText || (issue as any).html
+          }
+        ]
       };
     }
 
@@ -242,9 +257,11 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
           <div className="space-y-8 text-ink2 text-sm sm:text-base leading-relaxed">
             {(articleDetails.sections || []).map((sec, idx) => (
               <div key={idx} className="space-y-3">
-                <h2 className="font-display font-bold text-lg sm:text-xl text-ink">
-                  {sec.title}
-                </h2>
+                {sec.title && (
+                  <h2 className="font-display font-bold text-lg sm:text-xl text-ink">
+                    {sec.title}
+                  </h2>
+                )}
                 <FormattedText content={sec.text} />
               </div>
             ))}

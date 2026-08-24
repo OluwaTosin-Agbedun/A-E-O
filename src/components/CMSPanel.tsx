@@ -2158,12 +2158,12 @@ export default function CMSPanel({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Electoral Date String *</label>
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Election Date (YYYY-MM-DD) *</label>
                           <input 
-                            type="text" 
+                            type="date" 
                             value={diaryForm.date || ''} 
                             onChange={(e) => setDiaryForm({ ...diaryForm, date: e.target.value })}
-                            placeholder="E.g., Aug 15, 2026 or 15 August 2026"
+                            placeholder="YYYY-MM-DD"
                             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
                             required
                           />

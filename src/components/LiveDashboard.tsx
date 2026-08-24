@@ -9,7 +9,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useCMS } from '../context/CMSContext';
 import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
-import { parseDateValue } from '../utils/date';
+import { parseDateValue, formatReportDate } from '../utils/date';
 
 import { FULL_ELECTION_STATES } from '../data/allElectionData';
 
@@ -140,37 +140,28 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
     return [...nat, ...loc, ...afr, ...oth];
   }, [diaryNat, diaryLoc, diaryAfr, diaryOth]);
 
-  const closestElections = useMemo(() => {
-    const statusPriority: Record<string, number> = {
-      'In view': 1,
-      'Scheduled': 2,
-      'Tracking': 3,
-      'Provisional': 4,
-    };
+    const closestElections = useMemo(() => {
+    const now = new Date();
+    now.setHours(0,0,0,0);
 
-    // Exclude Osun (live election in focus) and Concluded/Past elections
     const upcoming = allDiaryItems.filter(item => {
-      if (item.status === 'Concluded') return false;
-
-      const isOsun = item.id === 'nat-1' || 
-                     item.title.toLowerCase().includes('osun') ||
-                     (item.location && item.location.toLowerCase().includes('osun')) ||
-                     item.stateCode === 'OS';
-      if (isOsun) return false;
-
-      if (item.date && (item.date.includes('2025') || item.date.includes('2024') || item.date.includes('2023'))) {
-        return false;
-      }
-
-      return true;
+      const t = parseDateValue(item.date);
+      if (t === 0) return false;
+      
+      // Exclude Osun if needed, although user said "Do not hard-code specific elections."
+      // The instruction: "For example: The FCT election must not continue appearing as an upcoming election after its scheduled election date has passed. Also audit every other election..."
+      // The user wants strict logic. So no Osun hardcode.
+      return t >= now.getTime();
     });
 
-    return [...upcoming].sort((a, b) => {
-      const pA = statusPriority[a.status] || 99;
-      const pB = statusPriority[b.status] || 99;
-      if (pA !== pB) return pA - pB;
-      return parseDateValue(a.date) - parseDateValue(b.date);
-    }).slice(0, 3);
+    // Sort from nearest upcoming to furthest upcoming
+    upcoming.sort((a, b) => {
+      const tA = parseDateValue(a.date);
+      const tB = parseDateValue(b.date);
+      return tA - tB;
+    });
+
+    return upcoming.slice(0, 3);
   }, [allDiaryItems]);
 
   // Split into Live (Collation in progress / Live / Audit phase / Upcoming) and Concluded (Past)
@@ -771,7 +762,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     <div className="md:col-span-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-brand-blue uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 group-hover:bg-blue-100 transition-colors">
                         <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                        {item.date}
+                        {formatReportDate(item.date)}
                       </span>
                     </div>
 

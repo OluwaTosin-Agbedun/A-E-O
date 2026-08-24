@@ -6,7 +6,7 @@ export const REPORTS: Report[] = [];
 export const DIARY_NATIONAL: DiaryItem[] = [
   {
     id: 'nat-1',
-    date: '15 Aug 2026',
+    date: '2026-08-15',
     title: 'Osun State Governorship',
     subtitle: 'Off-cycle · INEC Monitored',
     status: 'In view',
@@ -53,7 +53,7 @@ export const DIARY_NATIONAL: DiaryItem[] = [
   },
   {
     id: 'nat-2',
-    date: '16 Jan 2027',
+    date: '2027-01-16',
     title: 'Presidential & National Assembly Election',
     subtitle: '2027 Nigeria General Election',
     status: 'Scheduled',
@@ -90,7 +90,7 @@ export const DIARY_NATIONAL: DiaryItem[] = [
   },
   {
     id: 'nat-3',
-    date: '06 Feb 2027',
+    date: '2027-02-06',
     title: 'Governorship & State Assembly Elections',
     subtitle: '2027 Nigeria General Election',
     status: 'Scheduled',
@@ -125,7 +125,7 @@ export const DIARY_NATIONAL: DiaryItem[] = [
   },
   {
     id: 'nat-4',
-    date: '08 Nov 2025',
+    date: '2025-11-08',
     title: 'Anambra State Governorship',
     subtitle: 'Off-cycle · INEC Monitored',
     status: 'Concluded',
@@ -165,7 +165,7 @@ export const DIARY_NATIONAL: DiaryItem[] = [
 export const DIARY_LOCAL: DiaryItem[] = [
   {
     id: 'loc-bauchi',
-    date: '17 Aug 2026',
+    date: '2026-08-17',
     title: 'Bauchi State Local Government Election',
     subtitle: 'Local Government · BASIEC',
     status: 'Scheduled',
@@ -187,7 +187,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
   },
   {
     id: 'loc-anambra-lg',
-    date: '29 Aug 2026',
+    date: '2026-08-29',
     title: 'Anambra State Local Government Election',
     subtitle: 'Local Government · ANSIEC',
     status: 'Scheduled',
@@ -209,7 +209,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
   },
   {
     id: 'loc-plateau',
-    date: '17 Sep 2026',
+    date: '2026-09-17',
     title: 'Plateau State Local Government Election',
     subtitle: 'Local Government · PLASIEC',
     status: 'Scheduled',
@@ -231,7 +231,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
   },
   {
     id: 'loc-enugu',
-    date: '26 Sep 2026',
+    date: '2026-09-26',
     title: 'Enugu State Local Government Election',
     subtitle: 'Local Government · ENSIEC',
     status: 'Scheduled',
@@ -253,7 +253,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
   },
   {
     id: 'loc-kogi',
-    date: '17 Oct 2026',
+    date: '2026-10-17',
     title: 'Kogi State Local Government Election',
     subtitle: 'Local Government · KOSIEC',
     status: 'Scheduled',
@@ -275,7 +275,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
   },
   {
     id: 'loc-oyo',
-    date: '29 Dec 2026',
+    date: '2026-12-29',
     title: 'Oyo State Local Government Election',
     subtitle: 'Local Government · OYSIEC',
     status: 'Scheduled',
@@ -448,7 +448,7 @@ export const DIARY_LOCAL: DiaryItem[] = [
 export const DIARY_AFRICA: DiaryItem[] = [
   {
     id: 'afr-zambia',
-    date: '13 Aug 2026',
+    date: '2026-08-13',
     title: 'Zambia General Election',
     subtitle: 'Africa · Presidential & Parliamentary',
     status: 'Scheduled',
@@ -469,7 +469,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-morocco',
-    date: '23 Sep 2026',
+    date: '2026-09-23',
     title: 'Morocco General Election',
     subtitle: 'Africa · Parliamentary & Regional',
     status: 'Scheduled',
@@ -490,7 +490,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-saotome',
-    date: '27 Sep 2026',
+    date: '2026-09-27',
     title: 'São Tomé and Príncipe Parliamentary Election',
     subtitle: 'Africa · National Assembly',
     status: 'Scheduled',
@@ -510,7 +510,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-sa-muni',
-    date: '04 Nov 2026',
+    date: '2026-11-04',
     title: 'South Africa Municipal Election',
     subtitle: 'Africa · Local Government',
     status: 'Scheduled',
@@ -531,7 +531,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-capeverde',
-    date: '15 Nov 2026',
+    date: '2026-11-15',
     title: 'Cape Verde Presidential Election',
     subtitle: 'Africa · Head of State',
     status: 'Scheduled',
@@ -551,7 +551,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-gambia',
-    date: '05 Dec 2026',
+    date: '2026-12-05',
     title: 'Gambia Presidential Election',
     subtitle: 'Africa · Head of State',
     status: 'Scheduled',
@@ -571,7 +571,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-guineabissau',
-    date: '06 Dec 2026',
+    date: '2026-12-06',
     title: 'Guinea-Bissau General Election',
     subtitle: 'Africa · Presidential & Legislative',
     status: 'Scheduled',
@@ -591,7 +591,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-cameroon',
-    date: '20 Dec 2026',
+    date: '2026-12-20',
     title: 'Cameroon Parliamentary Election',
     subtitle: 'Africa · National Assembly',
     status: 'Scheduled',
@@ -611,7 +611,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-southsudan',
-    date: '22 Dec 2026',
+    date: '2026-12-22',
     title: 'South Sudan General Election',
     subtitle: 'Africa · Presidential & Parliamentary',
     status: 'Scheduled',
@@ -631,7 +631,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-cotedivoire',
-    date: '25 Oct 2025',
+    date: '2025-10-25',
     title: "Côte d'Ivoire Presidential Election",
     subtitle: 'Africa · Regional Benchmark',
     status: 'Concluded',
@@ -651,7 +651,7 @@ export const DIARY_AFRICA: DiaryItem[] = [
   },
   {
     id: 'afr-ghana',
-    date: '07 Dec 2028',
+    date: '2028-12-07',
     title: 'Ghana General Election',
     subtitle: 'Africa · West Africa Landmark',
     status: 'Scheduled',
@@ -714,7 +714,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-iceland',
-    date: '29 Aug 2026',
+    date: '2026-08-29',
     title: 'Iceland EU Membership Referendum',
     subtitle: 'Europe · National Referendum',
     status: 'Scheduled',
@@ -734,7 +734,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-haiti-1',
-    date: '30 Aug 2026',
+    date: '2026-08-30',
     title: 'Haiti General Election (First Round)',
     subtitle: 'Americas · Presidential & Legislative',
     status: 'Scheduled',
@@ -754,7 +754,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-estonia',
-    date: '02 Sep 2026',
+    date: '2026-09-02',
     title: 'Estonia Presidential Election',
     subtitle: 'Europe · Head of State',
     status: 'Scheduled',
@@ -774,7 +774,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-germany-saxony',
-    date: '06 Sep 2026',
+    date: '2026-09-06',
     title: 'Germany, Saxony-Anhalt State Election',
     subtitle: 'Europe · Landtag Parliament',
     status: 'Scheduled',
@@ -794,7 +794,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-sweden-gen',
-    date: '13 Sep 2026',
+    date: '2026-09-13',
     title: 'Sweden General Election',
     subtitle: 'Europe · Riksdag Parliament',
     status: 'Scheduled',
@@ -814,7 +814,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-sweden-loc',
-    date: '13 Sep 2026',
+    date: '2026-09-13',
     title: 'Sweden Local Election',
     subtitle: 'Europe · Municipal & Regional Councils',
     status: 'Scheduled',
@@ -834,7 +834,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-philippines-barmm',
-    date: '14 Sep 2026',
+    date: '2026-09-14',
     title: 'Philippines, Bangsamoro Parliament Election',
     subtitle: 'Asia · Regional Parliament',
     status: 'Scheduled',
@@ -854,7 +854,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-russia-leg',
-    date: '18–20 Sep 2026',
+    date: '2026-09-18',
     title: 'Russia Legislative Election',
     subtitle: 'Europe/Asia · State Duma',
     status: 'Scheduled',
@@ -874,7 +874,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-germany-berlin',
-    date: '20 Sep 2026',
+    date: '2026-09-20',
     title: 'Germany, Berlin State Election',
     subtitle: 'Europe · Abgeordnetenhaus',
     status: 'Scheduled',
@@ -894,7 +894,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-germany-mecklenburg',
-    date: '20 Sep 2026',
+    date: '2026-09-20',
     title: 'Germany, Mecklenburg-Vorpommern State Election',
     subtitle: 'Europe · Landtag Parliament',
     status: 'Scheduled',
@@ -914,7 +914,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-russia-reg',
-    date: '20 Sep 2026',
+    date: '2026-09-20',
     title: 'Russia Regional Elections',
     subtitle: 'Europe/Asia · Regional Governors & Assemblies',
     status: 'Scheduled',
@@ -934,7 +934,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-isleofman',
-    date: '24 Sep 2026',
+    date: '2026-09-24',
     title: 'Isle of Man General Election',
     subtitle: 'Europe · House of Keys',
     status: 'Scheduled',
@@ -954,7 +954,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-french-senate',
-    date: '27 Sep 2026',
+    date: '2026-09-27',
     title: 'French Senate Elections',
     subtitle: 'Europe · Sénat Upper House',
     status: 'Scheduled',
@@ -974,7 +974,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-bosnia',
-    date: '04 Oct 2026',
+    date: '2026-10-04',
     title: 'Bosnia and Herzegovina General Election',
     subtitle: 'Europe · Presidency & Parliament',
     status: 'Scheduled',
@@ -994,7 +994,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-brazil-gen1',
-    date: '04 Oct 2026',
+    date: '2026-10-04',
     title: 'Brazil General Election (First Round)',
     subtitle: 'Americas · Presidential & Congressional',
     status: 'Scheduled',
@@ -1014,7 +1014,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-brazil-gov1',
-    date: '04 Oct 2026',
+    date: '2026-10-04',
     title: 'Brazil Gubernatorial Election (First Round)',
     subtitle: 'Americas · State Governors',
     status: 'Scheduled',
@@ -1034,7 +1034,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-czech-muni',
-    date: '09–10 Oct 2026',
+    date: '2026-10-09',
     title: 'Czech Republic Municipal Election',
     subtitle: 'Europe · Local Councils',
     status: 'Scheduled',
@@ -1054,7 +1054,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-czech-sen1',
-    date: '09–10 Oct 2026',
+    date: '2026-10-09',
     title: 'Czech Republic Senate Election (First Round)',
     subtitle: 'Europe · Senát 1/3 Renewal',
     status: 'Scheduled',
@@ -1094,7 +1094,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-czech-sen2',
-    date: '16–17 Oct 2026',
+    date: '2026-10-16',
     title: 'Czech Republic Senate Election (Second Round)',
     subtitle: 'Europe · Senát Runoffs',
     status: 'Scheduled',
@@ -1114,7 +1114,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-canada-bc',
-    date: '17 Oct 2026',
+    date: '2026-10-17',
     title: 'Canada, British Columbia Municipal Election',
     subtitle: 'Americas · Local Government',
     status: 'Scheduled',
@@ -1134,7 +1134,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-slovakia-loc',
-    date: '24 Oct 2026',
+    date: '2026-10-24',
     title: 'Slovakia Local Election',
     subtitle: 'Europe · Municipalities & Towns',
     status: 'Scheduled',
@@ -1154,7 +1154,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-slovakia-reg',
-    date: '24 Oct 2026',
+    date: '2026-10-24',
     title: 'Slovakia Regional Election',
     subtitle: 'Europe · Self-Governing Regions',
     status: 'Scheduled',
@@ -1174,7 +1174,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-brazil-gen2',
-    date: '25 Oct 2026',
+    date: '2026-10-25',
     title: 'Brazil General Election (Potential Second Round)',
     subtitle: 'Americas · Presidential Runoff',
     status: 'Scheduled',
@@ -1194,7 +1194,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-brazil-gov2',
-    date: '25 Oct 2026',
+    date: '2026-10-25',
     title: 'Brazil Gubernatorial Election (Potential Second Round)',
     subtitle: 'Americas · State Governor Runoffs',
     status: 'Scheduled',
@@ -1214,7 +1214,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-canada-ontario',
-    date: '26 Oct 2026',
+    date: '2026-10-26',
     title: 'Canada, Ontario Municipal Election',
     subtitle: 'Americas · Local Government',
     status: 'Scheduled',
@@ -1234,7 +1234,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-canada-manitoba',
-    date: '28 Oct 2026',
+    date: '2026-10-28',
     title: 'Canada, Manitoba Municipal Election',
     subtitle: 'Americas · Local Government',
     status: 'Scheduled',
@@ -1254,7 +1254,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-canada-pei',
-    date: '02 Nov 2026',
+    date: '2026-11-02',
     title: 'Canada, Prince Edward Island Municipal Election',
     subtitle: 'Americas · Local Government',
     status: 'Scheduled',
@@ -1274,7 +1274,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-philippines-sk',
-    date: '02 Nov 2026',
+    date: '2026-11-02',
     title: 'Philippines Barangay & Sangguniang Kabataan Election',
     subtitle: 'Asia · Grassroots & Youth Councils',
     status: 'Scheduled',
@@ -1294,7 +1294,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-us-gov',
-    date: '03 Nov 2026',
+    date: '2026-11-03',
     title: 'United States Gubernatorial Elections',
     subtitle: 'Americas · State Governors',
     status: 'Scheduled',
@@ -1314,7 +1314,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-1',
-    date: '03 Nov 2026',
+    date: '2026-11-03',
     title: 'United States Midterm Elections',
     subtitle: 'Other Continents · Global Reference',
     status: 'Scheduled',
@@ -1336,7 +1336,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-newzealand',
-    date: '07 Nov 2026',
+    date: '2026-11-07',
     title: 'New Zealand General Election',
     subtitle: 'Oceania · House of Representatives',
     status: 'Scheduled',
@@ -1356,7 +1356,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-taiwan',
-    date: '28 Nov 2026',
+    date: '2026-11-28',
     title: 'Taiwan Local Elections',
     subtitle: 'Asia · Municipalities & Counties',
     status: 'Scheduled',
@@ -1376,7 +1376,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-australia-vic',
-    date: '28 Nov 2026',
+    date: '2026-11-28',
     title: 'Australia, Victoria State Election',
     subtitle: 'Oceania · Legislative Assembly & Council',
     status: 'Scheduled',
@@ -1396,7 +1396,7 @@ export const DIARY_OTHER: DiaryItem[] = [
   },
   {
     id: 'oth-haiti-2',
-    date: '06 Dec 2026',
+    date: '2026-12-06',
     title: 'Haiti General Election (Second Round)',
     subtitle: 'Americas · Presidential & Legislative Runoff',
     status: 'Scheduled',

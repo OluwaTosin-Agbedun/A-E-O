@@ -6,7 +6,7 @@ import {
 import { useCMS } from '../context/CMSContext';
 import { DiaryItem } from '../types';
 import DiaryElectionDetail from './DiaryElectionDetail';
-import { sortItemsByDate } from '../utils/date';
+import { sortItemsByDate, parseDateValue, formatReportDate } from '../utils/date';
 
 export default function Diary() {
   const { diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
@@ -17,7 +17,8 @@ export default function Diary() {
   // Filter States
   const [regionFilter, setRegionFilter] = useState<'all' | 'nigeria' | 'africa' | 'other'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'presidential' | 'governorship' | 'local_government'>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [timingFilter, setTimingFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Combine all items and auto-assign region/type if missing
@@ -46,7 +47,21 @@ export default function Diary() {
       type: item.type || 'presidential' as const
     }));
 
-    return [...nat, ...loc, ...afr, ...oth];
+    const combined = [...nat, ...loc, ...afr, ...oth];
+    return combined.map(item => {
+      const timestamp = parseDateValue(item.date);
+      let y = null;
+      if (timestamp > 0) {
+        y = new Date(timestamp).getFullYear();
+      } else {
+        const dStr = String(item.date || '').trim();
+        const yMatch = dStr.match(/\d{4}/);
+        if (yMatch) {
+          y = parseInt(yMatch[0], 10);
+        }
+      }
+      return { ...item, _timestamp: timestamp, _year: y };
+    });
   }, [diaryNat, diaryLoc, diaryAfr, diaryOth]);
 
   // Filtered and Date-Sorted List based on criteria
@@ -62,9 +77,27 @@ export default function Diary() {
         return false;
       }
 
-      // 3. Status filter
-      if (statusFilter !== 'all' && item.status !== statusFilter) {
-        return false;
+      // 3. Timing Filter (Upcoming / Past)
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      const isPast = (item as any)._timestamp > 0 && (item as any)._timestamp < now.getTime();
+      
+      if (timingFilter === 'upcoming') {
+        // Upcoming: date >= today and current calendar year
+        const currentYear = new Date().getFullYear();
+        if (isPast) return false;
+        if ((item as any)._year !== currentYear && (item as any)._timestamp > 0) return false; 
+        // wait, the user said: "Upcoming Elections must show ONLY elections that: have a date today or in future AND are taking place within the CURRENT CALENDAR YEAR."
+        // "Past Elections must include ALL elections whose election date has passed. This includes earlier in current year, previous year, and every earlier year."
+      } else if (timingFilter === 'past') {
+        if (!isPast && (item as any)._timestamp > 0) return false;
+      }
+
+      // 3b. Year Filter
+      if (yearFilter !== 'all') {
+        if (String((item as any)._year) !== yearFilter) {
+          return false;
+        }
       }
 
       // 4. Search Query
@@ -84,7 +117,15 @@ export default function Diary() {
 
     // Always sort by date chronologically
     return sortItemsByDate(list, 'date', 'asc');
-  }, [allDiaryItems, regionFilter, typeFilter, statusFilter, searchQuery]);
+  }, [allDiaryItems, regionFilter, typeFilter, timingFilter, yearFilter, searchQuery]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allDiaryItems.forEach(item => {
+      if ((item as any)._year) years.add((item as any)._year);
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [allDiaryItems]);
 
   const getStatusColor = (status: DiaryItem['status']) => {
     switch (status) {
@@ -104,14 +145,15 @@ export default function Diary() {
   const resetFilters = () => {
     setRegionFilter('all');
     setTypeFilter('all');
-    setStatusFilter('all');
+    setTimingFilter('all');
+    setYearFilter('all');
     setSearchQuery('');
   };
 
   const activeFiltersCount = 
     (regionFilter !== 'all' ? 1 : 0) + 
     (typeFilter !== 'all' ? 1 : 0) + 
-    (statusFilter !== 'all' ? 1 : 0) +
+    (timingFilter !== 'all' ? 1 : 0) + (yearFilter !== 'all' ? 1 : 0) +
     (searchQuery.trim() !== '' ? 1 : 0);
 
   const handleSelectQuickFilter = (region: 'all' | 'nigeria' | 'africa' | 'other', type: 'all' | 'presidential' | 'governorship' | 'local_government' = 'all') => {
@@ -266,6 +308,30 @@ export default function Diary() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-paper/80 border border-line rounded-full text-xs text-ink placeholder:text-slate-400 focus:outline-none focus:border-brand-blue shadow-2xs transition-colors"
                 />
+              </div>
+
+              {/* Status and Year Filters */}
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={timingFilter}
+                  onChange={(e) => setTimingFilter(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-paper border border-line rounded-xl text-xs text-ink focus:outline-none focus:border-brand-blue"
+                >
+                  <option value="all">All Timing</option>
+                  <option value="upcoming">Upcoming Elections</option>
+                  <option value="past">Past Elections</option>
+                </select>
+
+                <select
+                  value={yearFilter}
+                  onChange={(e) => setYearFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-paper border border-line rounded-xl text-xs text-ink focus:outline-none focus:border-brand-blue"
+                >
+                  <option value="all">All Years</option>
+                  {availableYears.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Exact Tree List as drawn in Sketch */}
@@ -472,7 +538,7 @@ export default function Diary() {
                       <div className="md:col-span-3">
                         <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-brand-blue uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 group-hover:bg-blue-100 transition-colors">
                           <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                          {item.date}
+                          {formatReportDate(item.date)}
                         </span>
                       </div>
 
