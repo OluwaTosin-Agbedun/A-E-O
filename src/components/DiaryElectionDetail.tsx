@@ -104,7 +104,7 @@ export default function DiaryElectionDetail({
               </span>
               <span className="text-xs font-bold text-ink flex items-center gap-1.5 line-clamp-1">
                 <Landmark className="w-4 h-4 text-emerald-600" />
-                {item.electoralBody || 'INEC'}
+                {item.electoralBody || (item.country === 'Nigeria' ? 'INEC' : 'Electoral Commission')}
               </span>
             </div>
 
@@ -198,7 +198,7 @@ export default function DiaryElectionDetail({
             </div>
 
             <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-              {item.monitoringMission || 'Athena Election Observatory deploys independent, non-partisan field observers to audit voter accreditation, result form EC8A uploads, and collation pipeline integrity.'}
+              {item.monitoringMission || 'Athena Election Observatory deploys independent, non-partisan field observers to audit voter accreditation, official result form uploads, and collation pipeline integrity.'}
             </p>
 
             {item.stateCode && onNavigateToElection && (
@@ -261,7 +261,7 @@ export default function DiaryElectionDetail({
               </div>
             ) : (
               <div className="text-center py-8 text-xs text-mut bg-paper/40 rounded-2xl border border-dashed border-line">
-                Candidate registrations undergoing official INEC/Commission verification.
+                Candidate registrations undergoing official {item.electoralBody ? item.electoralBody : 'electoral commission'} verification.
               </div>
             )}
           </div>

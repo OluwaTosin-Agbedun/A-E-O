@@ -56,6 +56,9 @@ export function getLgaValidVotes(lga: LgaPartyStanding): number {
 export interface StateMonitor {
   code: string;
   name: string;
+  country?: string;
+  year?: string;
+  type?: string;
   region: string;
   election: string;
   status: 'Upcoming' | 'Concluded' | 'Audit phase' | 'Collation in progress' | 'INEC Announced Result' | string;
@@ -170,6 +173,10 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
 
   // Currently viewed Live election - prioritize Osun (OS) for live collation focus
   const liveState = liveStates.find(s => s.code === 'OS') || liveStates[0] || INITIAL_STATES[0];
+  const isNigeria = !liveState.country || liveState.country === 'Nigeria';
+  const liveStateTitle = liveState.name.toLowerCase().includes('election') 
+    ? liveState.name 
+    : `${liveState.year || '2026'} ${liveState.name} ${liveState.type || 'Governorship Election'}`;
 
   // Selected concluded election index
   const [selectedPastIndex, setSelectedPastIndex] = useState(0);
@@ -349,7 +356,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                 <span>Live Election Observatory</span>
               </h2>
               <p className="text-xs text-mut font-semibold uppercase tracking-wider mt-1 font-mono">
-                Active Off-Cycle Monitoring Pipeline • Real-time IReV Audit Feed
+                Active Off-Cycle Monitoring Pipeline • Real-time {isNigeria ? 'IReV' : 'Result'} Audit Feed
               </p>
             </div>
             <span className="text-xs font-mono text-amber-900 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-2 shadow-2xs self-start sm:self-auto">
@@ -365,7 +372,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
           <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-custom space-y-6">
             
             {/* Live Collation / Announced Result Status Banner */}
-            {liveState.status === 'INEC Announced Result' ? (
+            {liveState.status === 'INEC Announced Result' || liveState.status === 'Official Announced Result' ? (
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex items-start sm:items-center gap-3">
                   <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
@@ -374,14 +381,14 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-emerald-950 flex items-center gap-1.5">
-                        <span>INEC Announced Result</span>
+                        <span>{isNigeria ? 'INEC Announced Result' : 'Official Announced Result'}</span>
                       </h4>
                       <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
-                        {liveState.reconciledRate || '98.43%'} IReV Uploaded
+                        {liveState.reconciledRate || '98.43%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                      Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({liveState.reconciledRate || '98.43%'} IReV Uploaded) • Declared on {liveState.date || '16 August 2026'}
+                      Official Announced Results for {liveStateTitle} • <strong>{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({liveState.reconciledRate || '98.43%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}) • Declared on {liveState.date || '16 August 2026'}
                     </p>
                   </div>
                 </div>
@@ -407,11 +414,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                         <span>Official Vote Collation Ongoing</span>
                       </h4>
                       <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                        {liveState.reconciledRate || '87.48%'} IReV Uploaded
+                        {liveState.reconciledRate || '87.48%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                      Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
+                      Results rolling in live across {liveState.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{liveState.reportedPus ? `${liveState.reportedPus.toLocaleString()} of ${liveState.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • {isNigeria ? 'IReV ' : ''}Uploaded as of {liveState.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{liveState.lastPuUploaded ? ` (Last PU: ${liveState.lastPuUploaded})` : ''}
                     </p>
                   </div>
                 </div>
@@ -460,7 +467,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   </div>
                   {liveState.pvcCollected && (
                     <div className="p-3 bg-paper rounded-xl border border-line">
-                      <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">PVC Collected</span>
+                      <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">{isNigeria ? 'PVC Collected' : 'Cards Collected'}</span>
                       <span className="block text-sm font-semibold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
                         <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> {liveState.pvcCollected}
                       </span>
@@ -503,7 +510,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     </span>
                   </div>
                   <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/90 shadow-2xs transition-all hover:shadow-sm">
-                    <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">IReV Upload</span>
+                    <span className="block text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider">{isNigeria ? 'IReV Upload' : 'Result Upload'}</span>
                     <span className="block text-sm font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5 font-mono">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {liveState.reconciledRate || '98.43%'}
                     </span>
@@ -938,7 +945,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                 <div className="w-full md:w-[372px] mx-auto p-2.5 bg-slate-50 border border-line rounded-xl flex flex-col items-center justify-center text-center gap-1.5 shadow-sm">
                   <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-semibold text-ink">IREV upload rate:</span>
+                    <span className="font-semibold text-ink">Result upload rate:</span>
                     <span className="font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded text-[10px]">
                       {activePastState.reconciledRate} Reconciled
                     </span>
@@ -950,7 +957,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                     ></div>
                   </div>
                   <p className="text-[11px] text-mut max-w-[280px] sm:max-w-md leading-tight">
-                    Data gotten from INEC IReV
+                    Data gotten from {(!activePastState.country || activePastState.country === 'Nigeria') ? 'INEC IReV' : 'Official Portal'}
                   </p>
                 </div>
 

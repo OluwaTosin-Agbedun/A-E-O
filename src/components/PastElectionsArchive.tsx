@@ -369,7 +369,7 @@ export default function PastElectionsArchive() {
                   {/* Summary & Reconciled Bar */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-slate-500 font-medium">IREV upload rate</span>
+                      <span className="text-slate-500 font-medium">Result upload rate</span>
                       <span className="font-bold text-emerald-600">{item.reconciledRate}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -379,7 +379,7 @@ export default function PastElectionsArchive() {
                       ></div>
                     </div>
                     <p className="text-xs text-ink2 line-clamp-2 leading-relaxed pt-1">
-                      Data gotten from INEC IReV
+                      Data gotten from {(item as any).country === 'Nigeria' || !(item as any).country ? 'INEC IReV' : 'Official Portal'}
                     </p>
                   </div>
 

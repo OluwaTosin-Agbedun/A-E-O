@@ -207,18 +207,31 @@ export default function ElectionDetails({
   const activeReport = associatedReports[election.code as keyof typeof associatedReports];
 
   // Mock checklist for Upcoming vs Past
-  const upcomingChecklist = [
+  const isNigeria = !election.country || election.country === 'Nigeria';
+
+  const upcomingChecklist = isNigeria ? [
     { label: 'Map collation center physical transit routes', checked: true, desc: 'Identified 30 LGA collation route segments for observer transit tracking.' },
     { label: 'Accredit 1,200 local observer teams with INEC', checked: true, desc: 'Official commission list submitted and verified.' },
     { label: 'Deploy offline-first SMS relay system', checked: true, desc: 'Bypasses standard cellular network packet drops via satellite-linked secondary relays.' },
     { label: 'Train observers on BVAS logs exception counting', checked: false, desc: 'Hands-on practical session scheduled for next week.' },
     { label: 'Establish central observatory war-room in Osogbo', checked: false, desc: 'Equipment and power backup installation in progress.' },
+  ] : [
+    { label: 'Map collation center physical transit routes', checked: true, desc: 'Identified major collation route segments for observer transit tracking.' },
+    { label: 'Accredit local observer teams with Electoral Commission', checked: true, desc: 'Official commission list submitted and verified.' },
+    { label: 'Deploy offline-first SMS relay system', checked: true, desc: 'Bypasses standard cellular network packet drops via satellite-linked secondary relays.' },
+    { label: 'Train observers on biometric logs exception counting', checked: false, desc: 'Hands-on practical session scheduled for next week.' },
+    { label: 'Establish central observatory war-room', checked: false, desc: 'Equipment and power backup installation in progress.' },
   ];
 
-  const pastChecklist = [
+  const pastChecklist = isNigeria ? [
     { label: 'Collect official Form EC8A scans from IReV', checked: true, desc: 'Successfully scraped and archived 100% of accessible polling unit sheet images.' },
     { label: 'Perform OCR and manual transcription validation', checked: true, desc: 'Cross-checked numerical vote tallies between physical duplicates and scans.' },
     { label: 'Audit BVAS hardware logs against accredited tallies', checked: true, desc: 'Flagged discrepancy deviations between biometric scans and manual voter lists.' },
+    { label: 'Publish open-source statistical dataset', checked: true, desc: 'Raw verified CSV tallies uploaded to our archives.' },
+  ] : [
+    { label: 'Collect official result sheet scans from data portal', checked: true, desc: 'Successfully scraped and archived 100% of accessible polling unit sheet images.' },
+    { label: 'Perform OCR and manual transcription validation', checked: true, desc: 'Cross-checked numerical vote tallies between physical duplicates and scans.' },
+    { label: 'Audit biometric hardware logs against accredited tallies', checked: true, desc: 'Flagged discrepancy deviations between biometric scans and manual voter lists.' },
     { label: 'Publish open-source statistical dataset', checked: true, desc: 'Raw verified CSV tallies uploaded to our archives.' },
   ];
 
@@ -302,7 +315,7 @@ export default function ElectionDetails({
           </div>
 
           {/* Live Collation / Announced Result Banner */}
-          {election.status === 'INEC Announced Result' ? (
+          {election.status === 'INEC Announced Result' || election.status === 'Official Announced Result' ? (
             <div className="mt-6 bg-gradient-to-r from-emerald-50 via-emerald-50/90 to-blue-50/50 border border-emerald-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
               <div className="flex items-start sm:items-center gap-3">
                 <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm shrink-0 flex items-center justify-center mt-0.5 sm:mt-0">
@@ -311,14 +324,14 @@ export default function ElectionDetails({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-xs font-bold font-mono tracking-wider uppercase text-emerald-950 flex items-center gap-1.5">
-                      <span>INEC Announced Result</span>
+                      <span>{isNigeria ? 'INEC Announced Result' : 'Official Announced Result'}</span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
-                      {election.reconciledRate || '98.43%'} IReV Uploaded
+                      {election.reconciledRate || '98.43%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Official INEC Announced Results for Osun State 2026 Governorship Election • <strong>{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({election.reconciledRate || '98.43%'} IReV Uploaded) • Declared on {election.date || '16 August 2026'}
+                    Official Announced Results for {electionTitle} • <strong>{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '3,704 of 3,763'}</strong> Polling Units Reported ({election.reconciledRate || '98.43%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}) • Declared on {election.date || '16 August 2026'}
                   </p>
                 </div>
               </div>
@@ -344,11 +357,11 @@ export default function ElectionDetails({
                       <span>Official Vote Collation Ongoing</span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
-                      {election.reconciledRate || '87.48%'} IReV Uploaded
+                      {election.reconciledRate || '87.48%'} {isNigeria ? 'IReV Uploaded' : 'Uploaded'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 mt-0.5 font-sans leading-relaxed">
-                    Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • IReV Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
+                    Results rolling in live across {election.numLgas || 30} LGAs • <strong className="text-amber-950 font-mono">{election.reportedPus ? `${election.reportedPus.toLocaleString()} of ${election.pollingUnits}` : '2,293 of 3,763'}</strong> Polling Units Reported • {isNigeria ? 'IReV ' : ''}Uploaded as of {election.irevUploadTime || 'Aug 15, 2026, 9:30:00 PM'}{election.lastPuUploaded ? ` (Last PU: ${election.lastPuUploaded})` : ''}
                   </p>
                 </div>
               </div>
@@ -377,7 +390,7 @@ export default function ElectionDetails({
           {/* PVC Collected (if available) */}
           {election.pvcCollected && (
             <div className="p-3 bg-white rounded-xl border border-line shadow-sm flex flex-col justify-between">
-              <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">PVC Collected</span>
+              <span className="block text-[10px] font-mono font-bold text-mut uppercase tracking-wider">{isNigeria ? 'PVC Collected' : 'Cards Collected'}</span>
               <div className="mt-2 flex items-center gap-1.5 font-mono">
                 <CreditCard className="w-4 h-4 text-emerald-600" />
                 <span className="text-sm font-bold text-emerald-700">{election.pvcCollected}</span>
@@ -469,9 +482,9 @@ export default function ElectionDetails({
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-ink">IREV upload rate</h4>
+              <h4 className="text-xs font-bold text-ink">{isNigeria ? 'IREV upload rate' : 'Result Upload Rate'}</h4>
               <p className="text-[11px] text-mut mt-0.5 leading-normal">
-                Data gotten from INEC IReV
+                Data gotten from {isNigeria ? 'INEC IReV' : 'Official Portal'}
               </p>
             </div>
           </div>
