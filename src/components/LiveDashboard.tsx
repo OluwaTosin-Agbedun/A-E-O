@@ -359,13 +359,6 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                 Active Off-Cycle Monitoring Pipeline • Real-time {isNigeria ? 'IReV' : 'Result'} Audit Feed
               </p>
             </div>
-            <span className="text-xs font-mono text-amber-900 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-2 shadow-2xs self-start sm:self-auto">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-              Vote Collation In Progress
-            </span>
           </div>
 
           {/* Live Election Details Panel */}

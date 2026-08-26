@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { ArrowLeft, Clock, Share2, Mail, Check, MessageSquare, AlertCircle, FileText, Download, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Mail, Check, AlertCircle, Download, CheckCircle2 } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { db } from '../lib/firebase';
@@ -20,7 +20,6 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   const [subEmail, setSubEmail] = useState('');
   const [subError, setSubError] = useState('');
   const [hasShared, setHasShared] = useState(false);
-  const [fieldReportStatus, setFieldReportStatus] = useState<string | null>(null);
   const [isDownloaded, setIsDownloaded] = useState(false);
 
   const decodedId = weeklyId ? decodeURIComponent(weeklyId) : '';
@@ -39,7 +38,6 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       setSubEmail('');
       setSubError('');
       setHasShared(false);
-      setFieldReportStatus(null);
     }
     if (issue) {
       const canonicalSlug = getItemSlug(issue);
@@ -267,30 +265,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
             ))}
           </div>
 
-          {/* Interactive Comment section placeholder */}
-          <div className="border-t border-line pt-8 mt-12">
-            <h3 className="font-display font-bold text-base text-ink mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4.5 h-4.5 text-brand-blue" />
-              <span>Observatory Discussion Hub</span>
-            </h3>
-            <div className="bg-paper border border-line rounded-xl p-4 text-center">
-              <p className="text-xs text-mut mb-3">
-                Do you have local observations regarding this issue? Post secure reports to the Athena Centre.
-              </p>
-              {fieldReportStatus ? (
-                <div className="text-xs font-semibold font-mono text-brand-green py-2 animate-fade-in">
-                  ✓ {fieldReportStatus}
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setFieldReportStatus("Connecting to the Secure Field Observer Submission pipeline...")}
-                  className="inline-flex items-center justify-center bg-navy hover:bg-navy-dark text-white text-xs font-semibold font-mono tracking-wider uppercase px-4 py-2 rounded-lg cursor-pointer"
-                >
-                  Submit field report
-                </button>
-              )}
-            </div>
-          </div>
+
 
           {/* Download Action Box (Placed After Text Contents) */}
           <div className="pt-8 border-t border-line">
@@ -373,28 +348,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
             )}
           </div>
 
-          {/* Related Documents list */}
-          <div className="bg-paper border border-line rounded-2xl p-6 shadow-sm space-y-3">
-            <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider">
-              Associated Files
-            </h3>
-            <ul className="space-y-2 text-xs">
-              <li className="flex items-start gap-2 text-ink2">
-                <FileText className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-semibold">EC8A Compliance Spreadsheet</span>
-                  <span className="block text-[10px] text-mut font-mono">XLSX · 1.4 MB</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-2 text-ink2">
-                <FileText className="w-4 h-4 text-brand-purple shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-semibold">Osun Observers Training Kit</span>
-                  <span className="block text-[10px] text-mut font-mono">PDF · 3.2 MB</span>
-                </div>
-              </li>
-            </ul>
-          </div>
+
 
         </aside>
 

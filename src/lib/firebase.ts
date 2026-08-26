@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2jLCAa4Tcm5p19N6tEZ0Mefv9qKnTPaQ",
@@ -16,10 +16,14 @@ export const auth = getAuth(app);
 
 let firestoreDb;
 try {
-  firestoreDb = getFirestore(app, "ai-studio-athenaelectionob-f9fd98b2-b5fa-4c58-95e8-8d4d87819146");
+  firestoreDb = initializeFirestore(app, {
+    experimentalForceLongPolling: true
+  }, "ai-studio-athenaelectionob-f9fd98b2-b5fa-4c58-95e8-8d4d87819146");
 } catch (e) {
   console.warn("Failed to initialize with custom database ID, falling back to default database:", e);
-  firestoreDb = getFirestore(app);
+  firestoreDb = initializeFirestore(app, {
+    experimentalForceLongPolling: true
+  });
 }
 
 export const db = firestoreDb;
