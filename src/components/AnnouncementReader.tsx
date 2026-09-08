@@ -13,7 +13,7 @@ interface AnnouncementReaderProps {
 }
 
 export default function AnnouncementReader({ announcementId, onClose }: AnnouncementReaderProps) {
-  const { announcements } = useCMS();
+  const { announcements, incrementPublicationStat } = useCMS();
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [hasShared, setHasShared] = useState(false);
 
@@ -37,8 +37,14 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       if (canonicalSlug && window.location.pathname !== `/announcement/${canonicalSlug}`) {
         window.history.replaceState({}, '', `/announcement/${canonicalSlug}`);
       }
+      
+      // Increment reads
+      if (!sessionStorage.getItem(`read_announcement_${announcement.id}`)) {
+        incrementPublicationStat('announcement', announcement.id, 'reads');
+        sessionStorage.setItem(`read_announcement_${announcement.id}`, 'true');
+      }
     }
-  }, [announcementId, announcement]);
+  }, [announcementId, announcement, incrementPublicationStat]);
 
   if (!announcementId) return null;
 
@@ -85,6 +91,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
 
   const handleDownloadPDF = () => {
     setIsDownloaded(true);
+    incrementPublicationStat('announcement', announcement.id, 'downloads');
     triggerPdfDownload(
       announcement.title,
       announcement.summary,

@@ -160,6 +160,7 @@ interface CMSContextType {
   saveHeroConfig: (config: HeroConfig) => void;
   saveStatsConfig: (config: StatItemConfig[]) => void;
 
+  incrementPublicationStat: (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => Promise<void>;
   resetAllData: () => void;
 }
 
@@ -536,6 +537,32 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     syncToFirestore('stats', { items: config });
   };
 
+  const incrementPublicationStat = async (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => {
+    try {
+      const collectionKey = type === 'report' ? 'reports' : type === 'weekly' ? 'weekly' : 'announcements';
+      const docRef = doc(db, 'cms', collectionKey);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const items = data.items || [];
+        const itemIndex = items.findIndex((item: any) => item.id === id);
+        
+        if (itemIndex > -1) {
+          const item = items[itemIndex];
+          const currentValue = item[statType] || 0;
+          items[itemIndex] = {
+            ...item,
+            [statType]: currentValue + 1
+          };
+          
+          await setDoc(docRef, { items });
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to increment ${statType} for ${type} ${id}:`, error);
+    }
+  };
+
   const resetAllData = async () => {
     setReports(initialReports);
     setDiaryNat(initialDiaryNat);
@@ -589,6 +616,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       deleteWeeklyIssue,
       saveHeroConfig,
       saveStatsConfig,
+      incrementPublicationStat,
       resetAllData
     }}>
       {children}

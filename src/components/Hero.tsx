@@ -153,16 +153,40 @@ export default function Hero() {
                   </h3>
 
                   {/* Date & Meta */}
-                  <div className="text-xs text-blue-200/80 font-medium mb-3 flex items-center gap-3 flex-wrap">
-                    <span className="flex items-center gap-1 font-mono text-[11px]">
-                      <Calendar className="w-3.5 h-3.5 text-blue-300" />
-                      {formatReportDate(latestArticle.date)}
-                    </span>
-                    {latestArticle.author && (
-                      <span className="flex items-center gap-1 text-[11px]">
-                        <User className="w-3.5 h-3.5 text-blue-300" />
-                        {latestArticle.author}
+                  <div className="text-xs text-blue-200/80 font-medium mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1 font-mono text-[11px]">
+                        <Calendar className="w-3.5 h-3.5 text-blue-300" />
+                        {formatReportDate(latestArticle.date)}
                       </span>
+                      {latestArticle.author && (
+                        <span className="flex items-center gap-1 text-[11px]">
+                          <User className="w-3.5 h-3.5 text-blue-300" />
+                          {latestArticle.author}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {(latestArticle.reads !== undefined || latestArticle.downloads !== undefined) && (
+                      <div className="flex items-center gap-3 text-blue-200/60 text-[11px] font-mono">
+                        {latestArticle.reads !== undefined && (
+                          <span className="flex items-center gap-1" title="Reads">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>{latestArticle.reads}</span>
+                          </span>
+                        )}
+                        {latestArticle.downloads !== undefined && (
+                          <span className="flex items-center gap-1" title="Downloads">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>{latestArticle.downloads}</span>
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 

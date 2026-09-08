@@ -21,6 +21,8 @@ export interface Report {
   pdfUrl?: string;
   slug?: string;
   createdAt?: number;
+  reads?: number;
+  downloads?: number;
 }
 
 export interface CandidateParticipant {
@@ -107,6 +109,8 @@ export interface WeeklyIssue {
   pdfUrl?: string;
   slug?: string;
   createdAt?: number;
+  reads?: number;
+  downloads?: number;
 }
 
 export interface HeroConfig {
@@ -179,5 +183,7 @@ export interface AnnouncementItem {
   pdfUrl?: string;
   slug?: string;
   createdAt?: number;
+  reads?: number;
+  downloads?: number;
 }
 

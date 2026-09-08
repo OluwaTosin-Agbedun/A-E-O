@@ -15,7 +15,7 @@ interface WeeklyReaderProps {
 }
 
 export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
-  const { weekly } = useCMS();
+  const { weekly, incrementPublicationStat } = useCMS();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subEmail, setSubEmail] = useState('');
   const [subError, setSubError] = useState('');
@@ -44,8 +44,14 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       if (canonicalSlug && window.location.pathname !== `/weekly/${canonicalSlug}`) {
         window.history.replaceState({}, '', `/weekly/${canonicalSlug}`);
       }
+      
+      // Increment reads
+      if (!sessionStorage.getItem(`read_weekly_${issue.id}`)) {
+        incrementPublicationStat('weekly', issue.id, 'reads');
+        sessionStorage.setItem(`read_weekly_${issue.id}`, 'true');
+      }
     }
-  }, [weeklyId, issue]);
+  }, [weeklyId, issue, incrementPublicationStat]);
 
   if (!weeklyId) return null;
   if (!issue) return null;
@@ -282,6 +288,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
                 <button 
                   onClick={() => {
                     setIsDownloaded(true);
+                    incrementPublicationStat('weekly', issue.id, 'downloads');
                     triggerPdfDownload(
                       issue.title,
                       issue.summary,

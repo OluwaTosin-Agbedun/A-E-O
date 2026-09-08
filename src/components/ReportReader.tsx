@@ -13,7 +13,7 @@ interface ReportReaderProps {
 }
 
 export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
-  const { reports } = useCMS();
+  const { reports, incrementPublicationStat } = useCMS();
   const [isDownloaded, setIsDownloaded] = useState(false);
 
   const decodedId = reportId ? decodeURIComponent(reportId) : '';
@@ -36,14 +36,21 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
       if (canonicalSlug && window.location.pathname !== `/reports/${canonicalSlug}` && window.location.pathname !== `/report/${canonicalSlug}`) {
         window.history.replaceState({}, '', `/reports/${canonicalSlug}`);
       }
+      
+      // Increment reads
+      if (!sessionStorage.getItem(`read_report_${report.id}`)) {
+        incrementPublicationStat('report', report.id, 'reads');
+        sessionStorage.setItem(`read_report_${report.id}`, 'true');
+      }
     }
-  }, [reportId, report]);
+  }, [reportId, report, incrementPublicationStat]);
 
   if (!reportId) return null;
   if (!report) return null;
 
   const handleDownloadPDF = () => {
     setIsDownloaded(true);
+    incrementPublicationStat('report', report.id, 'downloads');
     triggerPdfDownload(
       report.title,
       report.summary,

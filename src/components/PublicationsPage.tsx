@@ -66,6 +66,8 @@ interface UnifiedPublication {
   readTimeOrSize: string;
   originalItem: any;
   pdfUrl?: string;
+  reads?: number;
+  downloads?: number;
 }
 
 export default function PublicationsPage() {
@@ -169,8 +171,10 @@ export default function PublicationsPage() {
       image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
-      pdfUrl: r.pdfUrl
-    });
+      pdfUrl: r.pdfUrl,
+      reads: r.reads,
+      downloads: r.downloads
+});
   });
 
   // 2. Assessments (tagType === 'tech')
@@ -192,8 +196,10 @@ export default function PublicationsPage() {
       image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
-      pdfUrl: r.pdfUrl
-    });
+      pdfUrl: r.pdfUrl,
+      reads: r.reads,
+      downloads: r.downloads
+});
   });
 
   // 2.5 DCI reports (tagType === 'dci')
@@ -211,8 +217,10 @@ export default function PublicationsPage() {
       image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
-      pdfUrl: r.pdfUrl
-    });
+      pdfUrl: r.pdfUrl,
+      reads: r.reads,
+      downloads: r.downloads
+});
   });
 
   // 2.6 Reports & Briefs (tagType === 'brief')
@@ -230,8 +238,10 @@ export default function PublicationsPage() {
       image: r.image || '',
       readTimeOrSize: r.size,
       originalItem: r,
-      pdfUrl: r.pdfUrl
-    });
+      pdfUrl: r.pdfUrl,
+      reads: r.reads,
+      downloads: r.downloads
+});
   });
 
   // 3. Weekly issues
@@ -249,8 +259,10 @@ export default function PublicationsPage() {
       image: w.image || '',
       readTimeOrSize: w.readingTime || '5 min read',
       originalItem: w,
-      pdfUrl: w.pdfUrl
-    });
+      pdfUrl: w.pdfUrl,
+      reads: w.reads,
+      downloads: w.downloads
+});
   });
 
   // 4. Announcements
@@ -268,8 +280,10 @@ export default function PublicationsPage() {
       image: a.image || '',
       readTimeOrSize: '3 min read',
       originalItem: a,
-      pdfUrl: a.pdfUrl
-    });
+      pdfUrl: a.pdfUrl,
+      reads: a.reads,
+      downloads: a.downloads
+});
   });
 
   // Scope publications by the current page mode
@@ -652,14 +666,38 @@ export default function PublicationsPage() {
                         </div>
 
                         {/* Bottom line: Displays ONLY author and date */}
-                        <div className="pt-4 border-t border-line/60 flex items-center gap-2 text-xs text-mut font-semibold">
-                          {pub.authorsList ? (
-                            <>
-                              <span className="text-ink">{pub.authorsList}</span>
-                              <span>·</span>
-                            </>
-                          ) : null}
-                          <span className="text-ink2">{pub.date}</span>
+                        <div className="pt-4 border-t border-line/60 flex items-center justify-between text-xs text-mut font-semibold">
+                          <div className="flex items-center gap-2">
+                            {pub.authorsList ? (
+                              <>
+                                <span className="text-ink">{pub.authorsList}</span>
+                                <span>·</span>
+                              </>
+                            ) : null}
+                            <span className="text-ink2">{pub.date}</span>
+                          </div>
+                          
+                          {(pub.reads !== undefined || pub.downloads !== undefined) && (
+                            <div className="flex items-center gap-3 text-mut">
+                              {pub.reads !== undefined && (
+                                <span className="flex items-center gap-1" title="Reads">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  <span>{pub.reads}</span>
+                                </span>
+                              )}
+                              {pub.downloads !== undefined && (
+                                <span className="flex items-center gap-1" title="Downloads">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                  </svg>
+                                  <span>{pub.downloads}</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                       </div>
