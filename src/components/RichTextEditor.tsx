@@ -4,6 +4,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
 import {
   Bold,
   Italic,
@@ -24,6 +28,8 @@ import {
   RemoveFormatting,
   Undo,
   Redo,
+  Code,
+  Table as TableIcon,
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -41,6 +47,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [isSourceMode, setIsSourceMode] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -62,6 +69,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse border border-slate-300 w-full my-3 text-xs',
+        },
+      }),
+      TableRow,
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border border-slate-300 bg-slate-100 p-2 font-bold text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border border-slate-300 p-2',
+        },
+      }),
     ],
     content: value || '',
     onUpdate: ({ editor }) => {
@@ -78,13 +102,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Keep editor content in sync when value changes from outside (e.g. selecting another item)
   useEffect(() => {
-    if (editor && value !== undefined) {
+    if (editor && value !== undefined && !isSourceMode) {
       const currentHtml = editor.getHTML();
       if (value !== currentHtml && !(value === '' && currentHtml === '<p></p>')) {
         editor.commands.setContent(value || '');
       }
     }
-  }, [value, editor]);
+  }, [value, editor, isSourceMode]);
 
   if (!editor) {
     return (
@@ -128,7 +152,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
+            disabled={!editor.can().undo() || isSourceMode}
             title="Undo (Ctrl+Z)"
             className="p-1.5 rounded hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
           >
@@ -137,7 +161,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
+            disabled={!editor.can().redo() || isSourceMode}
             title="Redo (Ctrl+Y)"
             className="p-1.5 rounded hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
           >
@@ -150,9 +174,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().setParagraph().run()}
+            disabled={isSourceMode}
             title="Normal Paragraph"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('paragraph') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('paragraph') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Pilcrow className="w-3.5 h-3.5" />
@@ -160,9 +185,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            disabled={isSourceMode}
             title="Heading 2 (H2)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('heading', { level: 2 }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('heading', { level: 2 }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Heading2 className="w-3.5 h-3.5" />
@@ -170,9 +196,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            disabled={isSourceMode}
             title="Heading 3 (H3)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('heading', { level: 3 }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('heading', { level: 3 }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Heading3 className="w-3.5 h-3.5" />
@@ -180,9 +207,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+            disabled={isSourceMode}
             title="Heading 4 (H4)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('heading', { level: 4 }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('heading', { level: 4 }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Heading4 className="w-3.5 h-3.5" />
@@ -194,9 +222,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
+            disabled={isSourceMode}
             title="Bold (Ctrl+B)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('bold') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('bold') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Bold className="w-3.5 h-3.5" />
@@ -204,9 +233,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleItalic().run()}
+            disabled={isSourceMode}
             title="Italic (Ctrl+I)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('italic') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('italic') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Italic className="w-3.5 h-3.5" />
@@ -214,9 +244,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleUnderline().run()}
+            disabled={isSourceMode}
             title="Underline (Ctrl+U)"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('underline') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('underline') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <UnderlineIcon className="w-3.5 h-3.5" />
@@ -224,9 +255,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleStrike().run()}
+            disabled={isSourceMode}
             title="Strikethrough"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('strike') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('strike') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Strikethrough className="w-3.5 h-3.5" />
@@ -238,9 +270,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
+            disabled={isSourceMode}
             title="Align Left"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive({ textAlign: 'left' }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive({ textAlign: 'left' }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <AlignLeft className="w-3.5 h-3.5" />
@@ -248,9 +281,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().setTextAlign('center').run()}
+            disabled={isSourceMode}
             title="Align Center"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive({ textAlign: 'center' }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive({ textAlign: 'center' }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <AlignCenter className="w-3.5 h-3.5" />
@@ -258,9 +292,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().setTextAlign('right').run()}
+            disabled={isSourceMode}
             title="Align Right"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive({ textAlign: 'right' }) ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive({ textAlign: 'right' }) && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <AlignRight className="w-3.5 h-3.5" />
@@ -272,9 +307,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
+            disabled={isSourceMode}
             title="Bulleted List"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('bulletList') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('bulletList') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -282,9 +318,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            disabled={isSourceMode}
             title="Numbered List"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('orderedList') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('orderedList') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <ListOrdered className="w-3.5 h-3.5" />
@@ -292,9 +329,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            disabled={isSourceMode}
             title="Blockquote"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('blockquote') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('blockquote') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <Quote className="w-3.5 h-3.5" />
@@ -306,14 +344,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={handleSetLink}
+            disabled={isSourceMode}
             title="Insert / Edit Hyperlink"
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              editor.isActive('link') ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('link') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
             }`}
           >
             <LinkIcon className="w-3.5 h-3.5" />
           </button>
-          {editor.isActive('link') && (
+          {editor.isActive('link') && !isSourceMode && (
             <button
               type="button"
               onClick={removeLink}
@@ -325,22 +364,74 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           )}
           <button
             type="button"
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            disabled={isSourceMode}
+            title="Insert Table (3x3)"
+            className={`p-1.5 rounded transition-colors cursor-pointer disabled:opacity-30 ${
+              editor.isActive('table') && !isSourceMode ? 'bg-brand-blue text-white' : 'hover:bg-slate-200'
+            }`}
+          >
+            <TableIcon className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+            disabled={isSourceMode}
             title="Remove Formatting"
-            className="p-1.5 rounded hover:bg-slate-200 transition-colors cursor-pointer text-slate-500"
+            className="p-1.5 rounded hover:bg-slate-200 disabled:opacity-30 transition-colors cursor-pointer text-slate-500"
           >
             <RemoveFormatting className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* HTML Source Toggle Button */}
+        <div className="ml-auto flex items-center pl-1.5 border-l border-line">
+          <button
+            type="button"
+            onClick={() => {
+              if (isSourceMode && editor) {
+                editor.commands.setContent(value || '');
+              }
+              setIsSourceMode(!isSourceMode);
+            }}
+            title={isSourceMode ? "Switch to Visual WYSIWYG Editor" : "Switch to HTML Source Code Editor"}
+            className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 font-mono text-[10px] font-bold ${
+              isSourceMode 
+                ? 'bg-amber-600 text-white shadow-xs' 
+                : 'bg-slate-200/80 hover:bg-slate-300 text-slate-700'
+            }`}
+          >
+            <Code className="w-3.5 h-3.5" />
+            <span>{isSourceMode ? 'Visual Mode' : 'HTML Mode'}</span>
           </button>
         </div>
       </div>
 
       {/* Editor Content Area */}
       <div className="relative min-h-[120px] bg-white">
-        <EditorContent editor={editor} />
-        {editor.isEmpty && (
-          <div className="absolute top-3 left-3 text-slate-400 text-xs pointer-events-none italic font-sans">
-            {placeholder}
+        {isSourceMode ? (
+          <div className="relative bg-slate-950 text-slate-100 font-mono text-xs">
+            <textarea
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Paste or write raw HTML code here (e.g. <p>Paragraph with <b>bold</b>, <table>, <img>, etc.)..."
+              style={{ minHeight }}
+              className="w-full p-3 bg-slate-950 text-emerald-400 font-mono text-xs leading-relaxed focus:outline-none resize-y border-0 tracking-wide"
+            />
+            <div className="px-3 py-1 bg-slate-900 border-t border-slate-800 text-[10px] text-slate-400 font-mono flex items-center justify-between select-none">
+              <span>HTML Source Code Mode Active (Full HTML markup supported)</span>
+              <span>{value ? `${value.length} chars` : '0 chars'}</span>
+            </div>
           </div>
+        ) : (
+          <>
+            <EditorContent editor={editor} />
+            {editor.isEmpty && (
+              <div className="absolute top-3 left-3 text-slate-400 text-xs pointer-events-none italic font-sans">
+                {placeholder}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -382,3 +473,4 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 };
 
 export default RichTextEditor;
+

@@ -237,15 +237,6 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     let loadedCount = 0;
     const totalDocs = 11;
 
-    const MOCK_IDS = new Set([
-      'anambra', 'imo', 'tech', 'kaduna-security', 'hospitals-reform',
-      'wk-1', 'wk-2', 'wk-3',
-      'ann-1', 'ann-2',
-      'w-1', 'w-2', 'w-3',
-      'a-1', 'a-2',
-      'nasarawa-governance', 'plat-security', 'kano-security', 'benue-security', 'adamawa-security', 'taraba-security'
-    ]);
-
     const subscribeAndSeed = <T,>(
       docName: string, 
       setter: Dispatch<SetStateAction<T>>, 
@@ -261,7 +252,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             let raw = data.items !== undefined ? data.items : data.config;
 
             if (Array.isArray(raw)) {
-              raw = raw.filter((item: any) => item && item.id && !MOCK_IDS.has(item.id));
+              raw = raw.filter((item: any) => item && item.id);
             }
 
             const finalVal = transform ? transform(raw as T) : (raw as T);

@@ -39,6 +39,9 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       setSubError('');
       setHasShared(false);
     }
+  }, [weeklyId]);
+
+  useEffect(() => {
     if (issue) {
       const canonicalSlug = getItemSlug(issue);
       if (canonicalSlug && window.location.pathname !== `/weekly/${canonicalSlug}`) {
@@ -47,11 +50,11 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
       
       // Increment reads
       if (!sessionStorage.getItem(`read_weekly_${issue.id}`)) {
-        incrementPublicationStat('weekly', issue.id, 'reads');
         sessionStorage.setItem(`read_weekly_${issue.id}`, 'true');
+        incrementPublicationStat('weekly', issue.id, 'reads');
       }
     }
-  }, [weeklyId, issue, incrementPublicationStat]);
+  }, [issue?.id, incrementPublicationStat]);
 
   if (!weeklyId) return null;
   if (!issue) return null;

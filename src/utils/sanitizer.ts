@@ -13,9 +13,14 @@ export function sanitizeHtml(htmlString: string): string {
       'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
       'ul', 'ol', 'li', 
       'blockquote', 'a', 'span', 'div', 'br', 'hr',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td'
+      'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'img', 'figure', 'figcaption', 'iframe', 'code', 'pre', 'sub', 'sup', 'mark'
     ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style', 'align', 'id', 'title'],
+    ALLOWED_ATTR: [
+      'href', 'target', 'rel', 'class', 'style', 'align', 'id', 'title',
+      'src', 'alt', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen',
+      'colspan', 'rowspan'
+    ],
     ALLOW_DATA_ATTR: false,
     ADD_ATTR: ['target'],
   });

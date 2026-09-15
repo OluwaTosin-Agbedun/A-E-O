@@ -186,6 +186,12 @@ export default function App() {
   } else if (path === '/diary') {
     seo = <SEO title="Electoral Diary & Timeline" description="Chronological timeline of electoral events, INEC deadlines, observer deployments, and key legal milestones." canonicalPath="/diary" />;
     content = <DiaryPage />;
+  } else if (path === '/team' || path === '/our-team') {
+    seo = <SEO title="Our Team" description="Meet the researchers, data analysts, field supervisors, and legal experts behind the Athena Election Observatory." canonicalPath="/team" />;
+    content = <Team />;
+  } else if (path === '/subscribe') {
+    seo = <SEO title="Subscribe" description="Subscribe to receive AEO Weekly intelligence bulletins, audit report releases, and electoral alerts." canonicalPath="/subscribe" />;
+    content = <Subscribe />;
   } else if (path.startsWith('/reports/')) {
     const reportId = path.substring('/reports/'.length);
     content = <ReportReader reportId={reportId} onClose={() => navigate('/publications')} />;

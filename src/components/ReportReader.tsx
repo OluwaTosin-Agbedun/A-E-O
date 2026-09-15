@@ -25,12 +25,16 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
     r.id === decodedId
   );
 
-  // Auto-scroll to top and synchronize canonical URL slug
+  // Auto-scroll to top ONCE when navigating to a new report
   useEffect(() => {
     if (reportId) {
       window.scrollTo(0, 0);
       setIsDownloaded(false);
     }
+  }, [reportId]);
+
+  // Synchronize canonical URL & increment read stats ONCE per report ID
+  useEffect(() => {
     if (report) {
       const canonicalSlug = getItemSlug(report);
       if (canonicalSlug && window.location.pathname !== `/reports/${canonicalSlug}` && window.location.pathname !== `/report/${canonicalSlug}`) {
@@ -39,11 +43,11 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
       
       // Increment reads
       if (!sessionStorage.getItem(`read_report_${report.id}`)) {
-        incrementPublicationStat('report', report.id, 'reads');
         sessionStorage.setItem(`read_report_${report.id}`, 'true');
+        incrementPublicationStat('report', report.id, 'reads');
       }
     }
-  }, [reportId, report, incrementPublicationStat]);
+  }, [report?.id, incrementPublicationStat]);
 
   if (!reportId) return null;
   if (!report) return null;

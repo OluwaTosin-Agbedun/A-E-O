@@ -1,10 +1,13 @@
-import { Landmark, Mail, Globe, MapPin } from 'lucide-react';
+import { Mail, Globe, MapPin } from 'lucide-react';
 
 export default function Footer() {
-  const handleScroll = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const navigateTo = (to: string) => {
+    if (window.location.pathname === to) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.history.pushState({}, '', to);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -17,18 +20,20 @@ export default function Footer() {
           
           {/* Column 1: Observatory description */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded bg-brand-blue flex items-center justify-center font-display font-bold text-base text-white">
+            <div 
+              className="flex items-center gap-2 cursor-pointer group"
+              onClick={() => navigateTo('/')}
+            >
+              <div className="w-8 h-8 rounded bg-brand-blue flex items-center justify-center font-display font-bold text-base text-white group-hover:scale-105 transition-transform">
                 A
               </div>
-              <span className="font-display font-bold text-sm text-white uppercase tracking-wider">
+              <span className="font-display font-bold text-sm text-white uppercase tracking-wider group-hover:text-brand-blue transition-colors">
                 Athena Election Observatory
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
               An independent, non-partisan research initiatives platform auditing election data benchmarks and measuring overall democratic health indicators across Nigeria and regional partner nations.
             </p>
-            {/* Removed Institutional Redesign Series badge */}
           </div>
 
           {/* Column 2: Explore Navigation */}
@@ -38,12 +43,50 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button onClick={() => handleScroll('reports')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/post-election-audits')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   Audit Reports
                 </button>
               </li>
               <li>
-                <button onClick={() => handleScroll('diary')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/political-landscape-monitor')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Political Landscape
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigateTo('/democracy-competitive-index')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Democracy Index
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigateTo('/elections')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Elections &amp; Data
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigateTo('/ehii')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  EHII Index
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigateTo('/diary')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   Diary of Election
                 </button>
               </li>
@@ -57,22 +100,42 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button onClick={() => handleScroll('weekly')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/aeo-weekly-digest')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   AEO Weekly
                 </button>
               </li>
               <li>
-                <button onClick={() => handleScroll('events')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/announcements')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Press Bulletins
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigateTo('/events')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   Events Hub
                 </button>
               </li>
               <li>
-                <button onClick={() => handleScroll('subscribe')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/subscribe')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   Subscribe
                 </button>
               </li>
               <li>
-                <button onClick={() => handleScroll('team')} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <button 
+                  onClick={() => navigateTo('/team')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
                   Our Team
                 </button>
               </li>
@@ -113,9 +176,6 @@ export default function Footer() {
             <span className="block mt-1 sm:inline sm:mt-0 sm:ml-2 text-slate-600">
               · Powered by Athena Centre for Policy &amp; Leadership.
             </span>
-          </div>
-          <div className="text-center sm:text-right text-slate-400 font-bold">
-            {/* Tagline removed */}
           </div>
         </div>
 

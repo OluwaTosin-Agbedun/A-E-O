@@ -141,4 +141,38 @@ body {
   font-style: italic;
 }
 
+/* HTML Table Styling for publications and CMS editor */
+.formatted-content table, .ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  overflow-x: auto;
+  display: table;
+}
+.formatted-content table th, .formatted-content table td,
+.ProseMirror table th, .ProseMirror table td {
+  border: 1px solid #CBD5E1;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.formatted-content table th, .ProseMirror table th {
+  background-color: #F1F5F9;
+  font-weight: 700;
+  color: #0F172A;
+}
+.formatted-content table tr:nth-child(even), .ProseMirror table tr:nth-child(even) {
+  background-color: #F8FAFC;
+}
+.formatted-content table caption, .ProseMirror table caption {
+  caption-side: bottom;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748B;
+  font-style: italic;
+}
+
 

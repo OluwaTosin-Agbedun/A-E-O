@@ -32,6 +32,9 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       setIsDownloaded(false);
       setHasShared(false);
     }
+  }, [announcementId]);
+
+  useEffect(() => {
     if (announcement) {
       const canonicalSlug = getItemSlug(announcement);
       if (canonicalSlug && window.location.pathname !== `/announcement/${canonicalSlug}`) {
@@ -40,11 +43,11 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
       
       // Increment reads
       if (!sessionStorage.getItem(`read_announcement_${announcement.id}`)) {
-        incrementPublicationStat('announcement', announcement.id, 'reads');
         sessionStorage.setItem(`read_announcement_${announcement.id}`, 'true');
+        incrementPublicationStat('announcement', announcement.id, 'reads');
       }
     }
-  }, [announcementId, announcement, incrementPublicationStat]);
+  }, [announcement?.id, incrementPublicationStat]);
 
   if (!announcementId) return null;
 
