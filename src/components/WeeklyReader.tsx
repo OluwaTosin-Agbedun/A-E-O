@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { ArrowLeft, Clock, Share2, Mail, Check, AlertCircle } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
@@ -22,6 +22,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   const [subError, setSubError] = useState('');
   const [hasShared, setHasShared] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const isDownloadingRef = useRef(false);
 
   const decodedId = weeklyId ? decodeURIComponent(weeklyId) : '';
   const issue = weekly.find(i => 
@@ -185,6 +186,8 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
   };
 
   const handleDownloadPDF = () => {
+    if (isDownloadingRef.current || isDownloaded) return;
+    isDownloadingRef.current = true;
     setIsDownloaded(true);
     incrementPublicationStat('weekly', issue.id, 'downloads');
     triggerPdfDownload(
@@ -197,6 +200,7 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
     );
     setTimeout(() => {
       setIsDownloaded(false);
+      isDownloadingRef.current = false;
     }, 4000);
   };
 
@@ -303,6 +307,22 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
               </div>
             ))}
           </div>
+
+          {/* Bottom Download Action */}
+          {issue.pdfUrl && (
+            <div className="mt-10 pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs text-mut font-medium">
+                {issue.downloadSectionTitle || 'Download Official Statement'}
+              </div>
+              <DownloadButton
+                fileUrl={issue.pdfUrl}
+                buttonLabel={issue.downloadButtonLabel || 'Download Report'}
+                onDownload={handleDownloadPDF}
+                isDownloaded={isDownloaded}
+                fullWidthOnMobile={true}
+              />
+            </div>
+          )}
 
         </article>
 

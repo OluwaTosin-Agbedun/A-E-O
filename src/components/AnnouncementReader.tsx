@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Loader2, Bell, Share2, Calendar, User, Clock } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
@@ -17,6 +17,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
   const { announcements, incrementPublicationStat } = useCMS();
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [hasShared, setHasShared] = useState(false);
+  const isDownloadingRef = useRef(false);
 
   const decodedId = announcementId ? decodeURIComponent(announcementId) : '';
   const announcement = announcements.find(a => 
@@ -94,6 +95,8 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
   }
 
   const handleDownloadPDF = () => {
+    if (isDownloadingRef.current || isDownloaded) return;
+    isDownloadingRef.current = true;
     setIsDownloaded(true);
     incrementPublicationStat('announcement', announcement.id, 'downloads');
     triggerPdfDownload(
@@ -106,6 +109,7 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
     );
     setTimeout(() => {
       setIsDownloaded(false);
+      isDownloadingRef.current = false;
     }, 4000);
   };
 
@@ -249,6 +253,22 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
             className="text-base sm:text-lg text-ink2"
           />
         </div>
+
+        {/* Bottom Download Action */}
+        {announcement.pdfUrl && (
+          <div className="mt-10 pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-mut font-medium">
+              {announcement.downloadSectionTitle || 'Download Official Statement'}
+            </div>
+            <DownloadButton
+              fileUrl={announcement.pdfUrl}
+              buttonLabel={announcement.downloadButtonLabel || 'Download Statement'}
+              onDownload={handleDownloadPDF}
+              isDownloaded={isDownloaded}
+              fullWidthOnMobile={true}
+            />
+          </div>
+        )}
 
         {/* Bottom Actions and Navigation */}
         <div className="pt-10 border-t border-line">

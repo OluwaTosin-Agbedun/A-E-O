@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen, Clock } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
@@ -16,6 +16,7 @@ interface ReportReaderProps {
 export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   const { reports, incrementPublicationStat } = useCMS();
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const isDownloadingRef = useRef(false);
 
   const decodedId = reportId ? decodeURIComponent(reportId) : '';
   const report = reports.find(r => 
@@ -54,6 +55,8 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
   if (!report) return null;
 
   const handleDownloadPDF = () => {
+    if (isDownloadingRef.current || isDownloaded) return;
+    isDownloadingRef.current = true;
     setIsDownloaded(true);
     incrementPublicationStat('report', report.id, 'downloads');
     triggerPdfDownload(
@@ -66,6 +69,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
     );
     setTimeout(() => {
       setIsDownloaded(false);
+      isDownloadingRef.current = false;
     }, 4000);
   };
 
@@ -169,6 +173,22 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             <FormattedText content={(report as any).content || (report as any).body || (report as any).richText || (report as any).html} className="text-ink2" />
           )}
         </div>
+
+        {/* Bottom Download Action */}
+        {report.pdfUrl && (
+          <div className="mt-12 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-mut font-medium">
+              {report.downloadSectionTitle || 'Download Official Statement'}
+            </div>
+            <DownloadButton
+              fileUrl={report.pdfUrl}
+              buttonLabel={report.downloadButtonLabel || 'Download Report'}
+              onDownload={handleDownloadPDF}
+              isDownloaded={isDownloaded}
+              fullWidthOnMobile={true}
+            />
+          </div>
+        )}
 
       </article>
 
