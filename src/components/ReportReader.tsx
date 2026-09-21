@@ -86,7 +86,9 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             className="inline-flex items-center gap-2 text-sm font-semibold text-ink2 hover:text-brand-blue focus:outline-none transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>← All audit reports</span>
+            <span>
+              ← Back to {report.tagType === 'africa-election-watch' ? 'Africa Election Watch' : report.tagType === 'tech' ? 'Political Landscape Monitor' : report.tagType === 'dci' ? 'DCI Reports' : report.tagType === 'brief' ? 'Reports & Briefs' : 'All audit reports'}
+            </span>
           </button>
         </div>
       </div>
@@ -102,9 +104,11 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
                 ? 'bg-purple-50 text-brand-purple border border-purple-100' 
                 : report.tagType === 'dci'
                 ? 'bg-blue-50 text-brand-blue border border-blue-100'
+                : report.tagType === 'africa-election-watch'
+                ? 'bg-teal-50 text-teal-700 border border-teal-200'
                 : 'bg-green-50 text-brand-green border border-green-100'
             }`}>
-              {report.tag}
+              {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
             </span>
           </div>
 

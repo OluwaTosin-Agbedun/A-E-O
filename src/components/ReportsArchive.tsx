@@ -7,7 +7,7 @@ import { getItemSlug } from '../utils/url';
 export default function ReportsArchive() {
   const { reports } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<'all' | 'brief' | 'analysis' | 'tech' | 'dci'>('all');
+  const [selectedTag, setSelectedTag] = useState<'all' | 'brief' | 'analysis' | 'tech' | 'dci' | 'africa-election-watch'>('all');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -115,6 +115,16 @@ export default function ReportsArchive() {
               >
                 Democracy Competitive Index ({reports.filter(r => r.tagType === 'dci').length})
               </button>
+              <button
+                onClick={() => setSelectedTag('africa-election-watch')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedTag === 'africa-election-watch' 
+                    ? 'bg-teal-700 text-white' 
+                    : 'bg-paper text-ink2 hover:bg-line border border-line'
+                }`}
+              >
+                Africa Election Watch ({reports.filter(r => r.tagType === 'africa-election-watch').length})
+              </button>
             </div>
 
             {/* Search Box */}
@@ -149,9 +159,11 @@ export default function ReportsArchive() {
                           ? 'bg-purple-50 text-brand-purple border border-purple-100' 
                           : report.tagType === 'dci'
                           ? 'bg-blue-50 text-brand-blue border border-blue-100'
+                          : report.tagType === 'africa-election-watch'
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200'
                           : 'bg-green-50 text-brand-green border border-green-100'
                       }`}>
-                        {report.tag}
+                        {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
                       </span>
                       <span className="text-xs font-mono font-semibold text-mut">
                         {formatReportDate(report.date)}

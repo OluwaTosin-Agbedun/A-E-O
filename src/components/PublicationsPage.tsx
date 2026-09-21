@@ -54,7 +54,7 @@ Verification pipeline: AEO-SECURE-2026-X.
 
 interface UnifiedPublication {
   id: string;
-  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'brief';
+  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'brief' | 'africa-election-watch';
   typeName: string;
   category: string;
   title: string;
@@ -85,6 +85,7 @@ export default function PublicationsPage() {
     { value: 'audit', label: 'Post-Election Audits' },
     { value: 'assessment', label: 'Political Landscape Monitor' },
     { value: 'dci', label: 'Democracy Competitive Index (DCI) Report' },
+    { value: 'africa-election-watch', label: 'Africa Election Watch' },
     { value: 'weekly', label: 'AEO Weekly Digest' },
     { value: 'announcement', label: 'Announcements' }
   ];
@@ -145,13 +146,14 @@ export default function PublicationsPage() {
 
   // Determine current path to set mode
   const currentPath = window.location.pathname;
-  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'reports-briefs' = 'all';
-  if (currentPath === '/reports-and-briefs' || currentPath === '/reports-briefs') pageMode = 'reports-briefs';
-  else if (currentPath === '/post-election-audits') pageMode = 'audit';
-  else if (currentPath === '/political-landscape-monitor') pageMode = 'assessment';
-  else if (currentPath === '/democracy-competitive-index') pageMode = 'dci';
-  else if (currentPath === '/aeo-weekly-digest') pageMode = 'weekly';
-  else if (currentPath === '/announcements') pageMode = 'announcement';
+  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'reports-briefs' | 'africa-election-watch' = 'all';
+  if (currentPath === '/reports-and-briefs' || currentPath === '/reports-briefs' || currentPath === '/publications/reports-and-briefs' || currentPath === '/publications/reports-briefs') pageMode = 'reports-briefs';
+  else if (currentPath === '/post-election-audits' || currentPath === '/publications/post-election-audits') pageMode = 'audit';
+  else if (currentPath === '/political-landscape-monitor' || currentPath === '/publications/political-landscape-monitor') pageMode = 'assessment';
+  else if (currentPath === '/democracy-competitive-index' || currentPath === '/publications/democracy-competitive-index') pageMode = 'dci';
+  else if (currentPath === '/africa-election-watch' || currentPath === '/publications/africa-election-watch') pageMode = 'africa-election-watch';
+  else if (currentPath === '/aeo-weekly-digest' || currentPath === '/publications/aeo-weekly-digest') pageMode = 'weekly';
+  else if (currentPath === '/announcements' || currentPath === '/publications/announcements') pageMode = 'announcement';
 
   // Build unified publication items
   const unifiedPublications: UnifiedPublication[] = [];
@@ -230,6 +232,27 @@ export default function PublicationsPage() {
       type: 'brief',
       typeName: 'Reports & Briefs',
       category: r.tag || 'REPORTS & BRIEFS',
+      title: r.title,
+      summary: r.summary,
+      author: r.author || '',
+      authorsList: r.authorsList || r.author || '',
+      date: formatReportDate(r.date),
+      image: r.image || '',
+      readTimeOrSize: r.size,
+      originalItem: r,
+      pdfUrl: r.pdfUrl,
+      reads: r.reads,
+      downloads: r.downloads
+});
+  });
+
+  // 2.7 Africa Election Watch (tagType === 'africa-election-watch')
+  reports.filter(r => r.tagType === 'africa-election-watch').forEach(r => {
+    unifiedPublications.push({
+      id: r.id,
+      type: 'africa-election-watch',
+      typeName: 'Africa Election Watch',
+      category: r.tag || 'AFRICA ELECTION WATCH',
       title: r.title,
       summary: r.summary,
       author: r.author || '',
@@ -348,7 +371,7 @@ export default function PublicationsPage() {
 
   const handleItemClick = (pub: UnifiedPublication) => {
     const slug = getItemSlug(pub);
-    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci' || pub.type === 'brief') {
+    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci' || pub.type === 'brief' || pub.type === 'africa-election-watch') {
       navigateTo(`/reports/${slug}`);
     } else if (pub.type === 'weekly') {
       navigateTo(`/weekly/${slug}`);
@@ -383,6 +406,12 @@ export default function PublicationsPage() {
           title: "Democracy Competitive Index (DCI) Reports",
           description: "Rigorous research and data metrics scoring electoral competitiveness, political participation, and administrative compliance across jurisdictions.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
+        };
+      case 'africa-election-watch':
+        return {
+          title: "Africa Election Watch",
+          description: "Cross-border electoral monitoring, comparative regional research, and democratic health assessments across African nations.",
+          icon: <Globe className="w-8 h-8 text-teal-600" />
         };
       case 'weekly':
         return {

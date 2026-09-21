@@ -68,6 +68,14 @@ export default function Footer() {
               </li>
               <li>
                 <button 
+                  onClick={() => navigateTo('/publications/africa-election-watch')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Africa Election Watch
+                </button>
+              </li>
+              <li>
+                <button 
                   onClick={() => navigateTo('/elections')} 
                   className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
                 >

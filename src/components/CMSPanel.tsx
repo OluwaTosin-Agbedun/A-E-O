@@ -155,8 +155,8 @@ export default function CMSPanel({
   } = useCMS();
 
   const [activeTab, setActiveTab] = useState<TabType>('publications');
-  const [selectedPubType, setSelectedPubType] = useState<'report' | 'assessment' | 'brief' | 'dci' | 'weekly' | 'announcement'>('report');
-  const [pubFilter, setPubFilter] = useState<'all' | 'report' | 'assessment' | 'brief' | 'dci' | 'weekly' | 'announcement'>('all');
+  const [selectedPubType, setSelectedPubType] = useState<'report' | 'assessment' | 'brief' | 'dci' | 'africa-election-watch' | 'weekly' | 'announcement'>('report');
+  const [pubFilter, setPubFilter] = useState<'all' | 'report' | 'assessment' | 'brief' | 'dci' | 'africa-election-watch' | 'weekly' | 'announcement'>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [diaryCategory, setDiaryCategory] = useState<'national' | 'local' | 'africa' | 'other'>('national');
   
@@ -673,6 +673,9 @@ export default function CMSPanel({
     } else if (selectedPubType === 'dci') {
       defaultTagType = 'dci';
       defaultTag = 'DEMOCRACY COMPETITIVE INDEX';
+    } else if (selectedPubType === 'africa-election-watch') {
+      defaultTagType = 'africa-election-watch';
+      defaultTag = 'AFRICA ELECTION WATCH';
     }
 
     const finalReport: Report = {
@@ -1263,8 +1266,8 @@ export default function CMSPanel({
                       <Plus className="w-4.5 h-4.5 text-brand-blue" />
                       <span>
                         {editingId 
-                          ? `Edit ${selectedPubType === 'assessment' ? 'Political Landscape Monitor' : selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'dci' ? 'DCI Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : selectedPubType === 'announcement' ? 'Announcement' : 'Post-Election Audit'}` 
-                          : `Create ${selectedPubType === 'assessment' ? 'Political Landscape Monitor' : selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'dci' ? 'DCI Report' : selectedPubType === 'weekly' ? 'Weekly Digest' : selectedPubType === 'announcement' ? 'Announcement' : 'Post-Election Audit'}`
+                          ? `Edit ${selectedPubType === 'assessment' ? 'Political Landscape Monitor' : selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'dci' ? 'DCI Report' : selectedPubType === 'africa-election-watch' ? 'Africa Election Watch' : selectedPubType === 'weekly' ? 'Weekly Digest' : selectedPubType === 'announcement' ? 'Announcement' : 'Post-Election Audit'}` 
+                          : `Create ${selectedPubType === 'assessment' ? 'Political Landscape Monitor' : selectedPubType === 'brief' ? 'Report / Brief' : selectedPubType === 'dci' ? 'DCI Report' : selectedPubType === 'africa-election-watch' ? 'Africa Election Watch' : selectedPubType === 'weekly' ? 'Weekly Digest' : selectedPubType === 'announcement' ? 'Announcement' : 'Post-Election Audit'}`
                         }
                       </span>
                     </h3>
@@ -1310,11 +1313,17 @@ export default function CMSPanel({
                             tagType: 'dci',
                             tag: prev.tag && prev.tag !== 'ELECTION AUDIT' ? prev.tag : 'DEMOCRACY COMPETITIVE INDEX'
                           }));
+                        } else if (val === 'africa-election-watch') {
+                          setReportForm(prev => ({
+                            ...prev,
+                            tagType: 'africa-election-watch',
+                            tag: prev.tag && prev.tag !== 'ELECTION AUDIT' ? prev.tag : 'AFRICA ELECTION WATCH'
+                          }));
                         } else if (val === 'report') {
                           setReportForm(prev => ({
                             ...prev,
-                            tagType: prev.tagType === 'brief' || prev.tagType === 'tech' || prev.tagType === 'dci' ? 'analysis' : prev.tagType,
-                            tag: prev.tag === 'REPORTS & BRIEFS' || prev.tag === 'POLITICAL LANDSCAPE MONITOR' || prev.tag === 'DEMOCRACY COMPETITIVE INDEX' ? 'ELECTION AUDIT' : prev.tag
+                            tagType: prev.tagType === 'brief' || prev.tagType === 'tech' || prev.tagType === 'dci' || prev.tagType === 'africa-election-watch' ? 'analysis' : prev.tagType,
+                            tag: prev.tag === 'REPORTS & BRIEFS' || prev.tag === 'POLITICAL LANDSCAPE MONITOR' || prev.tag === 'DEMOCRACY COMPETITIVE INDEX' || prev.tag === 'AFRICA ELECTION WATCH' ? 'ELECTION AUDIT' : prev.tag
                           }));
                         }
                       }}
@@ -1324,6 +1333,7 @@ export default function CMSPanel({
                       <option value="assessment">Political Landscape Monitor</option>
                       <option value="brief">Reports and Briefs (Policy Brief & Research)</option>
                       <option value="dci">Democracy Competitive Index (DCI) Report</option>
+                      <option value="africa-election-watch">Africa Election Watch</option>
                       <option value="weekly">AEO Weekly Digest Bulletin</option>
                       <option value="announcement">Official Announcement / Press Bulletin</option>
                     </select>
@@ -1335,7 +1345,7 @@ export default function CMSPanel({
 
                 {/* Sub-form based on selection */}
                 <div className="border-t border-line pt-4">
-                  {(selectedPubType === 'report' || selectedPubType === 'assessment' || selectedPubType === 'brief' || selectedPubType === 'dci') && (
+                  {(selectedPubType === 'report' || selectedPubType === 'assessment' || selectedPubType === 'brief' || selectedPubType === 'dci' || selectedPubType === 'africa-election-watch') && (
                     <form onSubmit={handleSaveReport} className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
@@ -1357,11 +1367,12 @@ export default function CMSPanel({
                               setReportForm({ 
                                 ...reportForm, 
                                 tagType: newTagType,
-                                tag: newTagType === 'tech' && (!reportForm.tag || reportForm.tag === 'ELECTION AUDIT') ? 'POLITICAL LANDSCAPE MONITOR' : newTagType === 'brief' && (!reportForm.tag || reportForm.tag === 'ELECTION AUDIT') ? 'REPORTS & BRIEFS' : reportForm.tag
+                                tag: newTagType === 'tech' && (!reportForm.tag || reportForm.tag === 'ELECTION AUDIT') ? 'POLITICAL LANDSCAPE MONITOR' : newTagType === 'brief' && (!reportForm.tag || reportForm.tag === 'ELECTION AUDIT') ? 'REPORTS & BRIEFS' : newTagType === 'africa-election-watch' && (!reportForm.tag || reportForm.tag === 'ELECTION AUDIT') ? 'AFRICA ELECTION WATCH' : reportForm.tag
                               });
                               if (newTagType === 'tech') setSelectedPubType('assessment');
                               else if (newTagType === 'brief') setSelectedPubType('brief');
                               else if (newTagType === 'dci') setSelectedPubType('dci');
+                              else if (newTagType === 'africa-election-watch') setSelectedPubType('africa-election-watch');
                               else setSelectedPubType('report');
                             }}
                             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none"
@@ -1370,6 +1381,7 @@ export default function CMSPanel({
                             <option value="analysis">Post-Election Audit (Purple theme)</option>
                             <option value="brief">Reports and Briefs (Navy/Blue theme)</option>
                             <option value="dci">Democracy Competitive Index (DCI) Report (Blue/Green theme)</option>
+                            <option value="africa-election-watch">Africa Election Watch (Teal/Emerald theme)</option>
                           </select>
                         </div>
                       </div>
@@ -1775,7 +1787,7 @@ export default function CMSPanel({
                 
                 {/* Interactive filter toggle bar */}
                 <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0 overflow-x-auto">
-                  {(['all', 'report', 'assessment', 'brief', 'dci', 'weekly', 'announcement'] as const).map(f => (
+                  {(['all', 'report', 'assessment', 'brief', 'dci', 'africa-election-watch', 'weekly', 'announcement'] as const).map(f => (
                     <button
                       key={f}
                       type="button"
@@ -1786,7 +1798,7 @@ export default function CMSPanel({
                           : 'text-mut hover:text-ink'
                       }`}
                     >
-                      {f === 'all' ? 'All' : f === 'report' ? 'Audits' : f === 'assessment' ? 'Political Landscape' : f === 'brief' ? 'Briefs' : f === 'dci' ? 'DCI' : f === 'weekly' ? 'Weekly' : 'Announcements'}
+                      {f === 'all' ? 'All' : f === 'report' ? 'Audits' : f === 'assessment' ? 'Political Landscape' : f === 'brief' ? 'Briefs' : f === 'dci' ? 'DCI' : f === 'africa-election-watch' ? 'Africa Watch' : f === 'weekly' ? 'Weekly' : 'Announcements'}
                     </button>
                   ))}
                 </div>
@@ -1796,7 +1808,7 @@ export default function CMSPanel({
                   {(() => {
                     const allCombined = [
                       ...reports.map(r => {
-                        let unifiedType: 'report' | 'assessment' | 'brief' | 'dci' = 'report';
+                        let unifiedType: 'report' | 'assessment' | 'brief' | 'dci' | 'africa-election-watch' = 'report';
                         let tagColor = 'text-brand-purple bg-purple-50 border-purple-100';
                         if (r.tagType === 'tech') {
                           unifiedType = 'assessment';
@@ -1807,6 +1819,9 @@ export default function CMSPanel({
                         } else if (r.tagType === 'dci') {
                           unifiedType = 'dci';
                           tagColor = 'text-brand-blue bg-blue-50 border-blue-100';
+                        } else if (r.tagType === 'africa-election-watch') {
+                          unifiedType = 'africa-election-watch';
+                          tagColor = 'text-teal-700 bg-teal-50 border-teal-200';
                         }
                         return {
                           ...r,
@@ -1833,7 +1848,7 @@ export default function CMSPanel({
                         <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border ${item.tagColor}`}>
-                              {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' ? (item as any).tag || 'Report' : item.unifiedType === 'weekly' ? 'Weekly Digest' : `Announcement (${(item as any).category})`}
+                              {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' || item.unifiedType === 'africa-election-watch' ? (item as any).tag || 'Report' : item.unifiedType === 'weekly' ? 'Weekly Digest' : `Announcement (${(item as any).category})`}
                             </span>
                             {item.pdfUrl && (
                               <span className="text-[9px] font-mono font-bold text-brand-green bg-green-50 border border-green-100 px-1.5 py-0.5 rounded">
@@ -1843,7 +1858,7 @@ export default function CMSPanel({
                           </div>
                           <h4 className="font-semibold text-xs text-ink leading-snug truncate">{item.title}</h4>
                           <span className="text-[10px] text-mut font-mono block">
-                            {item.date} · {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' ? (item as any).size || '1.0 MB' : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
+                            {item.date} · {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' || item.unifiedType === 'africa-election-watch' ? (item as any).size || '1.0 MB' : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -1851,7 +1866,7 @@ export default function CMSPanel({
                             onClick={() => {
                               setEditingId(item.id);
                               setSelectedPubType(item.unifiedType);
-                              if (item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci') {
+                              if (item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' || item.unifiedType === 'africa-election-watch') {
                                 setReportForm(item);
                               } else if (item.unifiedType === 'weekly') {
                                 const weeklyItem = { ...item };

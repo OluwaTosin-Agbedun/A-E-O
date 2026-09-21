@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, ChevronDown, Mail, BookOpen, ShieldAlert, FileText, Bell, Award } from 'lucide-react';
+import { Menu, X, ChevronDown, Mail, BookOpen, ShieldAlert, FileText, Bell, Award, Globe } from 'lucide-react';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -147,6 +147,17 @@ export default function Header() {
                     </a>
 
                     <a 
+                      href="/publications/africa-election-watch" 
+                      onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
+                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
+                    >
+                      <Globe className="w-6 h-6 text-teal-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="block text-base font-bold text-teal-600 leading-snug">Africa Election Watch</span>
+                      </div>
+                    </a>
+
+                    <a 
                       href="/aeo-weekly-digest" 
                       onClick={(e) => { e.preventDefault(); navigateTo('/aeo-weekly-digest'); }}
                       className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
@@ -255,6 +266,13 @@ export default function Header() {
               className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
               Democracy Competitive Index (DCI) Report
+            </a>
+            <a 
+              href="/publications/africa-election-watch" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
+            >
+              Africa Election Watch
             </a>
             <a 
               href="/aeo-weekly-digest" 

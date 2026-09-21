@@ -128,26 +128,30 @@ export default function App() {
 
   if (
     path === '/publications' ||
+    path.startsWith('/publications/') ||
     path === '/reports-and-briefs' ||
     path === '/reports-briefs' ||
     path === '/post-election-audits' ||
     path === '/political-landscape-monitor' ||
     path === '/democracy-competitive-index' ||
+    path === '/africa-election-watch' ||
     path === '/aeo-weekly-digest' ||
     path === '/announcements'
   ) {
-    if (path === '/reports-and-briefs' || path === '/reports-briefs') {
-      seo = <SEO title="Reports and Briefs" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/reports-and-briefs" />;
-    } else if (path === '/post-election-audits') {
-      seo = <SEO title="Post-Election Audit Reports" description="Explore independent forensic audits scoring electoral administration against primary source evidence." canonicalPath="/post-election-audits" />;
-    } else if (path === '/political-landscape-monitor') {
-      seo = <SEO title="Political Landscape Monitor" description="Sub-national technological assessments and electoral health monitoring across Nigerian states." canonicalPath="/political-landscape-monitor" />;
-    } else if (path === '/democracy-competitive-index') {
-      seo = <SEO title="Democracy Competitive Index" description="Evaluating democratic competitiveness, voting access, and electoral fairness across sub-national jurisdictions." canonicalPath="/democracy-competitive-index" />;
-    } else if (path === '/aeo-weekly-digest') {
-      seo = <SEO title="AEO Weekly Digest" description="Weekly intelligence bulletins, electoral timeline updates, and democratic health monitoring." canonicalPath="/aeo-weekly-digest" />;
-    } else if (path === '/announcements') {
-      seo = <SEO title="Press Bulletins & Announcements" description="Official press statements, bulletins, and observer deployment notices from the Athena Election Observatory." canonicalPath="/announcements" />;
+    if (path === '/reports-and-briefs' || path === '/reports-briefs' || path === '/publications/reports-and-briefs' || path === '/publications/reports-briefs') {
+      seo = <SEO title="Reports and Briefs" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/publications/reports-and-briefs" />;
+    } else if (path === '/post-election-audits' || path === '/publications/post-election-audits') {
+      seo = <SEO title="Post-Election Audit Reports" description="Explore independent forensic audits scoring electoral administration against primary source evidence." canonicalPath="/publications/post-election-audits" />;
+    } else if (path === '/political-landscape-monitor' || path === '/publications/political-landscape-monitor') {
+      seo = <SEO title="Political Landscape Monitor" description="Sub-national technological assessments and electoral health monitoring across Nigerian states." canonicalPath="/publications/political-landscape-monitor" />;
+    } else if (path === '/democracy-competitive-index' || path === '/publications/democracy-competitive-index') {
+      seo = <SEO title="Democracy Competitive Index" description="Evaluating democratic competitiveness, voting access, and electoral fairness across sub-national jurisdictions." canonicalPath="/publications/democracy-competitive-index" />;
+    } else if (path === '/africa-election-watch' || path === '/publications/africa-election-watch') {
+      seo = <SEO title="Africa Election Watch" description="Cross-border electoral monitoring, comparative regional research, and democratic health assessments across African nations." canonicalPath="/publications/africa-election-watch" />;
+    } else if (path === '/aeo-weekly-digest' || path === '/publications/aeo-weekly-digest') {
+      seo = <SEO title="AEO Weekly Digest" description="Weekly intelligence bulletins, electoral timeline updates, and democratic health monitoring." canonicalPath="/publications/aeo-weekly-digest" />;
+    } else if (path === '/announcements' || path === '/publications/announcements') {
+      seo = <SEO title="Press Bulletins & Announcements" description="Official press statements, bulletins, and observer deployment notices from the Athena Election Observatory." canonicalPath="/publications/announcements" />;
     } else {
       seo = <SEO title="Publications & Research" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/publications" />;
     }

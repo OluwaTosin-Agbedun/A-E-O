@@ -72,11 +72,13 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
               let linkText = 'Read publication';
 
               if (item.unifiedType === 'report') {
-                tagText = item.tag || 'Election Audit';
+                tagText = item.tag || (item.tagType === 'africa-election-watch' ? 'Africa Election Watch' : 'Election Audit');
                 tagStyle = item.tagType === 'analysis' 
                   ? 'bg-purple-50 text-brand-purple border-purple-100' 
                   : item.tagType === 'dci'
                   ? 'bg-blue-50 text-brand-blue border-blue-100'
+                  : item.tagType === 'africa-election-watch'
+                  ? 'bg-teal-50 text-teal-700 border-teal-200'
                   : 'bg-green-50 text-brand-green border-green-100';
                 handleCardClick = () => onOpenReport(slug);
                 linkText = 'Read report';
