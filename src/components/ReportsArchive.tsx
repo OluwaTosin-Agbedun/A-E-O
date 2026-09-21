@@ -165,8 +165,14 @@ export default function ReportsArchive() {
                       }`}>
                         {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
                       </span>
-                      <span className="text-xs font-mono font-semibold text-mut">
-                        {formatReportDate(report.date)}
+                      <span className="text-xs font-mono font-semibold text-mut flex items-center gap-1.5">
+                        {report.readingTime ? (
+                          <>
+                            <span>{report.readingTime}</span>
+                            <span>·</span>
+                          </>
+                        ) : null}
+                        <span>{formatReportDate(report.date)}</span>
                       </span>
                     </div>
 

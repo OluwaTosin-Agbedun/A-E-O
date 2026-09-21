@@ -64,6 +64,7 @@ interface UnifiedPublication {
   date: string;
   image: string;
   readTimeOrSize: string;
+  readingTime?: string;
   originalItem: any;
   pdfUrl?: string;
   downloadSectionTitle?: string;
@@ -174,6 +175,7 @@ export default function PublicationsPage() {
       date: formatReportDate(r.date),
       image: r.image || '',
       readTimeOrSize: r.size,
+      readingTime: r.readingTime,
       originalItem: r,
       pdfUrl: r.pdfUrl,
       downloadSectionTitle: r.downloadSectionTitle,
@@ -201,6 +203,7 @@ export default function PublicationsPage() {
       date: formatReportDate(r.date),
       image: r.image || '',
       readTimeOrSize: r.size,
+      readingTime: r.readingTime,
       originalItem: r,
       pdfUrl: r.pdfUrl,
       downloadSectionTitle: r.downloadSectionTitle,
@@ -224,6 +227,7 @@ export default function PublicationsPage() {
       date: formatReportDate(r.date),
       image: r.image || '',
       readTimeOrSize: r.size,
+      readingTime: r.readingTime,
       originalItem: r,
       pdfUrl: r.pdfUrl,
       downloadSectionTitle: r.downloadSectionTitle,
@@ -247,6 +251,7 @@ export default function PublicationsPage() {
       date: formatReportDate(r.date),
       image: r.image || '',
       readTimeOrSize: r.size,
+      readingTime: r.readingTime,
       originalItem: r,
       pdfUrl: r.pdfUrl,
       downloadSectionTitle: r.downloadSectionTitle,
@@ -270,6 +275,7 @@ export default function PublicationsPage() {
       date: formatReportDate(r.date),
       image: r.image || '',
       readTimeOrSize: r.size,
+      readingTime: r.readingTime,
       originalItem: r,
       pdfUrl: r.pdfUrl,
       downloadSectionTitle: r.downloadSectionTitle,
@@ -293,6 +299,7 @@ export default function PublicationsPage() {
       date: formatReportDate(w.date),
       image: w.image || '',
       readTimeOrSize: w.readingTime || '5 min read',
+      readingTime: w.readingTime,
       originalItem: w,
       pdfUrl: w.pdfUrl,
       downloadSectionTitle: w.downloadSectionTitle,
@@ -316,6 +323,7 @@ export default function PublicationsPage() {
       date: formatReportDate(a.date),
       image: a.image || '',
       readTimeOrSize: '3 min read',
+      readingTime: a.readingTime,
       originalItem: a,
       pdfUrl: a.pdfUrl,
       downloadSectionTitle: a.downloadSectionTitle,
@@ -710,12 +718,18 @@ export default function PublicationsPage() {
                           </p>
                         </div>
 
-                        {/* Bottom line: Displays ONLY author and date */}
+                        {/* Bottom line: Displays author, reading time (if available), and date */}
                         <div className="pt-4 border-t border-line/60 flex items-center justify-between text-xs text-mut font-semibold">
                           <div className="flex items-center gap-2">
                             {pub.authorsList ? (
                               <>
                                 <span className="text-ink">{pub.authorsList}</span>
+                                <span>·</span>
+                              </>
+                            ) : null}
+                            {pub.readingTime ? (
+                              <>
+                                <span className="text-ink2">{pub.readingTime}</span>
                                 <span>·</span>
                               </>
                             ) : null}

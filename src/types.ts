@@ -16,6 +16,7 @@ export interface Report {
   sections: ReportSection[];
   author?: string;
   authorsList?: string;
+  readingTime?: string;
   image?: string;
   researchArea?: string;
   pdfUrl?: string;
@@ -183,6 +184,7 @@ export interface AnnouncementItem {
   category: 'press' | 'bulletin' | 'statement' | 'alert';
   author?: string;
   authorsList?: string;
+  readingTime?: string;
   image?: string;
   pdfUrl?: string;
   downloadSectionTitle?: string;

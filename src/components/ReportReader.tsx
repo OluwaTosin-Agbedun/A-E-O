@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen, Clock } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
@@ -117,8 +117,23 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             {report.title}
           </h1>
 
-          <div className="text-sm font-medium text-mut font-sans mt-2">
-            {formatReportDate(report.date)}
+          <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-mut font-sans mt-2">
+            {(report.authorsList || report.author) ? (
+              <>
+                <span className="text-ink font-semibold">{report.authorsList || report.author}</span>
+                <span className="text-slate-300">·</span>
+              </>
+            ) : null}
+            {report.readingTime ? (
+              <>
+                <span className="flex items-center gap-1.5 text-ink2">
+                  <Clock className="w-4 h-4 text-mut" />
+                  <span>{report.readingTime}</span>
+                </span>
+                <span className="text-slate-300">·</span>
+              </>
+            ) : null}
+            <span>{formatReportDate(report.date)}</span>
           </div>
         </div>
 

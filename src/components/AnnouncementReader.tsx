@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Bell, Share2, Calendar, User } from 'lucide-react';
+import { ArrowLeft, Loader2, Bell, Share2, Calendar, User, Clock } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
@@ -172,10 +172,18 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
               <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md border shadow-sm ${getCategoryColor(announcement.category)}`}>
                 {getCategoryLabel(announcement.category)}
               </span>
-              <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
-                <Calendar className="w-3.5 h-3.5" />
-                {formatReportDate(announcement.date)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {formatReportDate(announcement.date)}
+                </span>
+                {announcement.readingTime ? (
+                  <span className="text-white/90 font-mono text-xs flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md border border-white/20">
+                    <Clock className="w-3.5 h-3.5" />
+                    {announcement.readingTime}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : (
@@ -183,10 +191,21 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
             <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-md border shadow-sm ${getCategoryColor(announcement.category)}`}>
               {getCategoryLabel(announcement.category)}
             </span>
-            <span className="text-ink2 font-mono text-xs flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              {formatReportDate(announcement.date)}
-            </span>
+            <div className="flex items-center gap-3 text-ink2 font-mono text-xs">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {formatReportDate(announcement.date)}
+              </span>
+              {announcement.readingTime ? (
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    {announcement.readingTime}
+                  </span>
+                </>
+              ) : null}
+            </div>
           </div>
         )}
 

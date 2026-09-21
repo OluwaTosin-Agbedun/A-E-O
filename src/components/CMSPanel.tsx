@@ -548,7 +548,7 @@ export default function CMSPanel({
   
   // Empty form templates for clean resets
   const EMPTY_REPORT_FORM: Partial<Report> = {
-    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '',
+    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', readingTime: '', image: '', pdfUrl: '',
     downloadSectionTitle: '', downloadButtonLabel: ''
   };
 
@@ -563,7 +563,7 @@ export default function CMSPanel({
   };
 
   const EMPTY_ANNOUNCEMENT_FORM: Partial<AnnouncementItem> = {
-    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '',
+    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', readingTime: '', image: '', pdfUrl: '',
     downloadSectionTitle: '', downloadButtonLabel: ''
   };
 
@@ -694,6 +694,7 @@ export default function CMSPanel({
         : [{ title: 'Overview', content: reportForm.summary }],
       author: reportForm.author || '',
       authorsList: reportForm.authorsList || '',
+      readingTime: reportForm.readingTime?.trim() || undefined,
       image: reportForm.image || '',
       pdfUrl: prepareDocumentUrl(reportForm.pdfUrl || ''),
       downloadSectionTitle: reportForm.downloadSectionTitle?.trim() || undefined,
@@ -1034,6 +1035,7 @@ export default function CMSPanel({
       category: announcementForm.category || 'press',
       author: announcementForm.author || '',
       authorsList: announcementForm.authorsList || '',
+      readingTime: announcementForm.readingTime?.trim() || undefined,
       image: announcementForm.image || '',
       pdfUrl: prepareDocumentUrl(announcementForm.pdfUrl || ''),
       downloadSectionTitle: announcementForm.downloadSectionTitle?.trim() || undefined,
@@ -1392,7 +1394,7 @@ export default function CMSPanel({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publishing Date/Month</label>
                           <input 
@@ -1401,6 +1403,16 @@ export default function CMSPanel({
                             onChange={(e) => setReportForm({ ...reportForm, date: e.target.value })}
                             placeholder="E.g., July 2026"
                             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Estimated Reading Time</label>
+                          <input 
+                            type="text" 
+                            value={reportForm.readingTime || ''} 
+                            onChange={(e) => setReportForm({ ...reportForm, readingTime: e.target.value })}
+                            placeholder="E.g., 12 min read"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
                           />
                         </div>
                         <div className="space-y-1">
@@ -1790,15 +1802,27 @@ export default function CMSPanel({
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
-                        <input 
-                          type="text" 
-                          value={announcementForm.date} 
-                          onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
-                          placeholder="E.g., 15 July 2026"
-                          className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.date} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                            placeholder="E.g., 15 July 2026"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Estimated Reading Time</label>
+                          <input 
+                            type="text" 
+                            value={announcementForm.readingTime || ''} 
+                            onChange={(e) => setAnnouncementForm({ ...announcementForm, readingTime: e.target.value })}
+                            placeholder="E.g., 4 min read"
+                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-1">
@@ -2005,7 +2029,7 @@ export default function CMSPanel({
                           </div>
                           <h4 className="font-semibold text-xs text-ink leading-snug truncate">{item.title}</h4>
                           <span className="text-[10px] text-mut font-mono block">
-                            {item.date} · {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' || item.unifiedType === 'africa-election-watch' ? (item as any).size || '1.0 MB' : item.unifiedType === 'weekly' ? (item as any).readingTime : (item as any).author || 'AEO'}
+                            {item.date} {item.readingTime ? `· ${item.readingTime}` : ''} · {item.unifiedType === 'report' || item.unifiedType === 'assessment' || item.unifiedType === 'brief' || item.unifiedType === 'dci' || item.unifiedType === 'africa-election-watch' ? (item as any).size || '1.0 MB' : item.unifiedType === 'weekly' ? (item as any).readingTime || '5 min read' : (item as any).author || 'AEO'}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
