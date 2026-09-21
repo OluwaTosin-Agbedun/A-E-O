@@ -8,7 +8,8 @@ import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, HeroConfig, StatItemConfig, AnnouncementItem, TagType } from '../types';
-import { sortItemsByDate } from '../utils/date';
+import { sortItemsByDate, parseFlexibleDate } from '../utils/date';
+import { CMSDateField } from './CMSDateField';
 import { 
   parseSpreadsheetText, 
   downloadDiaryCSVTemplate, 
@@ -326,7 +327,7 @@ export default function CMSPanel({
           setStatesList(formatted);
         }
       }
-    });
+    }, err => console.warn("CMS Panel states snapshot error:", err));
 
     const unsubLogos = onSnapshot(doc(db, 'cms', 'custom_party_logos'), snapshot => {
       if (snapshot.exists()) {
@@ -338,7 +339,7 @@ export default function CMSPanel({
           setPartyFullNames(prev => ({ ...prev, ...data.names }));
         }
       }
-    });
+    }, err => console.warn("CMS Panel party logos snapshot error:", err));
 
     return () => {
       unsubStates();
@@ -681,13 +682,17 @@ export default function CMSPanel({
       defaultTag = 'AFRICA ELECTION WATCH';
     }
 
+    const parsedDate = parseFlexibleDate(reportForm.date || 'July 2026');
     const finalReport: Report = {
       id: finalId,
       title: reportForm.title,
       summary: reportForm.summary,
       tag: reportForm.tag || defaultTag,
       tagType: (reportForm.tagType as TagType) || defaultTagType,
-      date: reportForm.date || 'July 2026',
+      date: parsedDate.isValid ? parsedDate.displayDate : (reportForm.date || 'July 2026'),
+      normalizedDate: reportForm.normalizedDate || parsedDate.normalizedDate,
+      datePrecision: reportForm.datePrecision || parsedDate.precision,
+      sortValue: reportForm.sortValue || parsedDate.sortValue,
       size: reportForm.size || '1.0 MB',
       sections: reportForm.sections && reportForm.sections.length > 0 
         ? reportForm.sections 
@@ -715,10 +720,14 @@ export default function CMSPanel({
     }
 
     const finalId = diaryForm.id || generateId();
+    const parsedDate = parseFlexibleDate(diaryForm.date || '');
     const finalItem: DiaryItem = {
       ...diaryForm,
       id: finalId,
-      date: diaryForm.date,
+      date: parsedDate.isValid ? parsedDate.displayDate : diaryForm.date,
+      normalizedDate: diaryForm.normalizedDate || parsedDate.normalizedDate,
+      datePrecision: diaryForm.datePrecision || parsedDate.precision,
+      sortValue: diaryForm.sortValue || parsedDate.sortValue,
       title: diaryForm.title,
       subtitle: diaryForm.subtitle || 'Observatory Sync',
       status: diaryForm.status || 'In view',
@@ -959,10 +968,14 @@ export default function CMSPanel({
     }
 
     const finalId = weeklyForm.id || generateId();
+    const parsedDate = parseFlexibleDate(weeklyForm.date || 'July 2026');
     const finalIssue: WeeklyIssue = {
       id: finalId,
       tag: weeklyForm.tag || 'Weekly Analysis',
-      date: weeklyForm.date || 'July 2026',
+      date: parsedDate.isValid ? parsedDate.displayDate : (weeklyForm.date || 'July 2026'),
+      normalizedDate: weeklyForm.normalizedDate || parsedDate.normalizedDate,
+      datePrecision: weeklyForm.datePrecision || parsedDate.precision,
+      sortValue: weeklyForm.sortValue || parsedDate.sortValue,
       title: weeklyForm.title,
       summary: weeklyForm.summary,
       linkText: weeklyForm.linkText || 'Read full analysis',
@@ -988,16 +1001,23 @@ export default function CMSPanel({
 
   const handleSaveEvent = (e: FormEvent) => {
     e.preventDefault();
-    if (!eventForm.title || !eventForm.month || !eventForm.day) {
-      showStatus('Please fill out Title, Month, and Day.', 'error');
+    if (!eventForm.title) {
+      showStatus('Please fill out Event Title.', 'error');
       return;
     }
+
+    const rawEventDate = eventForm.date || `${eventForm.day || '15'} ${eventForm.month || 'AUG'} 2026`;
+    const parsedDate = parseFlexibleDate(rawEventDate);
 
     const finalId = eventForm.id || generateId();
     const finalEvent: EventItem = {
       id: finalId,
-      month: eventForm.month.toUpperCase(),
-      day: eventForm.day,
+      month: eventForm.month ? eventForm.month.toUpperCase() : (parsedDate.isValid ? parsedDate.normalizedDate.substring(5, 7) : 'AUG'),
+      day: eventForm.day || (parsedDate.isValid && parsedDate.precision === 'day' ? parsedDate.normalizedDate.substring(8, 10) : '15'),
+      date: parsedDate.isValid ? parsedDate.displayDate : rawEventDate,
+      normalizedDate: eventForm.normalizedDate || parsedDate.normalizedDate,
+      datePrecision: eventForm.datePrecision || parsedDate.precision,
+      sortValue: eventForm.sortValue || parsedDate.sortValue,
       title: eventForm.title,
       description: eventForm.description || '',
       location: eventForm.location || 'Online',
@@ -1018,17 +1038,23 @@ export default function CMSPanel({
 
   const handleSaveAnnouncement = (e: FormEvent) => {
     e.preventDefault();
-    if (!announcementForm.title || !announcementForm.month || !announcementForm.day) {
-      showStatus('Please fill out Title, Month, and Day.', 'error');
+    if (!announcementForm.title) {
+      showStatus('Please fill out Announcement Title.', 'error');
       return;
     }
+
+    const rawAnnouncementDate = announcementForm.date || `${announcementForm.day || '15'} ${announcementForm.month || 'JUL'} 2026`;
+    const parsedDate = parseFlexibleDate(rawAnnouncementDate);
 
     const finalId = announcementForm.id || generateId();
     const finalAnnouncement: AnnouncementItem = {
       id: finalId,
-      month: announcementForm.month.toUpperCase(),
-      day: announcementForm.day,
-      date: announcementForm.date || `${announcementForm.day} ${announcementForm.month} 2026`,
+      month: announcementForm.month ? announcementForm.month.toUpperCase() : (parsedDate.isValid ? parsedDate.normalizedDate.substring(5, 7) : 'JUL'),
+      day: announcementForm.day || (parsedDate.isValid && parsedDate.precision === 'day' ? parsedDate.normalizedDate.substring(8, 10) : '15'),
+      date: parsedDate.isValid ? parsedDate.displayDate : rawAnnouncementDate,
+      normalizedDate: announcementForm.normalizedDate || parsedDate.normalizedDate,
+      datePrecision: announcementForm.datePrecision || parsedDate.precision,
+      sortValue: announcementForm.sortValue || parsedDate.sortValue,
       title: announcementForm.title,
       summary: announcementForm.summary || '',
       content: announcementForm.content || '',
@@ -1395,16 +1421,19 @@ export default function CMSPanel({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publishing Date/Month</label>
-                          <input 
-                            type="text" 
-                            value={reportForm.date} 
-                            onChange={(e) => setReportForm({ ...reportForm, date: e.target.value })}
-                            placeholder="E.g., July 2026"
-                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
-                          />
-                        </div>
+                        <CMSDateField
+                          label="Publishing Date / Period"
+                          value={reportForm.date}
+                          onChange={(val, meta) => setReportForm({
+                            ...reportForm,
+                            date: val,
+                            ...(meta ? {
+                              normalizedDate: meta.normalizedDate,
+                              datePrecision: meta.datePrecision,
+                              sortValue: meta.sortValue
+                            } : {})
+                          })}
+                        />
                         <div className="space-y-1">
                           <label className="block text-[10px] font-mono uppercase font-bold text-mut">Estimated Reading Time</label>
                           <input 
@@ -1596,16 +1625,19 @@ export default function CMSPanel({
                             className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue"
                           />
                         </div>
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Publication Month</label>
-                          <input 
-                            type="text" 
-                            value={weeklyForm.date} 
-                            onChange={(e) => setWeeklyForm({ ...weeklyForm, date: e.target.value })}
-                            placeholder="E.g., July 2026"
-                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none"
-                          />
-                        </div>
+                        <CMSDateField
+                          label="Publishing Date / Period"
+                          value={weeklyForm.date}
+                          onChange={(val, meta) => setWeeklyForm({
+                            ...weeklyForm,
+                            date: val,
+                            ...(meta ? {
+                              normalizedDate: meta.normalizedDate,
+                              datePrecision: meta.datePrecision,
+                              sortValue: meta.sortValue
+                            } : {})
+                          })}
+                        />
                       </div>
 
                       <div className="space-y-1">
@@ -1803,16 +1835,19 @@ export default function CMSPanel({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Date Display (e.g. 15 July 2026)</label>
-                          <input 
-                            type="text" 
-                            value={announcementForm.date} 
-                            onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
-                            placeholder="E.g., 15 July 2026"
-                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono focus:outline-none focus:border-brand-blue"
-                          />
-                        </div>
+                        <CMSDateField
+                          label="Publishing Date / Period"
+                          value={announcementForm.date}
+                          onChange={(val, meta) => setAnnouncementForm({
+                            ...announcementForm,
+                            date: val,
+                            ...(meta ? {
+                              normalizedDate: meta.normalizedDate,
+                              datePrecision: meta.datePrecision,
+                              sortValue: meta.sortValue
+                            } : {})
+                          })}
+                        />
                         <div className="space-y-1">
                           <label className="block text-[10px] font-mono uppercase font-bold text-mut">Estimated Reading Time</label>
                           <input 
@@ -2386,17 +2421,20 @@ export default function CMSPanel({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase font-bold text-mut">Election Date (YYYY-MM-DD) *</label>
-                          <input 
-                            type="date" 
-                            value={diaryForm.date || ''} 
-                            onChange={(e) => setDiaryForm({ ...diaryForm, date: e.target.value })}
-                            placeholder="YYYY-MM-DD"
-                            className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                            required
-                          />
-                        </div>
+                        <CMSDateField
+                          label="Election Date / Period *"
+                          value={diaryForm.date || ''}
+                          required
+                          onChange={(val, meta) => setDiaryForm({
+                            ...diaryForm,
+                            date: val,
+                            ...(meta ? {
+                              normalizedDate: meta.normalizedDate,
+                              datePrecision: meta.datePrecision,
+                              sortValue: meta.sortValue
+                            } : {})
+                          })}
+                        />
                         <div className="space-y-1">
                           <label className="block text-[10px] font-mono uppercase font-bold text-mut">Poll Subtitle / Context</label>
                           <input 
@@ -2760,28 +2798,19 @@ export default function CMSPanel({
                 </div>
 
                 <form onSubmit={handleSaveEvent} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Month string (3 chars)</label>
-                      <input 
-                        type="text" 
-                        value={eventForm.month} 
-                        onChange={(e) => setEventForm({ ...eventForm, month: e.target.value })}
-                        placeholder="E.g., AUG"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white uppercase font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono uppercase font-bold text-mut">Day string (1-2 chars)</label>
-                      <input 
-                        type="text" 
-                        value={eventForm.day} 
-                        onChange={(e) => setEventForm({ ...eventForm, day: e.target.value })}
-                        placeholder="E.g., 28"
-                        className="w-full text-xs p-2.5 border border-line rounded-lg bg-white font-mono"
-                      />
-                    </div>
-                  </div>
+                  <CMSDateField
+                    label="Event Date / Period"
+                    value={eventForm.date || (eventForm.day && eventForm.month ? `${eventForm.day} ${eventForm.month} 2026` : '')}
+                    onChange={(val, meta) => setEventForm({
+                      ...eventForm,
+                      date: val,
+                      ...(meta ? {
+                        normalizedDate: meta.normalizedDate,
+                        datePrecision: meta.datePrecision,
+                        sortValue: meta.sortValue
+                      } : {})
+                    })}
+                  />
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">

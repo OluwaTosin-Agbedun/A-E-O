@@ -10,6 +10,9 @@ export interface Report {
   tag: string;
   tagType: TagType;
   date: string;
+  normalizedDate?: string;
+  datePrecision?: 'day' | 'month' | 'year';
+  sortValue?: number;
   size: string;
   title: string;
   summary: string;
@@ -47,6 +50,9 @@ export interface SittingExecutive {
 export interface DiaryItem {
   id: string;
   date: string;
+  normalizedDate?: string;
+  datePrecision?: 'day' | 'month' | 'year';
+  sortValue?: number;
   title: string;
   subtitle: string;
   status: 'In view' | 'Scheduled' | 'Provisional' | 'Tracking' | 'Concluded';
@@ -76,6 +82,10 @@ export interface EventItem {
   id: string;
   month: string;
   day: string;
+  date?: string;
+  normalizedDate?: string;
+  datePrecision?: 'day' | 'month' | 'year';
+  sortValue?: number;
   title: string;
   description: string;
   location: string;
@@ -101,6 +111,9 @@ export interface WeeklyIssue {
   id: string;
   tag: string;
   date: string;
+  normalizedDate?: string;
+  datePrecision?: 'day' | 'month' | 'year';
+  sortValue?: number;
   title: string;
   summary: string;
   linkText: string;
@@ -178,6 +191,9 @@ export interface AnnouncementItem {
   month: string;
   day: string;
   date: string;
+  normalizedDate?: string;
+  datePrecision?: 'day' | 'month' | 'year';
+  sortValue?: number;
   title: string;
   summary: string;
   content?: string;
