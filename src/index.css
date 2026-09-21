@@ -141,38 +141,222 @@ body {
   font-style: italic;
 }
 
-/* HTML Table Styling for publications and CMS editor */
-.formatted-content table, .ProseMirror table {
+/* ==========================================================================
+   HTML Table & Responsive Container Architecture (Publications & CMS Editor)
+   ========================================================================== */
+
+/* Responsive Table Scroll Container */
+.table-responsive {
+  display: block;
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  margin-bottom: 1.25rem;
-  font-size: 0.85rem;
-  line-height: 1.4;
+  max-width: 100%;
   overflow-x: auto;
-  display: table;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1.5rem;
+  margin-bottom: 1.75rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  position: relative;
 }
-.formatted-content table th, .formatted-content table td,
-.ProseMirror table th, .ProseMirror table td {
-  border: 1px solid #CBD5E1;
-  padding: 0.5rem 0.75rem;
+
+/* Subtle custom scrollbar for horizontal table scrolling */
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+.table-responsive::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Table layout rules */
+.table-responsive table,
+.formatted-content table,
+.ProseMirror table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #1E293B;
   text-align: left;
-  vertical-align: top;
 }
-.formatted-content table th, .ProseMirror table th {
-  background-color: #F1F5F9;
-  font-weight: 700;
+
+/* On mobile viewports, ensure multi-column text-heavy tables have comfortable minimum space
+   so text columns don't compress into unreadable slivers, while table-responsive prevents page overflow */
+@media (max-width: 639px) {
+  .table-responsive table {
+    min-width: 520px;
+  }
+}
+
+/* Table Header Cells */
+.table-responsive table thead th,
+.table-responsive table th,
+.formatted-content table th,
+.ProseMirror table th {
+  background-color: #F8FAFC;
   color: #0F172A;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 2px solid #CBD5E1;
+  border-right: 1px solid #E2E8F0;
+  padding: 0.85rem 1rem;
+  vertical-align: bottom;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  text-align: left;
 }
-.formatted-content table tr:nth-child(even), .ProseMirror table tr:nth-child(even) {
+
+.table-responsive table thead th:last-child,
+.table-responsive table th:last-child,
+.formatted-content table th:last-child,
+.ProseMirror table th:last-child {
+  border-right: none;
+}
+
+/* Table Data Cells */
+.table-responsive table tbody td,
+.table-responsive table td,
+.formatted-content table td,
+.ProseMirror table td {
+  border-bottom: 1px solid #E2E8F0;
+  border-right: 1px solid #F1F5F9;
+  padding: 0.85rem 1rem;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  color: #334155;
+  background-color: #FFFFFF;
+}
+
+.table-responsive table tbody tr:last-child td,
+.table-responsive table tr:last-child td,
+.formatted-content table tbody tr:last-child td,
+.ProseMirror table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-responsive table tbody td:last-child,
+.table-responsive table td:last-child,
+.formatted-content table td:last-child,
+.ProseMirror table td:last-child {
+  border-right: none;
+}
+
+/* Row Zebra Striping */
+.table-responsive table tbody tr:nth-child(even) td,
+.table-responsive table tr:nth-child(even) td,
+.formatted-content table tbody tr:nth-child(even) td,
+.ProseMirror table tbody tr:nth-child(even) td {
   background-color: #F8FAFC;
 }
-.formatted-content table caption, .ProseMirror table caption {
+
+/* Row Hover State */
+.table-responsive table tbody tr:hover td,
+.formatted-content table tbody tr:hover td {
+  background-color: #F1F5F9;
+}
+
+/* Table Caption */
+.table-responsive table caption,
+.formatted-content table caption,
+.ProseMirror table caption {
   caption-side: bottom;
-  margin-top: 0.5rem;
+  padding: 0.5rem 0.85rem;
   font-size: 0.75rem;
   color: #64748B;
   font-style: italic;
+  text-align: left;
+  border-top: 1px solid #E2E8F0;
+  background-color: #F8FAFC;
+}
+
+/* Table Cell typography & nested paragraph normalization */
+.table-responsive table td p,
+.formatted-content table td p,
+.ProseMirror table td p {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  color: inherit;
+}
+.table-responsive table td p:last-child,
+.formatted-content table td p:last-child,
+.ProseMirror table td p:last-child {
+  margin-bottom: 0;
+}
+
+/* Optional Stacked Cards Treatment for dense tables (class="table-cards" or data-responsive="cards") */
+@media (max-width: 639px) {
+  .table-responsive table.table-cards,
+  .table-responsive table[data-responsive="cards"] {
+    min-width: 100% !important;
+    display: block;
+  }
+  .table-responsive table.table-cards thead,
+  .table-responsive table[data-responsive="cards"] thead {
+    display: none;
+  }
+  .table-responsive table.table-cards tbody,
+  .table-responsive table[data-responsive="cards"] tbody {
+    display: block;
+    width: 100%;
+  }
+  .table-responsive table.table-cards tr,
+  .table-responsive table[data-responsive="cards"] tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.5rem;
+    background-color: #FFFFFF;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .table-responsive table.table-cards tr:last-child,
+  .table-responsive table[data-responsive="cards"] tr:last-child {
+    margin-bottom: 0;
+  }
+  .table-responsive table.table-cards td,
+  .table-responsive table[data-responsive="cards"] td {
+    display: block;
+    width: 100%;
+    border-bottom: 1px dashed #E2E8F0 !important;
+    border-right: none !important;
+    padding: 0.5rem 0;
+    background-color: transparent !important;
+  }
+  .table-responsive table.table-cards td:last-child,
+  .table-responsive table[data-responsive="cards"] td:last-child {
+    border-bottom: none !important;
+  }
+  .table-responsive table.table-cards td[data-label]::before,
+  .table-responsive table[data-responsive="cards"] td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #475569;
+    margin-bottom: 0.25rem;
+  }
 }
 
 

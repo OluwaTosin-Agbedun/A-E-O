@@ -548,12 +548,14 @@ export default function CMSPanel({
   
   // Empty form templates for clean resets
   const EMPTY_REPORT_FORM: Partial<Report> = {
-    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: ''
+    id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: '2026-07-13', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '',
+    downloadSectionTitle: '', downloadButtonLabel: ''
   };
 
   const EMPTY_WEEKLY_FORM: Partial<WeeklyIssue> = {
     id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-    author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
+    author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: '',
+    downloadSectionTitle: '', downloadButtonLabel: ''
   };
 
   const EMPTY_EVENT_FORM: Partial<EventItem> = {
@@ -561,7 +563,8 @@ export default function CMSPanel({
   };
 
   const EMPTY_ANNOUNCEMENT_FORM: Partial<AnnouncementItem> = {
-    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: ''
+    id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '',
+    downloadSectionTitle: '', downloadButtonLabel: ''
   };
 
   const EMPTY_TEAM_FORM: Partial<TeamMember> = {
@@ -692,7 +695,9 @@ export default function CMSPanel({
       author: reportForm.author || '',
       authorsList: reportForm.authorsList || '',
       image: reportForm.image || '',
-      pdfUrl: prepareDocumentUrl(reportForm.pdfUrl || '')
+      pdfUrl: prepareDocumentUrl(reportForm.pdfUrl || ''),
+      downloadSectionTitle: reportForm.downloadSectionTitle?.trim() || undefined,
+      downloadButtonLabel: reportForm.downloadButtonLabel?.trim() || undefined
     };
 
     saveReport(finalReport);
@@ -969,15 +974,14 @@ export default function CMSPanel({
             { title: 'Logistics Breakdown', text: 'This represents a live, custom edited observation sub-paragraph.' }
           ],
       image: weeklyForm.image || '',
-      pdfUrl: prepareDocumentUrl(weeklyForm.pdfUrl || '')
+      pdfUrl: prepareDocumentUrl(weeklyForm.pdfUrl || ''),
+      downloadSectionTitle: weeklyForm.downloadSectionTitle?.trim() || undefined,
+      downloadButtonLabel: weeklyForm.downloadButtonLabel?.trim() || undefined
     };
 
     saveWeeklyIssue(finalIssue);
     setEditingId(null);
-    setWeeklyForm({
-      id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis',
-      author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: ''
-    });
+    setWeeklyForm(EMPTY_WEEKLY_FORM);
     showStatus(`Weekly briefing "${finalIssue.title}" saved!`);
   };
 
@@ -1031,12 +1035,14 @@ export default function CMSPanel({
       author: announcementForm.author || '',
       authorsList: announcementForm.authorsList || '',
       image: announcementForm.image || '',
-      pdfUrl: prepareDocumentUrl(announcementForm.pdfUrl || '')
+      pdfUrl: prepareDocumentUrl(announcementForm.pdfUrl || ''),
+      downloadSectionTitle: announcementForm.downloadSectionTitle?.trim() || undefined,
+      downloadButtonLabel: announcementForm.downloadButtonLabel?.trim() || undefined
     };
 
     saveAnnouncement(finalAnnouncement);
     setEditingId(null);
-    setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '' });
+    setAnnouncementForm(EMPTY_ANNOUNCEMENT_FORM);
     showStatus(`Announcement "${finalAnnouncement.title}" saved!`);
   };
 
@@ -1275,9 +1281,9 @@ export default function CMSPanel({
                       <button 
                         onClick={() => {
                           setEditingId(null);
-                          setReportForm({ id: '', tag: 'ELECTION AUDIT', tagType: 'analysis', date: 'July 2026', size: '1.2 MB', title: '', summary: '', sections: [], author: '', authorsList: '', image: '', pdfUrl: '' });
-                          setWeeklyForm({ id: '', tag: 'Weekly Analysis', date: 'July 2026', title: '', summary: '', linkText: 'Read full analysis', author: '', readingTime: '4 min read', sections: [], image: '', pdfUrl: '' });
-                          setAnnouncementForm({ id: '', month: 'JUL', day: '15', date: '15 July 2026', title: '', summary: '', content: '', category: 'press', author: '', authorsList: '', image: '', pdfUrl: '' });
+                          setReportForm(EMPTY_REPORT_FORM);
+                          setWeeklyForm(EMPTY_WEEKLY_FORM);
+                          setAnnouncementForm(EMPTY_ANNOUNCEMENT_FORM);
                         }}
                         className="text-xs text-red-600 hover:underline font-semibold font-mono"
                       >
@@ -1467,6 +1473,53 @@ export default function CMSPanel({
                         onChange={(val) => setReportForm({ ...reportForm, pdfUrl: val })} 
                       />
 
+                      {/* Download Section Customization Controls */}
+                      {(!!reportForm.pdfUrl || !!reportForm.downloadSectionTitle || !!reportForm.downloadButtonLabel) && (
+                        <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center gap-1.5 text-blue-900 font-mono text-[11px] font-bold uppercase tracking-wider">
+                            <Download className="w-3.5 h-3.5 text-brand-blue" />
+                            <span>Download Component Labels (Optional)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                            Customise the section title and action button text displayed on the publication page. Leave empty to use the standard defaults (&ldquo;Download Official Statement&rdquo; and &ldquo;Download Report&rdquo;).
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Section Title
+                              </label>
+                              <input 
+                                type="text" 
+                                value={reportForm.downloadSectionTitle || ''} 
+                                onChange={(e) => setReportForm({ ...reportForm, downloadSectionTitle: e.target.value })} 
+                                placeholder="Download Official Statement"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download the Full Brief
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Button Label
+                              </label>
+                              <input 
+                                type="text" 
+                                value={reportForm.downloadButtonLabel || ''} 
+                                onChange={(e) => setReportForm({ ...reportForm, downloadButtonLabel: e.target.value })} 
+                                placeholder="Download Report"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download the brief (PDF)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Document Sections Builder */}
                       <div className="border-t border-line pt-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -1600,6 +1653,53 @@ export default function CMSPanel({
                         value={weeklyForm.pdfUrl} 
                         onChange={(val) => setWeeklyForm({ ...weeklyForm, pdfUrl: val })} 
                       />
+
+                      {/* Download Section Customization Controls */}
+                      {(!!weeklyForm.pdfUrl || !!weeklyForm.downloadSectionTitle || !!weeklyForm.downloadButtonLabel) && (
+                        <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center gap-1.5 text-blue-900 font-mono text-[11px] font-bold uppercase tracking-wider">
+                            <Download className="w-3.5 h-3.5 text-brand-blue" />
+                            <span>Download Component Labels (Optional)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                            Customise the section title and action button text displayed on the publication page. Leave empty to use the standard defaults (&ldquo;Download Official Statement&rdquo; and &ldquo;Download Report&rdquo;).
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Section Title
+                              </label>
+                              <input 
+                                type="text" 
+                                value={weeklyForm.downloadSectionTitle || ''} 
+                                onChange={(e) => setWeeklyForm({ ...weeklyForm, downloadSectionTitle: e.target.value })} 
+                                placeholder="Download Official Statement"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download the Full Brief
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Button Label
+                              </label>
+                              <input 
+                                type="text" 
+                                value={weeklyForm.downloadButtonLabel || ''} 
+                                onChange={(e) => setWeeklyForm({ ...weeklyForm, downloadButtonLabel: e.target.value })} 
+                                placeholder="Download Report"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download the brief (PDF)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Weekly Sections Builder */}
                       <div className="border-t border-line pt-4 space-y-3">
@@ -1758,6 +1858,53 @@ export default function CMSPanel({
                         value={announcementForm.pdfUrl} 
                         onChange={(val) => setAnnouncementForm({ ...announcementForm, pdfUrl: val })} 
                       />
+
+                      {/* Download Section Customization Controls */}
+                      {(!!announcementForm.pdfUrl || !!announcementForm.downloadSectionTitle || !!announcementForm.downloadButtonLabel) && (
+                        <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center gap-1.5 text-blue-900 font-mono text-[11px] font-bold uppercase tracking-wider">
+                            <Download className="w-3.5 h-3.5 text-brand-blue" />
+                            <span>Download Component Labels (Optional)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                            Customise the section title and action button text displayed on the publication page. Leave empty to use the standard defaults (&ldquo;Download Official Statement&rdquo; and &ldquo;Download Report&rdquo;).
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Section Title
+                              </label>
+                              <input 
+                                type="text" 
+                                value={announcementForm.downloadSectionTitle || ''} 
+                                onChange={(e) => setAnnouncementForm({ ...announcementForm, downloadSectionTitle: e.target.value })} 
+                                placeholder="Download Official Statement"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download Official Statement
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-mono uppercase font-bold text-slate-700">
+                                Download Button Label
+                              </label>
+                              <input 
+                                type="text" 
+                                value={announcementForm.downloadButtonLabel || ''} 
+                                onChange={(e) => setAnnouncementForm({ ...announcementForm, downloadButtonLabel: e.target.value })} 
+                                placeholder="Download Report"
+                                className="w-full text-xs p-2.5 border border-line rounded-lg bg-white focus:outline-none focus:border-brand-blue transition-colors"
+                              />
+                              <span className="text-[10px] text-slate-500 font-mono block">
+                                E.g. Download Statement (PDF)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="space-y-1">
                         <label className="block text-[10px] font-mono uppercase font-bold text-mut">Full Content (Rich Text / Formatted Document)</label>

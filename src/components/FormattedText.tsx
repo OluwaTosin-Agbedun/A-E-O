@@ -19,7 +19,7 @@ export const FormattedText: React.FC<FormattedTextProps> = ({
   const isHtml = isHtmlContent(textToRender);
 
   if (isHtml) {
-    const cleanHtml = sanitizeHtml(textToRender);
+    const cleanHtml = sanitizeHtml(textToRender, true);
     return (
       <div
         className={`formatted-content text-slate-700 text-sm leading-relaxed space-y-3 ${className}`}

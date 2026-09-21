@@ -19,6 +19,8 @@ export interface Report {
   image?: string;
   researchArea?: string;
   pdfUrl?: string;
+  downloadSectionTitle?: string;
+  downloadButtonLabel?: string;
   slug?: string;
   createdAt?: number;
   reads?: number;
@@ -107,6 +109,8 @@ export interface WeeklyIssue {
   sections?: WeeklySection[];
   image?: string;
   pdfUrl?: string;
+  downloadSectionTitle?: string;
+  downloadButtonLabel?: string;
   slug?: string;
   createdAt?: number;
   reads?: number;
@@ -181,6 +185,8 @@ export interface AnnouncementItem {
   authorsList?: string;
   image?: string;
   pdfUrl?: string;
+  downloadSectionTitle?: string;
+  downloadButtonLabel?: string;
   slug?: string;
   createdAt?: number;
   reads?: number;

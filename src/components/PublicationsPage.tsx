@@ -66,6 +66,8 @@ interface UnifiedPublication {
   readTimeOrSize: string;
   originalItem: any;
   pdfUrl?: string;
+  downloadSectionTitle?: string;
+  downloadButtonLabel?: string;
   reads?: number;
   downloads?: number;
 }
@@ -174,6 +176,8 @@ export default function PublicationsPage() {
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl,
+      downloadSectionTitle: r.downloadSectionTitle,
+      downloadButtonLabel: r.downloadButtonLabel,
       reads: r.reads,
       downloads: r.downloads
 });
@@ -199,6 +203,8 @@ export default function PublicationsPage() {
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl,
+      downloadSectionTitle: r.downloadSectionTitle,
+      downloadButtonLabel: r.downloadButtonLabel,
       reads: r.reads,
       downloads: r.downloads
 });
@@ -220,6 +226,8 @@ export default function PublicationsPage() {
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl,
+      downloadSectionTitle: r.downloadSectionTitle,
+      downloadButtonLabel: r.downloadButtonLabel,
       reads: r.reads,
       downloads: r.downloads
 });
@@ -241,6 +249,8 @@ export default function PublicationsPage() {
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl,
+      downloadSectionTitle: r.downloadSectionTitle,
+      downloadButtonLabel: r.downloadButtonLabel,
       reads: r.reads,
       downloads: r.downloads
 });
@@ -262,6 +272,8 @@ export default function PublicationsPage() {
       readTimeOrSize: r.size,
       originalItem: r,
       pdfUrl: r.pdfUrl,
+      downloadSectionTitle: r.downloadSectionTitle,
+      downloadButtonLabel: r.downloadButtonLabel,
       reads: r.reads,
       downloads: r.downloads
 });
@@ -283,6 +295,8 @@ export default function PublicationsPage() {
       readTimeOrSize: w.readingTime || '5 min read',
       originalItem: w,
       pdfUrl: w.pdfUrl,
+      downloadSectionTitle: w.downloadSectionTitle,
+      downloadButtonLabel: w.downloadButtonLabel,
       reads: w.reads,
       downloads: w.downloads
 });
@@ -304,6 +318,8 @@ export default function PublicationsPage() {
       readTimeOrSize: '3 min read',
       originalItem: a,
       pdfUrl: a.pdfUrl,
+      downloadSectionTitle: a.downloadSectionTitle,
+      downloadButtonLabel: a.downloadButtonLabel,
       reads: a.reads,
       downloads: a.downloads
 });

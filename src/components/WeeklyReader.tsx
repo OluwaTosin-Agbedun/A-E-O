@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { ArrowLeft, Clock, Share2, Mail, Check, AlertCircle, Download, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Mail, Check, AlertCircle } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { db } from '../lib/firebase';
@@ -8,6 +8,7 @@ import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
 import { generateSlug, getItemSlug } from '../utils/url';
 import FormattedText from './FormattedText';
+import DownloadPanel from './DownloadPanel';
 
 interface WeeklyReaderProps {
   weeklyId: string | null;
@@ -277,41 +278,28 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
 
 
           {/* Download Action Box (Placed After Text Contents) */}
-          <div className="pt-8 border-t border-line">
-            <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="font-display font-bold text-base text-ink">Download Official Statement</h4>
-              </div>
-              {isDownloaded ? (
-                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-brand-green text-xs font-semibold px-5 py-3 rounded-xl shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                  <span>Downloaded</span>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => {
-                    setIsDownloaded(true);
-                    incrementPublicationStat('weekly', issue.id, 'downloads');
-                    triggerPdfDownload(
-                      issue.title,
-                      issue.summary,
-                      articleDetails.author,
-                      formatReportDate(issue.date),
-                      issue.pdfUrl,
-                      (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
-                    );
-                    setTimeout(() => {
-                      setIsDownloaded(false);
-                    }, 4000);
-                  }}
-                  className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download Report</span>
-                </button>
-              )}
-            </div>
-          </div>
+          <DownloadPanel
+            fileUrl={issue.pdfUrl}
+            title={issue.downloadSectionTitle}
+            buttonLabel={issue.downloadButtonLabel}
+            onDownload={() => {
+              setIsDownloaded(true);
+              incrementPublicationStat('weekly', issue.id, 'downloads');
+              triggerPdfDownload(
+                issue.title,
+                issue.summary,
+                articleDetails.author,
+                formatReportDate(issue.date),
+                issue.pdfUrl,
+                (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+              );
+              setTimeout(() => {
+                setIsDownloaded(false);
+              }, 4000);
+            }}
+            isDownloaded={isDownloaded}
+            className="!mt-0"
+          />
 
         </article>
 

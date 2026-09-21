@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Download, CheckCircle2, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
 import { generateSlug, getItemSlug } from '../utils/url';
 import FormattedText from './FormattedText';
+import DownloadPanel from './DownloadPanel';
 
 interface ReportReaderProps {
   reportId: string | null;
@@ -138,27 +139,13 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
         </div>
 
         {/* Download Action Box (Placed After Text Contents) */}
-        <div className="mt-12 pt-8 border-t border-line">
-          <div className="bg-paper/80 border border-line p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h4 className="font-display font-bold text-base text-ink">Download Official Statement</h4>
-            </div>
-            {isDownloaded ? (
-              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-brand-green text-xs font-semibold px-5 py-3 rounded-xl shrink-0">
-                <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                <span>Downloaded</span>
-              </div>
-            ) : (
-              <button 
-                onClick={handleDownloadPDF}
-                className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-semibold px-5 py-3 rounded-xl transition-all cursor-pointer shadow-sm shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Report</span>
-              </button>
-            )}
-          </div>
-        </div>
+        <DownloadPanel
+          fileUrl={report.pdfUrl}
+          title={report.downloadSectionTitle}
+          buttonLabel={report.downloadButtonLabel}
+          onDownload={handleDownloadPDF}
+          isDownloaded={isDownloaded}
+        />
 
       </article>
 
