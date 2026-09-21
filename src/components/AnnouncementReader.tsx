@@ -6,7 +6,7 @@ import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
 import { generateSlug, getItemSlug } from '../utils/url';
 import FormattedText from './FormattedText';
-import DownloadPanel from './DownloadPanel';
+import DownloadButton from './DownloadButton';
 
 interface AnnouncementReaderProps {
   announcementId: string | null;
@@ -211,18 +211,35 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
 
         {/* Title and Metadata */}
         <div className="space-y-4 border-b border-line pb-8">
-          <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-ink leading-tight">
-            {announcement.title}
-          </h1>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div className="space-y-3 flex-1 min-w-0">
+              <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-ink leading-tight">
+                {announcement.title}
+              </h1>
 
-          {(announcement.authorsList || announcement.author) ? (
-            <div className="flex items-center gap-2 text-xs text-mut font-medium pt-2">
-              <User className="w-4 h-4 text-brand-blue" />
-              <span>
-                Issued by <strong className="text-ink font-semibold">{announcement.authorsList || announcement.author}</strong>
-              </span>
+              {(announcement.authorsList || announcement.author) ? (
+                <div className="flex items-center gap-2 text-xs text-mut font-medium pt-2">
+                  <User className="w-4 h-4 text-brand-blue" />
+                  <span>
+                    Issued by <strong className="text-ink font-semibold">{announcement.authorsList || announcement.author}</strong>
+                  </span>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+
+            {/* Upper Right Download Action */}
+            {announcement.pdfUrl && (
+              <div className="shrink-0 pt-1 md:pt-2 w-full md:w-auto">
+                <DownloadButton
+                  fileUrl={announcement.pdfUrl}
+                  buttonLabel={announcement.downloadButtonLabel || 'Download Statement'}
+                  onDownload={handleDownloadPDF}
+                  isDownloaded={isDownloaded}
+                  fullWidthOnMobile={true}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Declaration Body / Content */}
@@ -232,16 +249,6 @@ export default function AnnouncementReader({ announcementId, onClose }: Announce
             className="text-base sm:text-lg text-ink2"
           />
         </div>
-
-        {/* Download Action Box (Placed After Text Contents) */}
-        <DownloadPanel
-          fileUrl={announcement.pdfUrl}
-          title={announcement.downloadSectionTitle}
-          buttonLabel={announcement.downloadButtonLabel}
-          onDownload={handleDownloadPDF}
-          isDownloaded={isDownloaded}
-          className="!mt-0"
-        />
 
         {/* Bottom Actions and Navigation */}
         <div className="pt-10 border-t border-line">

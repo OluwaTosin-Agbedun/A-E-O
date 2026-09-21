@@ -6,7 +6,7 @@ import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
 import { generateSlug, getItemSlug } from '../utils/url';
 import FormattedText from './FormattedText';
-import DownloadPanel from './DownloadPanel';
+import DownloadButton from './DownloadButton';
 
 interface ReportReaderProps {
   reportId: string | null;
@@ -99,41 +99,58 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
         
         {/* Document Header Metadata */}
         <div className="border-b border-line pb-6 mb-8 space-y-4">
-          <div className="flex items-center gap-3">
-            <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
-              report.tagType === 'analysis' 
-                ? 'bg-purple-50 text-brand-purple border border-purple-100' 
-                : report.tagType === 'dci'
-                ? 'bg-blue-50 text-brand-blue border border-blue-100'
-                : report.tagType === 'africa-election-watch'
-                ? 'bg-teal-50 text-teal-700 border border-teal-200'
-                : 'bg-green-50 text-brand-green border border-green-100'
-            }`}>
-              {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
-            </span>
-          </div>
-
-          <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink leading-tight tracking-tight">
-            {report.title}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-mut font-sans mt-2">
-            {(report.authorsList || report.author) ? (
-              <>
-                <span className="text-ink font-semibold">{report.authorsList || report.author}</span>
-                <span className="text-slate-300">·</span>
-              </>
-            ) : null}
-            {report.readingTime ? (
-              <>
-                <span className="flex items-center gap-1.5 text-ink2">
-                  <Clock className="w-4 h-4 text-mut" />
-                  <span>{report.readingTime}</span>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div className="space-y-3 flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
+                  report.tagType === 'analysis' 
+                    ? 'bg-purple-50 text-brand-purple border border-purple-100' 
+                    : report.tagType === 'dci'
+                    ? 'bg-blue-50 text-brand-blue border border-blue-100'
+                    : report.tagType === 'africa-election-watch'
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                    : 'bg-green-50 text-brand-green border border-green-100'
+                }`}>
+                  {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
                 </span>
-                <span className="text-slate-300">·</span>
-              </>
-            ) : null}
-            <span>{formatReportDate(report.date)}</span>
+              </div>
+
+              <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink leading-tight tracking-tight">
+                {report.title}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-mut font-sans mt-2">
+                {(report.authorsList || report.author) ? (
+                  <>
+                    <span className="text-ink font-semibold">{report.authorsList || report.author}</span>
+                    <span className="text-slate-300">·</span>
+                  </>
+                ) : null}
+                {report.readingTime ? (
+                  <>
+                    <span className="flex items-center gap-1.5 text-ink2">
+                      <Clock className="w-4 h-4 text-mut" />
+                      <span>{report.readingTime}</span>
+                    </span>
+                    <span className="text-slate-300">·</span>
+                  </>
+                ) : null}
+                <span>{formatReportDate(report.date)}</span>
+              </div>
+            </div>
+
+            {/* Upper Right Action Area on Desktop / Under Metadata on Mobile */}
+            {report.pdfUrl && (
+              <div className="shrink-0 pt-1 md:pt-2 w-full md:w-auto">
+                <DownloadButton
+                  fileUrl={report.pdfUrl}
+                  buttonLabel={report.downloadButtonLabel || 'Download Report'}
+                  onDownload={handleDownloadPDF}
+                  isDownloaded={isDownloaded}
+                  fullWidthOnMobile={true}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -152,15 +169,6 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             <FormattedText content={(report as any).content || (report as any).body || (report as any).richText || (report as any).html} className="text-ink2" />
           )}
         </div>
-
-        {/* Download Action Box (Placed After Text Contents) */}
-        <DownloadPanel
-          fileUrl={report.pdfUrl}
-          title={report.downloadSectionTitle}
-          buttonLabel={report.downloadButtonLabel}
-          onDownload={handleDownloadPDF}
-          isDownloaded={isDownloaded}
-        />
 
       </article>
 

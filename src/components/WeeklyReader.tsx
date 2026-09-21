@@ -8,7 +8,7 @@ import { triggerPdfDownload } from './PublicationsPage';
 import { formatReportDate } from '../utils/date';
 import { generateSlug, getItemSlug } from '../utils/url';
 import FormattedText from './FormattedText';
-import DownloadPanel from './DownloadPanel';
+import DownloadButton from './DownloadButton';
 
 interface WeeklyReaderProps {
   weeklyId: string | null;
@@ -184,6 +184,22 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
     setTimeout(() => setHasShared(false), 3000);
   };
 
+  const handleDownloadPDF = () => {
+    setIsDownloaded(true);
+    incrementPublicationStat('weekly', issue.id, 'downloads');
+    triggerPdfDownload(
+      issue.title,
+      issue.summary,
+      articleDetails.author,
+      formatReportDate(issue.date),
+      issue.pdfUrl,
+      (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
+    );
+    setTimeout(() => {
+      setIsDownloaded(false);
+    }, 4000);
+  };
+
   return (
     <div className="bg-white min-h-screen font-sans animate-fade-in">
       <SEO 
@@ -259,6 +275,19 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
               <span className="text-slate-300">|</span>
               <span>Published: {formatReportDate(issue.date)}</span>
             </div>
+
+            {/* Mobile Download Action (under metadata, before article body) */}
+            {issue.pdfUrl && (
+              <div className="pt-2 lg:hidden">
+                <DownloadButton
+                  fileUrl={issue.pdfUrl}
+                  buttonLabel={issue.downloadButtonLabel || 'Download Report'}
+                  onDownload={handleDownloadPDF}
+                  isDownloaded={isDownloaded}
+                  fullWidthOnMobile={true}
+                />
+              </div>
+            )}
           </div>
 
           {/* Render Sections */}
@@ -275,37 +304,24 @@ export default function WeeklyReader({ weeklyId, onClose }: WeeklyReaderProps) {
             ))}
           </div>
 
-
-
-          {/* Download Action Box (Placed After Text Contents) */}
-          <DownloadPanel
-            fileUrl={issue.pdfUrl}
-            title={issue.downloadSectionTitle}
-            buttonLabel={issue.downloadButtonLabel}
-            onDownload={() => {
-              setIsDownloaded(true);
-              incrementPublicationStat('weekly', issue.id, 'downloads');
-              triggerPdfDownload(
-                issue.title,
-                issue.summary,
-                articleDetails.author,
-                formatReportDate(issue.date),
-                issue.pdfUrl,
-                (articleDetails.sections || []).map((s, idx) => `${s.title}\n${s.text}`).join('\n\n')
-              );
-              setTimeout(() => {
-                setIsDownloaded(false);
-              }, 4000);
-            }}
-            isDownloaded={isDownloaded}
-            className="!mt-0"
-          />
-
         </article>
 
         {/* Sidebar widgets */}
         <aside className="lg:col-span-4 space-y-6">
           
+          {/* Desktop Download Action (Top of Sidebar, above AEO Updates Stream) */}
+          {issue.pdfUrl && (
+            <div className="hidden lg:block">
+              <DownloadButton
+                fileUrl={issue.pdfUrl}
+                buttonLabel={issue.downloadButtonLabel || 'Download Report'}
+                onDownload={handleDownloadPDF}
+                isDownloaded={isDownloaded}
+                className="w-full"
+              />
+            </div>
+          )}
+
           {/* Subscribe widget */}
           <div className="bg-paper border border-line rounded-2xl p-6 shadow-sm space-y-4">
             <h3 className="font-display font-bold text-sm text-ink uppercase tracking-wider">
