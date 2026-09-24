@@ -76,6 +76,23 @@ export async function loadAssetFromFirestore(assetType: 'pdf' | 'img' | 'logo', 
 }
 
 /**
+ * Recursively removes any undefined values from objects/arrays to prevent Firestore errors.
+ */
+export function removeUndefined(obj: any): any {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
+  }
+  const clean: any = {};
+  for (const key of Object.keys(obj)) {
+    if (obj[key] !== undefined) {
+      clean[key] = removeUndefined(obj[key]);
+    }
+  }
+  return clean;
+}
+
+/**
  * Sanitizes an array of CMS items before saving to main Firestore array doc.
  * Heavy base64 fields are saved to asset docs and replaced with reference keys.
  */
@@ -99,7 +116,7 @@ export async function sanitizeAndSyncItems(docName: string, items: any[]): Promi
       itemCopy.image = `ref:img_${itemCopy.id}`;
     }
 
-    sanitizedItems.push(itemCopy);
+    sanitizedItems.push(removeUndefined(itemCopy));
   }
 
   try {

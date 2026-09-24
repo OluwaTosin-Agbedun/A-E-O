@@ -13,7 +13,7 @@ import {
 } from '../data';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore } from '../lib/firebaseAssets';
+import { sanitizeAndSyncItems, loadAssetFromFirestore, saveAssetToFirestore, removeUndefined } from '../lib/firebaseAssets';
 import { sortItemsByDate } from '../utils/date';
 import { generateSlug } from '../utils/url';
 
@@ -207,10 +207,11 @@ function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: 
 // Helper to save Firestore document cleanly with asset chunking
 const syncToFirestore = async (docName: string, data: any) => {
   try {
-    if (data && Array.isArray(data.items)) {
-      await sanitizeAndSyncItems(docName, data.items);
+    const cleaned = removeUndefined(data);
+    if (cleaned && Array.isArray(cleaned.items)) {
+      await sanitizeAndSyncItems(docName, cleaned.items);
     } else {
-      await setDoc(doc(db, 'cms', docName), data);
+      await setDoc(doc(db, 'cms', docName), cleaned);
     }
   } catch (err) {
     console.error(`Error syncing ${docName} to Firestore:`, err);
@@ -265,8 +266,9 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             setter(fallbackVal);
           }
         } else {
-          // Document doesn't exist in Firestore -> default to fallback locally
+          // Document doesn't exist in Firestore -> seed with fallbackVal and sync to Firestore
           setter(fallbackVal);
+          syncToFirestore(docName, docName === 'hero' ? { config: fallbackVal } : { items: fallbackVal });
         }
         
         if (isFirst) {
@@ -289,15 +291,15 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    unsubscribes.push(subscribeAndSeed('reports', setReports, []));
+    unsubscribes.push(subscribeAndSeed('reports', setReports, initialReports));
     unsubscribes.push(subscribeAndSeed('diary_nat', setDiaryNat, initialDiaryNat));
     unsubscribes.push(subscribeAndSeed('diary_loc', setDiaryLoc, initialDiaryLoc));
     unsubscribes.push(subscribeAndSeed('diary_afr', setDiaryAfr, initialDiaryAfr));
     unsubscribes.push(subscribeAndSeed('diary_oth', setDiaryOth, initialDiaryOth));
-    unsubscribes.push(subscribeAndSeed('events', setEvents, []));
-    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, []));
-    unsubscribes.push(subscribeAndSeed('team', setTeam, []));
-    unsubscribes.push(subscribeAndSeed('weekly', setWeekly, []));
+    unsubscribes.push(subscribeAndSeed('events', setEvents, initialEvents));
+    unsubscribes.push(subscribeAndSeed('announcements', setAnnouncements, initialAnnouncements));
+    unsubscribes.push(subscribeAndSeed('team', setTeam, initialTeam));
+    unsubscribes.push(subscribeAndSeed('weekly', setWeekly, initialWeekly));
     unsubscribes.push(subscribeAndSeed('hero', setHeroConfig, INITIAL_HERO_CONFIG, (cfg: HeroConfig) => {
       if (cfg.spotlightStatusText === 'Off-Cycle') cfg.spotlightStatusText = 'IREV Data';
       if (cfg.registeredVoters === '1,955,657 voters' || cfg.registeredVoters === '1,955,657') {
@@ -546,7 +548,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
             [statType]: currentValue + 1
           };
           
-          await setDoc(docRef, { items });
+          await syncToFirestore(collectionKey, { items });
         }
       }
     } catch (error) {
