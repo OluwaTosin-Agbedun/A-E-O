@@ -3,7 +3,7 @@ export interface ReportSection {
   content: string;
 }
 
-export type TagType = 'analysis' | 'tech' | 'dci' | 'announcement' | 'newsletter' | 'brief' | 'africa-election-watch';
+export type TagType = 'analysis' | 'tech' | 'dcm' | 'announcement' | 'newsletter' | 'brief' | 'africa-election-watch';
 
 export interface Report {
   id: string;

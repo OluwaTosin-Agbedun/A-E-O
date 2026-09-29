@@ -54,7 +54,7 @@ Verification pipeline: AEO-SECURE-2026-X.
 
 interface UnifiedPublication {
   id: string;
-  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'brief' | 'africa-election-watch';
+  type: 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dcm' | 'brief' | 'africa-election-watch';
   typeName: string;
   category: string;
   title: string;
@@ -87,7 +87,7 @@ export default function PublicationsPage() {
     { value: 'brief', label: 'Reports and Briefs' },
     { value: 'audit', label: 'Post-Election Audits' },
     { value: 'assessment', label: 'Political Landscape Monitor' },
-    { value: 'dci', label: 'Democracy Competitive Index (DCI) Report' },
+    { value: 'dcm', label: 'Democratic Competitiveness Map (DCM)' },
     { value: 'africa-election-watch', label: 'Africa Election Watch' },
     { value: 'weekly', label: 'AEO Weekly Digest' },
     { value: 'announcement', label: 'Announcements' }
@@ -149,11 +149,11 @@ export default function PublicationsPage() {
 
   // Determine current path to set mode
   const currentPath = window.location.pathname;
-  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dci' | 'reports-briefs' | 'africa-election-watch' = 'all';
+  let pageMode: 'all' | 'audit' | 'assessment' | 'weekly' | 'announcement' | 'dcm' | 'reports-briefs' | 'africa-election-watch' = 'all';
   if (currentPath === '/reports-and-briefs' || currentPath === '/reports-briefs' || currentPath === '/publications/reports-and-briefs' || currentPath === '/publications/reports-briefs') pageMode = 'reports-briefs';
   else if (currentPath === '/post-election-audits' || currentPath === '/publications/post-election-audits') pageMode = 'audit';
   else if (currentPath === '/political-landscape-monitor' || currentPath === '/publications/political-landscape-monitor') pageMode = 'assessment';
-  else if (currentPath === '/democracy-competitive-index' || currentPath === '/publications/democracy-competitive-index') pageMode = 'dci';
+  else if (currentPath === '/democratic-competitiveness-map' || currentPath === '/publications/democratic-competitiveness-map' || currentPath === '/democracy-competitive-index' || currentPath === '/publications/democracy-competitive-index') pageMode = 'dcm';
   else if (currentPath === '/africa-election-watch' || currentPath === '/publications/africa-election-watch') pageMode = 'africa-election-watch';
   else if (currentPath === '/aeo-weekly-digest' || currentPath === '/publications/aeo-weekly-digest') pageMode = 'weekly';
   else if (currentPath === '/announcements' || currentPath === '/publications/announcements') pageMode = 'announcement';
@@ -213,13 +213,13 @@ export default function PublicationsPage() {
 });
   });
 
-  // 2.5 DCI reports (tagType === 'dci')
-  reports.filter(r => r.tagType === 'dci').forEach(r => {
+  // 2.5 DCM reports (tagType === 'dcm')
+  reports.filter(r => r.tagType === 'dcm' || r.tagType === ('dci' as any)).forEach(r => {
     unifiedPublications.push({
       id: r.id,
-      type: 'dci',
-      typeName: 'Democracy Competitive Index (DCI) Report',
-      category: r.tag || 'DCI REPORT',
+      type: 'dcm',
+      typeName: 'Democratic Competitiveness Map (DCM) Report',
+      category: r.tag || 'DCM REPORT',
       title: r.title,
       summary: r.summary,
       author: r.author || '',
@@ -395,7 +395,7 @@ export default function PublicationsPage() {
 
   const handleItemClick = (pub: UnifiedPublication) => {
     const slug = getItemSlug(pub);
-    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dci' || pub.type === 'brief' || pub.type === 'africa-election-watch') {
+    if (pub.type === 'audit' || pub.type === 'assessment' || pub.type === 'dcm' || pub.type === 'brief' || pub.type === 'africa-election-watch') {
       navigateTo(`/reports/${slug}`);
     } else if (pub.type === 'weekly') {
       navigateTo(`/weekly/${slug}`);
@@ -425,10 +425,10 @@ export default function PublicationsPage() {
           description: "Sub-national assessments, tech reviews, and governance research briefs analyzing democratic compliance.",
           icon: <BookOpen className="w-8 h-8 text-brand-blue" />
         };
-      case 'dci':
+      case 'dcm':
         return {
-          title: "Democracy Competitive Index (DCI) Reports",
-          description: "Rigorous research and data metrics scoring electoral competitiveness, political participation, and administrative compliance across jurisdictions.",
+          title: "Democratic Competitiveness Map (DCM)",
+          description: "The Democratic Competitiveness Map (DCM) is AEO’s state-by-state outlook of the conditions under which political competition occurs in Nigeria. It uses verified evidence to show the extent to which Nigeria’s political and institutional environment allows political actors to freely organise, campaign, and compete for public offices under fair, lawful, and reasonably equal conditions. The documented conditions in a particular state and during a defined reporting period are summarised and represented in a colour map. The DCM does not score or rank the states. Therefore, the colour map is not a numerical score, a political label, or a permanent judgment on a state.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'africa-election-watch':

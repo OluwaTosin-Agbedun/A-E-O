@@ -60,10 +60,10 @@ export default function Footer() {
               </li>
               <li>
                 <button 
-                  onClick={() => navigateTo('/democracy-competitive-index')} 
+                  onClick={() => navigateTo('/democratic-competitiveness-map')} 
                   className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
                 >
-                  Democracy Index
+                  Democratic Competitiveness Map
                 </button>
               </li>
               <li>

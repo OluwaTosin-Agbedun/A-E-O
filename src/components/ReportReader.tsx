@@ -92,7 +92,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
           >
             <ArrowLeft className="w-4 h-4" />
             <span>
-              ← Back to {report.tagType === 'africa-election-watch' ? 'Africa Election Watch' : report.tagType === 'tech' ? 'Political Landscape Monitor' : report.tagType === 'dci' ? 'DCI Reports' : report.tagType === 'brief' ? 'Reports & Briefs' : 'All audit reports'}
+              ← Back to {report.tagType === 'africa-election-watch' ? 'Africa Election Watch' : report.tagType === 'tech' ? 'Political Landscape Monitor' : report.tagType === 'dcm' ? 'Democratic Competitiveness Map' : report.tagType === 'brief' ? 'Reports & Briefs' : 'All audit reports'}
             </span>
           </button>
         </div>
@@ -109,7 +109,7 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
                 <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
                   report.tagType === 'analysis' 
                     ? 'bg-purple-50 text-brand-purple border border-purple-100' 
-                    : report.tagType === 'dci'
+                    : report.tagType === 'dcm'
                     ? 'bg-blue-50 text-brand-blue border border-blue-100'
                     : report.tagType === 'africa-election-watch'
                     ? 'bg-teal-50 text-teal-700 border border-teal-200'

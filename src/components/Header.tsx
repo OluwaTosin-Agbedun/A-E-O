@@ -85,6 +85,14 @@ export default function Header() {
                 Diary of Election
               </a>
 
+              <a 
+                href="/democratic-competitiveness-map" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/democratic-competitiveness-map'); }}
+                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
+              >
+                DCM
+              </a>
+
               {/* Publications Dropdown */}
               <div 
                 className="relative"
@@ -132,17 +140,6 @@ export default function Header() {
                       <BookOpen className="w-6 h-6 text-brand-blue mt-1 flex-shrink-0" />
                       <div>
                         <span className="block text-base font-bold text-brand-blue leading-snug">Political landscape monitor</span>
-                      </div>
-                    </a>
-
-                    <a 
-                      href="/democracy-competitive-index" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/democracy-competitive-index'); }}
-                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
-                    >
-                      <Award className="w-6 h-6 text-brand-green mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="block text-base font-bold text-brand-green leading-snug">Democracy Competitive Index (DCI) Report</span>
                       </div>
                     </a>
 
@@ -236,6 +233,13 @@ export default function Header() {
             >
               Diary of Election
             </a>
+            <a 
+              href="/democratic-competitiveness-map" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/democratic-competitiveness-map'); }}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+            >
+              DCM
+            </a>
             <div className="pt-2 pb-1 px-3">
               <span className="text-[10px] font-bold font-mono tracking-wider text-white/40 uppercase">Publications</span>
             </div>
@@ -259,13 +263,6 @@ export default function Header() {
               className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
               Political landscape monitor
-            </a>
-            <a 
-              href="/democracy-competitive-index" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/democracy-competitive-index'); }}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
-            >
-              Democracy Competitive Index (DCI) Report
             </a>
             <a 
               href="/publications/africa-election-watch" 

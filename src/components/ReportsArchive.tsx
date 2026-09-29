@@ -7,7 +7,7 @@ import { getItemSlug } from '../utils/url';
 export default function ReportsArchive() {
   const { reports } = useCMS();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<'all' | 'brief' | 'analysis' | 'tech' | 'dci' | 'africa-election-watch'>('all');
+  const [selectedTag, setSelectedTag] = useState<'all' | 'brief' | 'analysis' | 'tech' | 'dcm' | 'africa-election-watch'>('all');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -106,14 +106,14 @@ export default function ReportsArchive() {
                 Technology Assessment ({reports.filter(r => r.tagType === 'tech').length})
               </button>
               <button
-                onClick={() => setSelectedTag('dci')}
+                onClick={() => setSelectedTag('dcm')}
                 className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-colors whitespace-nowrap cursor-pointer ${
-                  selectedTag === 'dci' 
+                  selectedTag === 'dcm' 
                     ? 'bg-brand-blue text-white' 
                     : 'bg-paper text-ink2 hover:bg-line border border-line'
                 }`}
               >
-                Democracy Competitive Index ({reports.filter(r => r.tagType === 'dci').length})
+                Democratic Competitiveness Map ({reports.filter(r => r.tagType === 'dcm').length})
               </button>
               <button
                 onClick={() => setSelectedTag('africa-election-watch')}
@@ -157,7 +157,7 @@ export default function ReportsArchive() {
                       <span className={`text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
                         report.tagType === 'analysis' 
                           ? 'bg-purple-50 text-brand-purple border border-purple-100' 
-                          : report.tagType === 'dci'
+                          : report.tagType === 'dcm'
                           ? 'bg-blue-50 text-brand-blue border border-blue-100'
                           : report.tagType === 'africa-election-watch'
                           ? 'bg-teal-50 text-teal-700 border border-teal-200'

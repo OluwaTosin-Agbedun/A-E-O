@@ -75,7 +75,7 @@ export default function AuditReports({ onOpenReport, onOpenWeekly }: AuditReport
                 tagText = item.tag || (item.tagType === 'africa-election-watch' ? 'Africa Election Watch' : 'Election Audit');
                 tagStyle = item.tagType === 'analysis' 
                   ? 'bg-purple-50 text-brand-purple border-purple-100' 
-                  : item.tagType === 'dci'
+                  : item.tagType === 'dcm'
                   ? 'bg-blue-50 text-brand-blue border-blue-100'
                   : item.tagType === 'africa-election-watch'
                   ? 'bg-teal-50 text-teal-700 border-teal-200'
