@@ -120,7 +120,8 @@ export async function sanitizeAndSyncItems(docName: string, items: any[]): Promi
   }
 
   try {
-    await setDoc(doc(db, 'cms', docName), { items: sanitizedItems, updatedAt: Date.now() });
+    const payload = removeUndefined({ items: sanitizedItems, updatedAt: Date.now() });
+    await setDoc(doc(db, 'cms', docName), payload);
   } catch (err) {
     console.error(`Error syncing ${docName} to Firestore:`, err);
   }
