@@ -17,9 +17,29 @@ export default function Diary() {
   // Filter States
   const [regionFilter, setRegionFilter] = useState<'all' | 'nigeria' | 'africa' | 'other'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'presidential' | 'governorship' | 'local_government'>('all');
-  const [timingFilter, setTimingFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [timingFilter, setTimingFilter] = useState<'all' | 'upcoming' | 'concluded' | 'past'>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const getEffectiveStatus = (item: DiaryItem) => {
+    const timestamp = (item as any)._timestamp || parseDateValue(item.date);
+    if (!timestamp) return item.status || 'Scheduled';
+
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const todayTime = now.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    if (item.status === 'Concluded') return 'Concluded';
+
+    if (timestamp < todayTime) {
+      return 'Concluded';
+    } else if (timestamp >= todayTime && timestamp < todayTime + dayMs) {
+      return 'Ongoing';
+    } else {
+      return item.status || 'Scheduled';
+    }
+  };
 
   // Combine all items and auto-assign region/type if missing
   const allDiaryItems = useMemo(() => {
@@ -77,20 +97,23 @@ export default function Diary() {
         return false;
       }
 
-      // 3. Timing Filter (Upcoming / Past)
+      // 3. Timing Filter (Active Calendar / Upcoming / Concluded / Past)
       const now = new Date();
       now.setHours(0,0,0,0);
-      const isPast = (item as any)._timestamp > 0 && (item as any)._timestamp < now.getTime();
+      const todayTime = now.getTime();
+      const itemTimestamp = (item as any)._timestamp || parseDateValue(item.date);
+      const isPast = itemTimestamp > 0 && itemTimestamp < todayTime;
+      const daysSincePast = isPast ? (todayTime - itemTimestamp) / (1000 * 60 * 60 * 24) : 0;
       
       if (timingFilter === 'upcoming') {
-        // Upcoming: date >= today and current calendar year
-        const currentYear = new Date().getFullYear();
         if (isPast) return false;
-        if ((item as any)._year !== currentYear && (item as any)._timestamp > 0) return false; 
-        // wait, the user said: "Upcoming Elections must show ONLY elections that: have a date today or in future AND are taking place within the CURRENT CALENDAR YEAR."
-        // "Past Elections must include ALL elections whose election date has passed. This includes earlier in current year, previous year, and every earlier year."
+      } else if (timingFilter === 'concluded') {
+        if (!isPast) return false;
       } else if (timingFilter === 'past') {
-        if (!isPast && (item as any)._timestamp > 0) return false;
+        if (!isPast) return false;
+      } else {
+        // 'all' - Active Calendar view: show upcoming and recently concluded (within 14 days)
+        if (isPast && daysSincePast > 14) return false;
       }
 
       // 3b. Year Filter
@@ -127,18 +150,23 @@ export default function Diary() {
     return Array.from(years).sort((a, b) => b - a);
   }, [allDiaryItems]);
 
-  const getStatusColor = (status: DiaryItem['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'In view':
         return 'bg-amber-500/10 text-amber-700 border-amber-300';
       case 'Scheduled':
+      case 'Upcoming':
         return 'bg-blue-500/10 text-blue-700 border-blue-300';
+      case 'Ongoing':
+        return 'bg-emerald-500/10 text-emerald-700 border-emerald-300 animate-pulse';
       case 'Provisional':
         return 'bg-purple-500/10 text-brand-purple border-purple-300';
       case 'Tracking':
         return 'bg-slate-500/10 text-slate-700 border-slate-300';
       case 'Concluded':
-        return 'bg-emerald-500/10 text-emerald-700 border-emerald-300';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
+      default:
+        return 'bg-blue-500/10 text-blue-700 border-blue-300';
     }
   };
 
@@ -317,9 +345,10 @@ export default function Diary() {
                   onChange={(e) => setTimingFilter(e.target.value as any)}
                   className="w-full px-3 py-2 bg-paper border border-line rounded-xl text-xs text-ink focus:outline-none focus:border-brand-blue"
                 >
-                  <option value="all">All Timing</option>
+                  <option value="all">Active Calendar</option>
                   <option value="upcoming">Upcoming Elections</option>
-                  <option value="past">Past Elections</option>
+                  <option value="concluded">Concluded Elections</option>
+                  <option value="past">All Past History</option>
                 </select>
 
                 <select
@@ -562,9 +591,9 @@ export default function Diary() {
 
                       {/* Status & Arrow Action */}
                       <div className="md:col-span-3 flex items-center md:justify-end justify-between gap-3">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border ${getStatusColor(item.status)}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border ${getStatusColor(getEffectiveStatus(item))}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                          {item.status}
+                          {getEffectiveStatus(item)}
                         </span>
 
                         <div className="w-8 h-8 rounded-full bg-paper border border-line flex items-center justify-center text-slate-400 group-hover:bg-brand-blue group-hover:text-white group-hover:border-brand-blue transition-all shrink-0">

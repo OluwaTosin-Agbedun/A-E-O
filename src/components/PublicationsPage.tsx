@@ -124,13 +124,23 @@ export default function PublicationsPage() {
 
   const closestElections = useMemo(() => {
     const statusPriority: Record<string, number> = {
-      'In view': 1,
-      'Scheduled': 2,
-      'Tracking': 3,
-      'Provisional': 4,
-      'Concluded': 5
+      'Ongoing': 1,
+      'In view': 2,
+      'Scheduled': 3,
+      'Tracking': 4,
+      'Provisional': 5,
+      'Concluded': 6
     };
-    return [...allDiaryItems].sort((a, b) => {
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const todayTime = now.getTime();
+
+    const upcoming = allDiaryItems.filter(item => {
+      const ts = parseDateValue(item.date);
+      return ts >= todayTime;
+    });
+
+    return [...upcoming].sort((a, b) => {
       const pA = statusPriority[a.status] || 99;
       const pB = statusPriority[b.status] || 99;
       if (pA !== pB) return pA - pB;
@@ -442,7 +452,7 @@ export default function PublicationsPage() {
       case 'dcm':
         return {
           title: "Democratic Competitiveness Map (DCM)",
-          description: "The Democratic Competitiveness Map (DCM) is AEO’s state-by-state outlook of the conditions under which political competition occurs in Nigeria. It uses verified evidence to show the extent to which Nigeria’s political and institutional environment allows political actors to freely organise, campaign, and compete for public offices under fair, lawful, and reasonably equal conditions. The documented conditions in a particular state and during a defined reporting period are summarised and represented in a colour map. The DCM does not score or rank the states. Therefore, the colour map is not a numerical score, a political label, or a permanent judgment on a state.",
+          description: "The DCM currently identifies three key signals: growing concerns around political mobilisation, emerging questions about equal access to campaign opportunities, and the importance of institutional responses to political disputes and incidents. Concerns around mobilisation are most evident in Benue, Delta and Enugu, while campaign-access issues have emerged in Anambra, Abia and Enugu.\n\nIn several Amber states, including Imo, Kaduna and Kogi, unresolved disputes and incidents require continued monitoring.\n\nOverall, the map shows an uneven political competition environment, with specific areas requiring attention as Nigeria moves towards the twenty twenty-seven elections.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'africa-election-watch':
@@ -500,9 +510,11 @@ export default function PublicationsPage() {
             <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-ink leading-tight">
               {pageInfo.title}
             </h1>
-            <p className="text-ink2 text-base mt-3 max-w-3xl leading-relaxed">
-              {pageInfo.description}
-            </p>
+            <div className="text-ink2 text-base mt-3 max-w-3xl leading-relaxed space-y-4">
+              {pageInfo.description.split('\n\n').map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
           </div>
 
           {/* Search Box */}
@@ -547,241 +559,127 @@ export default function PublicationsPage() {
             </div>
           )}
 
-          {/* Full DCM Brief Content */}
+          {/* Full DCM Document Content (New Uploaded Document) */}
           {pageMode === 'dcm' && (
             <div className="bg-white border border-line rounded-2xl p-6 sm:p-10 space-y-8 shadow-sm mb-12">
-              <div className="border-b border-line pb-6 space-y-2">
-                <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
-                  Executive Brief & Analysis
-                </span>
-                <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
-                  Nigeria’s Political Competition Environment From 1 July – 28 September 2026
-                </h2>
-              </div>
-
               <div className="space-y-6 text-ink2 text-base leading-relaxed">
-                <h3 className="font-display font-bold text-xl text-ink">Executive Brief</h3>
+                <h3 className="font-display font-bold text-2xl text-ink">What is DCM?</h3>
                 <p>
-                  As Nigeria moves into the pre-election phase of the 2027 general elections, political competition is beginning to take different forms across states. The Democratic Competitiveness Map (DCM) provides an evidence-based assessment of whether political environments are open, experiencing emerging pressure points, or facing more significant constraints.
+                  The Democratic Competitiveness Map (DCM) is the Athena Election Observatory’s evidence-based system for monitoring the conditions under which legitimate political actors compete across Nigeria’s thirty-six states and the Federal Capital Territory.
                 </p>
                 <p>
-                  The first DCM assessment identifies a political environment characterised by uneven competitive conditions rather than a single national pattern.
+                  A credible election requires more than a credible election day. Political actors must also have a practical opportunity to organise, communicate, move, assemble and compete before voters cast their ballots.
                 </p>
-                <p className="font-semibold text-ink">
-                  The strongest concerns emerging from the map are concentrated around:
-                </p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>political violence affecting party organisation and mobilisation;</li>
-                  <li>administrative decisions influencing campaign access;</li>
-                  <li>unresolved disputes over institutional neutrality.</li>
-                </ul>
-                <p className="font-semibold text-ink">
-                  Of the 37 assessment units (36 states and the FCT):
-                </p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li><strong className="text-ink">Three states</strong> are currently classified as Orange (Constrained): Benue, Delta and Enugu.</li>
-                  <li><strong className="text-ink">Seven states</strong> are classified as Amber (Emerging Concern): Abia, Anambra, Imo, Kaduna, Kogi, Osun and Rivers.</li>
-                  <li><strong className="text-ink">Twenty-seven states and the FCT</strong> remain Grey due to insufficient evidence for a responsible classification.</li>
-                </ul>
                 <p>
-                  The current picture does not indicate that political competition is uniformly restricted across Nigeria. Rather, it highlights specific areas where competitive conditions require closer monitoring as parties move towards full campaign mobilisation.
+                  Election integrity examines whether voting, counting and collation reflect the will of voters. The DCM examines the environment in which political actors compete, whether the political actors have a reasonably open and fair opportunity to compete for those votes.
+                </p>
+                <p>
+                  The DCM assesses whether political parties, candidates and other legitimate political actors can organise, communicate, mobilise, move, campaign, access relevant institutions and participate in political competition under conditions of political pluralism, institutional neutrality, legal certainty and practical fairness.
                 </p>
               </div>
 
               <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
-                <h3 className="font-display font-bold text-xl text-ink">Reading the Map: What the Classifications Mean</h3>
-                <p>
-                  The DCM colours should be understood as indicators of current political conditions, not permanent judgments about states.
+                <h3 className="font-display font-bold text-2xl text-ink">What does it track?</h3>
+                <p>The DCM tracks five dimensions of the political competition environment:</p>
+                <ul className="list-disc pl-6 space-y-3">
+                  <li><strong className="text-ink">Political Space — Freedom of Association and Movement:</strong> Whether political actors can organise, assemble, move and campaign without unjustified or discriminatory restrictions.</li>
+                  <li><strong className="text-ink">Freedom of Speech and Expression:</strong> Whether political actors can communicate, campaign and express political positions without materially restrictive interference.</li>
+                  <li><strong className="text-ink">Administrative and Regulatory Neutrality:</strong> Whether administrative, regulatory and legal powers are applied impartially and without creating discriminatory competitive effects.</li>
+                  <li><strong className="text-ink">Security Neutrality:</strong> Whether police and security institutions protect lawful political activity and enforce applicable rules impartially across political actors.</li>
+                  <li><strong className="text-ink">Political Intimidation and Violence:</strong> Whether threats, coercion or violence materially restrict political actors from participating in political competition.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
+                <h3 className="font-display font-bold text-2xl text-ink">What does it seek to achieve?</h3>
+                <p>The DCM is designed to:</p>
+                <ul className="list-disc pl-6 space-y-3">
+                  <li>Provide an evidence-based picture of political competition conditions across Nigeria before election day.</li>
+                  <li>Identify emerging restrictions and pressure points that may affect the ability of political actors to compete.</li>
+                  <li>Track changes in competitive conditions over time, including whether conditions improve, deteriorate or remain unchanged.</li>
+                  <li>Make the evidence behind each classification transparent and traceable, allowing users to examine the basis for a state’s classification.</li>
+                  <li>Highlight areas requiring closer attention from political actors, institutions, civil society, researchers and other stakeholders as elections approach.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
+                <h3 className="font-display font-bold text-2xl text-ink">What is it not?</h3>
+                <p>The DCM:</p>
+                <ul className="list-disc pl-6 space-y-3">
+                  <li>Does not rank states or political parties.</li>
+                  <li>Does not assign numerical scores, weights or composite values.</li>
+                  <li>Does not measure political popularity, vote share or predict electoral outcomes.</li>
+                  <li>Does not assess whether a court reached the correct legal conclusion.</li>
+                  <li>Does not treat allegations as established facts without sufficient verification.</li>
+                  <li>Is not a general democracy, governance or civil-liberties index.</li>
+                  <li>Does not equate limited reporting or lack of evidence with an open political environment.</li>
+                  <li>Does not replace AEO’s election-day monitoring or Post-Election Audit workstreams.</li>
+                </ul>
+                <p className="mt-4">
+                  Each colour represents the current state of evidence for a defined reporting period, rather than a permanent judgment about a state. Classifications can change as conditions change, restrictions are remedied, or stronger evidence becomes available.
                 </p>
+              </div>
+
+              <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
+                <h3 className="font-display font-bold text-2xl text-ink">How do the colours work?</h3>
                 <p>
-                  The purpose of the map is therefore not to label states permanently, but to track whether political conditions improve, deteriorate or remain unchanged.
+                  The DCM uses five colour classifications. The colours are evidence-based and time-bound; they are not permanent labels assigned to states.
                 </p>
 
-                {/* Responsive Classification Table */}
+                {/* Responsive Colours Table */}
                 <div className="overflow-x-auto my-6 border border-line rounded-xl">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr className="bg-paper border-b border-line text-ink font-mono text-xs uppercase">
+                        <th className="p-4 font-bold">Colour</th>
                         <th className="p-4 font-bold">Classification</th>
-                        <th className="p-4 font-bold">Meaning</th>
-                        <th className="p-4 font-bold">States Classified</th>
-                        <th className="p-4 font-bold">Number of States</th>
+                        <th className="p-4 font-bold">What it means</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line text-ink2">
                       <tr className="hover:bg-paper/50">
                         <td className="p-4 font-semibold text-ink flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-amber-500 inline-block shrink-0"></span>
-                          Orange — Constrained
+                          <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shrink-0"></span>
+                          Green
                         </td>
-                        <td className="p-4">Verified incidents or patterns are materially affecting political competition</td>
-                        <td className="p-4 font-medium text-ink">Benue, Delta, Enugu</td>
-                        <td className="p-4 font-mono">3</td>
+                        <td className="p-4 font-bold text-ink">Open</td>
+                        <td className="p-4">Affirmative and sufficiently broad evidence indicates broadly equal practical political access during the reporting period, with political actors able to organise, communicate, mobilise and campaign without verified material or discriminatory restrictions. No verified pattern of material restriction remains at the cut-off date. Absence of adverse reporting or insufficient evidence is not, by itself, grounds for a Green classification.</td>
                       </tr>
                       <tr className="hover:bg-paper/50">
                         <td className="p-4 font-semibold text-ink flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-amber-400 inline-block shrink-0"></span>
-                          Amber — Emerging Concern
+                          <span className="w-3.5 h-3.5 rounded-full bg-amber-400 inline-block shrink-0"></span>
+                          Amber
                         </td>
-                        <td className="p-4">Material concerns exist but do not yet demonstrate a sustained restrictive pattern</td>
-                        <td className="p-4 font-medium text-ink">Abia, Anambra, Imo, Kaduna, Kogi, Osun, Rivers</td>
-                        <td className="p-4 font-mono">7</td>
+                        <td className="p-4 font-bold text-ink">Emerging Concern</td>
+                        <td className="p-4">A material incident or early evidence of unequal treatment requires monitoring, but the evidence does not yet establish a sustained or substantial restrictive pattern.</td>
                       </tr>
                       <tr className="hover:bg-paper/50">
                         <td className="p-4 font-semibold text-ink flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-slate-300 inline-block shrink-0"></span>
-                          Grey — Insufficient Evidence
+                          <span className="w-3.5 h-3.5 rounded-full bg-orange-500 inline-block shrink-0"></span>
+                          Orange
                         </td>
-                        <td className="p-4">Evidence is insufficient to responsibly classify political competition conditions</td>
-                        <td className="p-4 font-medium text-ink">27 states and FCT</td>
-                        <td className="p-4 font-mono">28</td>
+                        <td className="p-4 font-bold text-ink">Constrained</td>
+                        <td className="p-4">Multiple verified incidents, an identifiable pattern, or an exceptionally serious and well-documented action materially restricts political competition.</td>
                       </tr>
                       <tr className="hover:bg-paper/50">
                         <td className="p-4 font-semibold text-ink flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shrink-0"></span>
-                          Green — Open
+                          <span className="w-3.5 h-3.5 rounded-full bg-red-600 inline-block shrink-0"></span>
+                          Red
                         </td>
-                        <td className="p-4">Evidence indicates broadly open competitive conditions</td>
-                        <td className="p-4 font-medium text-ink">None classified in this cycle</td>
-                        <td className="p-4 font-mono">0</td>
+                        <td className="p-4 font-bold text-ink">Severely Constrained</td>
+                        <td className="p-4">Serious, sustained or systemic restrictions substantially impair political competition, taking into account their severity, reach, institutional authority and consequences.</td>
                       </tr>
                       <tr className="hover:bg-paper/50">
                         <td className="p-4 font-semibold text-ink flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-red-600 inline-block shrink-0"></span>
-                          Red — Severely Constrained
+                          <span className="w-3.5 h-3.5 rounded-full bg-slate-300 inline-block shrink-0"></span>
+                          Grey
                         </td>
-                        <td className="p-4">Serious and sustained restrictions substantially affect competition</td>
-                        <td className="p-4 font-medium text-ink">None classified in this cycle</td>
-                        <td className="p-4 font-mono">0</td>
+                        <td className="p-4 font-bold text-ink">Insufficient Evidence</td>
+                        <td className="p-4">Available evidence is inadequate to make a responsible classification. Importantly, insufficient evidence does not mean that political competition is open.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-
-                <p>
-                  The current map shows an uneven political competition environment as Nigeria moves towards the 2027 general elections. The available evidence identifies concentrated concerns in ten states, particularly around political violence, campaign access and institutional neutrality. The large number of Grey classifications reflects an evidence gap rather than a conclusion that political competition is either open or restricted.
-                </p>
-              </div>
-
-              <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
-                <h3 className="font-display font-bold text-xl text-ink">Key Signals Emerging from the Current Map</h3>
-                
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h4 className="font-display font-bold text-lg text-ink">1. Political mobilisation is becoming the main area of concern</h4>
-                    <p>
-                      The strongest restrictive signals currently relate to the ability of political actors to organise, hold meetings and mobilise supporters.
-                    </p>
-                    <p className="font-bold text-ink">Benue, Delta and Enugu — Orange</p>
-                    <p>Across these states, the evidence points to incidents affecting political activity:</p>
-                    
-                    <div className="pl-4 border-l-2 border-brand-blue space-y-4 my-4">
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Benue</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>Peter Obi’s convoy was obstructed on 8 September 2026 while travelling to Yelwata, Guma Local Government Area, for a humanitarian visit.</li>
-                          <li>Police confirmed the incident and arrested 46 individuals.</li>
-                          <li>Allegations of political involvement remain disputed between Obi/NDC officials and the Benue State Government.</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Enugu</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>On 12 September 2026, armed men disrupted an NDC ward meeting in Nkanu West Local Government Area, reportedly injuring two people.</li>
-                          <li>On the same day, materials prepared for a PDP rally in the same area were destroyed.</li>
-                          <li>Police ordered a CID investigation, but responsibility for the incidents remains unresolved.</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Delta</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>Violence disrupted an APC stakeholders’ meeting in Effurun on 26 July.</li>
-                          <li>On 18 September, suspected attackers opened fire on an NDC/Obi-Kwankwaso mobilisation march in Warri, with one person reportedly critically injured.</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <p className="font-semibold text-ink">Why this matters for 2027:</p>
-                    <p>
-                      Before election day, parties must be able to build structures, hold meetings and mobilise supporters. The key question is whether these incidents remain isolated or develop into broader patterns affecting political participation.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t border-line/60">
-                    <h4 className="font-display font-bold text-lg text-ink">2. Campaign access is emerging as a new competitive issue</h4>
-                    <p>The map also identifies concerns beyond physical violence.</p>
-                    <p>In Anambra, Abia and Enugu, the issue relates to political advertising regulations.</p>
-                    <p>The concern is not simply that fees exist. The issue is whether campaign regulations create equal practical opportunities for different political actors.</p>
-                    <p className="font-semibold text-ink">Examples:</p>
-                    <ul className="list-disc pl-6 space-y-1.5">
-                      <li>Anambra introduced a presidential billboard fee of ₦50 million.</li>
-                      <li>Abia introduced a presidential billboard fee of ₦200 million.</li>
-                      <li>Enugu introduced a flat ₦150 million fee structure currently under legal challenge.</li>
-                    </ul>
-                    <p className="font-semibold text-ink">Why this matters for 2027:</p>
-                    <p>
-                      Campaign visibility and communication will become increasingly important as parties compete for voter attention. Regulatory decisions affecting campaign access will therefore require close monitoring.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t border-line/60">
-                    <h4 className="font-display font-bold text-lg text-ink">3. Institutional response will determine whether concerns escalate</h4>
-                    <p>Several Amber classifications reflect unresolved disputes rather than established patterns.</p>
-                    <p className="font-semibold text-ink">Examples:</p>
-
-                    <div className="pl-4 border-l-2 border-brand-blue space-y-4 my-4">
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Imo</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>The state restricted an opposition lawmaker’s billboard placement to six locations.</li>
-                          <li>The lawmaker obtained a Federal Capital Territory High Court injunction preventing enforcement of the restriction.</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Kaduna</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>Between 9 and 17 September, competing allegations emerged involving an ADC solidarity march, attacks on ADC supporters’ vehicles and counter-allegations involving APC-linked groups.</li>
-                          <li>Available evidence confirms political tension but does not yet independently establish responsibility.</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="font-bold text-ink mb-1">Kogi</h5>
-                        <ul className="list-disc pl-6 space-y-1.5">
-                          <li>On 15 September 2026, armed men disrupted an ADC ward meeting in Ejule-Alla, Ofu Local Government Area.</li>
-                          <li>At least one party member was reportedly injured.</li>
-                          <li>The identity and political affiliation of the attackers remain unresolved.</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <p className="font-semibold text-ink">Why this matters for 2027:</p>
-                    <p>
-                      The future direction of these states will depend not only on whether incidents occur, but on whether institutions respond effectively through investigation, enforcement and dispute resolution.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6 text-ink2 text-base leading-relaxed border-t border-line pt-8">
-                <h3 className="font-display font-bold text-xl text-ink">The DCM and the 2027 Election Environment</h3>
-                <p>
-                  The value of the DCM is that it moves analysis beyond election-day events.
-                </p>
-                <p className="font-semibold text-ink">Competitive elections depend on conditions that develop before voting begins:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>whether parties can organise;</li>
-                  <li>whether candidates can campaign;</li>
-                  <li>whether regulations are applied fairly;</li>
-                  <li>whether security institutions protect political activity;</li>
-                  <li>whether disputes are resolved through credible institutions.</li>
-                </ul>
-                <p>
-                  The current map therefore provides an early picture of where competitive conditions require attention as Nigeria approaches 2027.
-                </p>
               </div>
             </div>
           )}
