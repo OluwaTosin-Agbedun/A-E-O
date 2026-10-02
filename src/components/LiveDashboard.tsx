@@ -314,33 +314,40 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
           </>
         )}
 
-        {/* Homepage Preview Header */}
+        {/* Homepage Preview Map replacing Elections Observatory text */}
         {isPreview && (
-          <div className="border-b border-line pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
-                Athena Observatory
-              </span>
-              <h2 className="font-display font-bold text-3xl text-ink leading-tight mt-1">
-                Elections Observatory
-              </h2>
-              <p className="text-ink2 text-sm mt-2 max-w-2xl leading-relaxed">
-                Electoral database tracking both upcoming off-cycle preparations in real-time and post-election audits with localized polling outcomes.
-              </p>
+          <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
+                  Interactive Map Visualization
+                </span>
+                <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
+                  AEO Democratic Competitiveness Monitor (DCM) Map
+                </h2>
+              </div>
+              <div>
+                <a 
+                  href="/democratic-competitiveness-map"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState({}, '', '/democratic-competitiveness-map');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue hover:bg-brand-blue-dark text-white text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  View Full DCM Page
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
-            <div>
-              <a 
-                href="/elections"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.history.pushState({}, '', '/elections');
-                  window.dispatchEvent(new PopStateEvent('popstate'));
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-blue hover:bg-brand-blue-dark text-white text-sm font-bold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
-              >
-                View Full Observatory
-                <ArrowRight className="w-4 h-4" />
-              </a>
+            <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+              <iframe 
+                src="https://flo.uri.sh/visualisation/30399422/embed" 
+                title="AEO Democratic Competitiveness Monitor Map"
+                className="w-full h-[500px] sm:h-[650px] border-0"
+                sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups"
+              />
             </div>
           </div>
         )}

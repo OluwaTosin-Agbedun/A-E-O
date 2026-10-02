@@ -488,16 +488,45 @@ export default function PublicationsPage() {
     <div className="py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Breadcrumb */}
-          <div className="mb-8">
-            <button 
-              onClick={() => navigateTo('/')}
-              className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </button>
-          </div>
+          {/* Breadcrumb or DCM Map at top */}
+          {pageMode === 'dcm' ? (
+            <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm mb-12">
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono font-bold tracking-widest text-brand-blue uppercase">
+                  Interactive Map Visualization
+                </div>
+                <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
+                  AEO Democratic Competitiveness Monitor (DCM) Map
+                </h2>
+                <p className="text-ink2 text-sm leading-relaxed max-w-3xl">
+                  Explore the latest Democratic Competitiveness Monitor (DCM) update across Nigeria. The map provides a state-level overview of classifications based on traceable evidence gathered during the monitoring cycle.
+                </p>
+              </div>
+
+              <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+                <iframe 
+                  src="https://flo.uri.sh/visualisation/30399422/embed" 
+                  title="AEO Democratic Competitiveness Monitor Map"
+                  className="w-full h-[650px] sm:h-[800px] lg:h-[850px] border-0"
+                  sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups"
+                />
+              </div>
+
+              <div className="text-xs text-mut leading-relaxed italic border-t border-line pt-4">
+                Methodology note: Classifications are assigned only where traceable evidence was identified during the monitoring period. Grey indicates insufficient evidence within the review cycle and does not represent a positive or negative finding.
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8">
+              <button 
+                onClick={() => navigateTo('/')}
+                className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+              </button>
+            </div>
+          )}
 
           {/* Page Title / Header Block */}
           <div className="border-b border-line pb-8 mb-10">
@@ -528,36 +557,6 @@ export default function PublicationsPage() {
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-line focus:border-brand-blue focus:ring-1 focus:ring-brand-blue text-sm outline-none bg-white transition-all shadow-sm"
             />
           </div>
-
-          {/* AEO Democratic Competitiveness Monitor (DCM) Map Section */}
-          {pageMode === 'dcm' && (
-            <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm mb-12">
-              <div className="space-y-2">
-                <div className="text-[10px] font-mono font-bold tracking-widest text-brand-blue uppercase">
-                  Interactive Map Visualization
-                </div>
-                <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
-                  AEO Democratic Competitiveness Monitor (DCM) Map
-                </h2>
-                <p className="text-ink2 text-sm leading-relaxed max-w-3xl">
-                  Explore the latest Democratic Competitiveness Monitor (DCM) update across Nigeria. The map provides a state-level overview of classifications based on traceable evidence gathered during the monitoring cycle.
-                </p>
-              </div>
-
-              <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
-                <iframe 
-                  src="https://flo.uri.sh/visualisation/30399422/embed" 
-                  title="AEO Democratic Competitiveness Monitor Map"
-                  className="w-full h-[650px] sm:h-[800px] lg:h-[850px] border-0"
-                  sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups"
-                />
-              </div>
-
-              <div className="text-xs text-mut leading-relaxed italic border-t border-line pt-4">
-                Methodology note: Classifications are assigned only where traceable evidence was identified during the monitoring period. Grey indicates insufficient evidence within the review cycle and does not represent a positive or negative finding.
-              </div>
-            </div>
-          )}
 
           {/* Full DCM Document Content (New Uploaded Document) */}
           {pageMode === 'dcm' && (
