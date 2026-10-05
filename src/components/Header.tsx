@@ -70,11 +70,19 @@ export default function Header() {
               </a>
 
               <a 
-                href="/ehii" 
-                onClick={(e) => { e.preventDefault(); navigateTo('/ehii'); }}
+                href="/post-election-audits" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
                 className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
               >
-                EHII Index
+                Post-Election Audits
+              </a>
+
+              <a 
+                href="/publications/africa-election-watch" 
+                onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
+                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
+              >
+                Africa Election Watch
               </a>
 
               <a 
@@ -122,17 +130,6 @@ export default function Header() {
                     </a>
 
                     <a 
-                      href="/post-election-audits" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
-                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
-                    >
-                      <FileText className="w-6 h-6 text-brand-purple mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="block text-base font-bold text-brand-purple leading-snug">Post-election audit reports</span>
-                      </div>
-                    </a>
-
-                    <a 
                       href="/political-landscape-monitor" 
                       onClick={(e) => { e.preventDefault(); navigateTo('/political-landscape-monitor'); }}
                       className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
@@ -140,17 +137,6 @@ export default function Header() {
                       <BookOpen className="w-6 h-6 text-brand-blue mt-1 flex-shrink-0" />
                       <div>
                         <span className="block text-base font-bold text-brand-blue leading-snug">Political landscape monitor</span>
-                      </div>
-                    </a>
-
-                    <a 
-                      href="/publications/africa-election-watch" 
-                      onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
-                      className="flex items-start gap-4 p-3.5 rounded-lg hover:bg-paper transition-all"
-                    >
-                      <Globe className="w-6 h-6 text-teal-600 mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="block text-base font-bold text-teal-600 leading-snug">Africa Election Watch</span>
                       </div>
                     </a>
 
@@ -220,11 +206,18 @@ export default function Header() {
               Elections
             </a>
             <a 
-              href="/ehii" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/ehii'); }}
+              href="/post-election-audits" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
-              EHII Index
+              Post-Election Audits
+            </a>
+            <a 
+              href="/publications/africa-election-watch" 
+              onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
+            >
+              Africa Election Watch
             </a>
             <a 
               href="/diary" 
@@ -251,25 +244,11 @@ export default function Header() {
               Reports and Briefs
             </a>
             <a 
-              href="/post-election-audits" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
-            >
-              Post-election audit reports
-            </a>
-            <a 
               href="/political-landscape-monitor" 
               onClick={(e) => { e.preventDefault(); navigateTo('/political-landscape-monitor'); }}
               className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
             >
               Political landscape monitor
-            </a>
-            <a 
-              href="/publications/africa-election-watch" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/publications/africa-election-watch'); }}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-navy-dark pl-6"
-            >
-              Africa Election Watch
             </a>
             <a 
               href="/aeo-weekly-digest" 

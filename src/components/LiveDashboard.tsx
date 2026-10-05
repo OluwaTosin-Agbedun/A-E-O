@@ -341,6 +341,11 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                 </a>
               </div>
             </div>
+
+            <p className="text-ink2 text-sm sm:text-base leading-relaxed max-w-4xl">
+              Nigeria’s political competition environment remains uneven, with concerns concentrated around political mobilisation, campaign access and institutional neutrality as the 2027 elections approach.
+            </p>
+
             <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
               <iframe 
                 src="https://flo.uri.sh/visualisation/30399422/embed" 

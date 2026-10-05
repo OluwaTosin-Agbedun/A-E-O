@@ -452,7 +452,7 @@ export default function PublicationsPage() {
       case 'dcm':
         return {
           title: "Democratic Competitiveness Map (DCM)",
-          description: "The DCM currently identifies three key signals: growing concerns around political mobilisation, emerging questions about equal access to campaign opportunities, and the importance of institutional responses to political disputes and incidents. Concerns around mobilisation are most evident in Benue, Delta and Enugu, while campaign-access issues have emerged in Anambra, Abia and Enugu.\n\nIn several Amber states, including Imo, Kaduna and Kogi, unresolved disputes and incidents require continued monitoring.\n\nOverall, the map shows an uneven political competition environment, with specific areas requiring attention as Nigeria moves towards the twenty twenty-seven elections.",
+          description: "*Period: 1st July – 30th September 2026*\n\nNigeria’s political competition environment remains uneven as the 2027 elections approach.\n\nConcerns around political mobilisation are most evident in Benue, Delta and Enugu, while campaign-access issues have emerged in Anambra, Abia and Enugu. In Imo, Kaduna and Kogi, unresolved disputes and incidents warrant continued monitoring.\n\nThe findings provide an early picture of changing political competition conditions as Nigeria approaches the 2027 general elections.\n\nAcross these states, the main signals relate to political mobilisation, campaign access and institutional neutrality.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'africa-election-watch':
@@ -488,8 +488,44 @@ export default function PublicationsPage() {
     <div className="py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Breadcrumb or DCM Map at top */}
-          {pageMode === 'dcm' ? (
+          {/* Breadcrumb */}
+          <div className="mb-8">
+            <button 
+              onClick={() => navigateTo('/')}
+              className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </button>
+          </div>
+
+          {/* Page Title / Header Block */}
+          <div className="border-b border-line pb-8 mb-10">
+            <div className="flex items-center gap-3.5 mb-2">
+              {pageInfo.icon}
+              <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
+                Athena Observatory
+              </span>
+            </div>
+            <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-ink leading-tight">
+              {pageInfo.title}
+            </h1>
+            <div className="text-ink2 text-base mt-3 max-w-3xl leading-relaxed space-y-4">
+              {pageInfo.description.split('\n\n').map((para, i) => {
+                if (para.startsWith('*') && para.endsWith('*')) {
+                  return (
+                    <p key={i} className="font-mono text-sm sm:text-base font-bold tracking-wider text-brand-blue uppercase bg-brand-blue/5 border border-brand-blue/20 inline-block px-3.5 py-1.5 rounded-md">
+                      {para.slice(1, -1)}
+                    </p>
+                  );
+                }
+                return <p key={i}>{para}</p>;
+              })}
+            </div>
+          </div>
+
+          {/* AEO Democratic Competitiveness Monitor (DCM) Map Section */}
+          {pageMode === 'dcm' && (
             <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm mb-12">
               <div className="space-y-2">
                 <div className="text-[10px] font-mono font-bold tracking-widest text-brand-blue uppercase">
@@ -516,35 +552,7 @@ export default function PublicationsPage() {
                 Methodology note: Classifications are assigned only where traceable evidence was identified during the monitoring period. Grey indicates insufficient evidence within the review cycle and does not represent a positive or negative finding.
               </div>
             </div>
-          ) : (
-            <div className="mb-8">
-              <button 
-                onClick={() => navigateTo('/')}
-                className="inline-flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer uppercase"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </button>
-            </div>
           )}
-
-          {/* Page Title / Header Block */}
-          <div className="border-b border-line pb-8 mb-10">
-            <div className="flex items-center gap-3.5 mb-2">
-              {pageInfo.icon}
-              <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
-                Athena Observatory
-              </span>
-            </div>
-            <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-ink leading-tight">
-              {pageInfo.title}
-            </h1>
-            <div className="text-ink2 text-base mt-3 max-w-3xl leading-relaxed space-y-4">
-              {pageInfo.description.split('\n\n').map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
-            </div>
-          </div>
 
           {/* Search Box */}
           <div className="relative max-w-md mb-8">
