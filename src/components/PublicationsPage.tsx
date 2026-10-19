@@ -514,7 +514,7 @@ export default function PublicationsPage() {
               {pageInfo.description.split('\n\n').map((para, i) => {
                 if (para.startsWith('*') && para.endsWith('*')) {
                   return (
-                    <p key={i} className="font-mono text-sm sm:text-base font-bold tracking-wider text-brand-blue uppercase bg-brand-blue/5 border border-brand-blue/20 inline-block px-3.5 py-1.5 rounded-md">
+                    <p key={i} className="font-mono text-xs font-bold tracking-wider text-brand-blue uppercase bg-brand-blue/5 border border-brand-blue/20 inline-block px-3 py-1 rounded-md">
                       {para.slice(1, -1)}
                     </p>
                   );
@@ -867,7 +867,7 @@ export default function PublicationsPage() {
                 <div className="space-y-6">
                   {filteredPublications.map((pub) => (
                     <div 
-                      key={pub.id}
+                      key={`${pub.type}-${pub.id}`}
                       onClick={() => handleItemClick(pub)}
                       className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-brand-blue transition-all flex flex-col md:flex-row items-stretch cursor-pointer group"
                     >

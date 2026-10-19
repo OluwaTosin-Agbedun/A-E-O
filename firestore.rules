@@ -1,9 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global Safety Net - default deny
+    // Global Safety Net - allow read for site content, default deny write
     match /{document=**} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if false;
     }
 
     // Reusable global helper functions
@@ -37,6 +38,17 @@ service cloud.firestore {
 
     // CMS documents collection matching (for site content, uploads, hero, stats, reports, logos, states)
     match /cms/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Publications and reports collections
+    match /publications/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /reports/{document=**} {
       allow read: if true;
       allow write: if true;
     }

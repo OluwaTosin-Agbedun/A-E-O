@@ -4,6 +4,7 @@ import {
   Calendar, ShieldCheck, X, ChevronRight, CreditCard
 } from 'lucide-react';
 import { PartyLogo } from './PartyLogo';
+import { FlourishMap } from './FlourishMap';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useCMS } from '../context/CMSContext';
@@ -347,12 +348,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
             </p>
 
             <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
-              <iframe 
-                src="https://flo.uri.sh/visualisation/30399422/embed" 
-                title="AEO Democratic Competitiveness Monitor Map"
-                className="w-full h-[500px] sm:h-[650px] border-0"
-                sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups"
-              />
+              <FlourishMap id="30596006" />
             </div>
           </div>
         )}

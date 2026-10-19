@@ -98,6 +98,10 @@ export function removeUndefined(obj: any): any {
  */
 export async function sanitizeAndSyncItems(docName: string, items: any[]): Promise<void> {
   if (!Array.isArray(items)) return;
+  if (docName === 'reports' && items.length === 0) {
+    console.warn(`[Safety Guard] Blocked attempt to overwrite cms/${docName} with empty array.`);
+    return;
+  }
 
   const sanitizedItems = [];
   for (const item of items) {

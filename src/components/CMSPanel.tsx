@@ -2,7 +2,8 @@ import { useState, useEffect, FormEvent } from 'react';
 import { 
   X, Database, Edit3, Trash2, Plus, Save, RotateCcw, 
   BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight, LogOut, Bell, Search, Loader2,
-  ChevronUp, ChevronDown, FileSpreadsheet, UploadCloud, Download, Table, PlusCircle, UserPlus, Check, AlertCircle, Sparkles
+  ChevronUp, ChevronDown, FileSpreadsheet, UploadCloud, Download, Table, PlusCircle, UserPlus, Check, AlertCircle, Sparkles,
+  RefreshCw, ShieldCheck
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
@@ -152,7 +153,8 @@ export default function CMSPanel({
     saveReport, deleteReport, saveDiaryItem, deleteDiaryItem, saveEvent, deleteEvent,
     saveAnnouncement, deleteAnnouncement,
     saveTeamMember, deleteTeamMember, saveWeeklyIssue, deleteWeeklyIssue,
-    saveHeroConfig, saveStatsConfig, resetAllData
+    saveHeroConfig, saveStatsConfig, resetAllData,
+    restorePublicationsBackup, refreshData, exportAllDataJson, importDataJson
   } = useCMS();
 
   const [activeTab, setActiveTab] = useState<TabType>('publications');
@@ -640,11 +642,68 @@ export default function CMSPanel({
     };
   }, []);
 
+  const handleRefreshData = async () => {
+    try {
+      await refreshData();
+      showStatus('All collections refreshed from cloud database.');
+    } catch {
+      showStatus('Error refreshing data.', 'error');
+    }
+  };
+
+  const handleRestorePublications = () => {
+    triggerConfirm('Restore publications from database backup? This will restore any missing reports, briefs, weekly digests, and associated documents.', async () => {
+      const res = await restorePublicationsBackup();
+      if (res.success) {
+        showStatus(`Restored ${res.count} publications successfully.`);
+      } else {
+        showStatus('Failed to restore publications.', 'error');
+      }
+    });
+  };
+
+  const handleExportData = () => {
+    try {
+      const json = exportAllDataJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aeo-cms-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showStatus('Database JSON backup downloaded.');
+    } catch {
+      showStatus('Failed to export backup.', 'error');
+    }
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        const res = await importDataJson(content);
+        if (res.success) {
+          showStatus(res.message);
+        } else {
+          showStatus(res.message, 'error');
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const handleResetData = () => {
-    triggerConfirm('Are you sure you want to reset all site content back to the default illustrative templates? Any custom entries will be lost.', () => {
+    triggerConfirm('Reset general templates (diaries, events, team) to default? Your publications will remain safe and will NOT be deleted.', () => {
       resetAllData();
       setEditingId(null);
-      showStatus('All database items restored to original defaults.');
+      showStatus('General templates refreshed (publications preserved).');
     });
   };
 
@@ -1163,15 +1222,42 @@ export default function CMSPanel({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleResetData}
-              title="Factory Reset All Fields"
-              className="p-1.5 hover:bg-white/10 rounded-lg text-amber-300 hover:text-amber-400 transition-colors flex items-center gap-1 text-xs font-mono font-bold cursor-pointer"
+              onClick={handleRefreshData}
+              title="Refresh all collections from Firestore"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-blue-200 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-mono font-medium cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Data</span>
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
+
+            <button
+              onClick={handleRestorePublications}
+              title="Restore Publications from Database Backup"
+              className="p-1.5 hover:bg-emerald-500/20 rounded-lg text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 transition-colors flex items-center gap-1.5 text-xs font-mono font-medium cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Restore Backup</span>
+            </button>
+
+            <button
+              onClick={handleExportData}
+              title="Download full JSON backup of database to your computer"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-mono cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export JSON</span>
+            </button>
+
+            <label
+              title="Import JSON backup from computer"
+              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-mono cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Import JSON</span>
+              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+            </label>
             {isStandalone ? (
               <div className="flex items-center gap-2">
                 <button 
@@ -2050,7 +2136,7 @@ export default function CMSPanel({
                     }
 
                     return filtered.map(item => (
-                      <div key={item.id} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs hover:border-slate-300 transition-colors">
+                      <div key={`${item.unifiedType}-${item.id}`} className="bg-paper border border-line rounded-xl p-3.5 flex items-start justify-between gap-3 shadow-xs hover:border-slate-300 transition-colors">
                         <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded border ${item.tagColor}`}>

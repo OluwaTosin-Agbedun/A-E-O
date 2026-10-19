@@ -1,4 +1,5 @@
 import { Mail, Globe, MapPin } from 'lucide-react';
+import { AthenaLogo } from './AthenaLogo';
 
 export default function Footer() {
   const navigateTo = (to: string) => {
@@ -21,15 +22,18 @@ export default function Footer() {
           {/* Column 1: Observatory description */}
           <div className="lg:col-span-4 space-y-4">
             <div 
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-3 cursor-pointer group"
               onClick={() => navigateTo('/')}
             >
-              <div className="w-8 h-8 rounded bg-brand-blue flex items-center justify-center font-display font-bold text-base text-white group-hover:scale-105 transition-transform">
-                A
+              <AthenaLogo className="w-10 h-10" dark={true} />
+              <div className="flex flex-col">
+                <span className="font-display font-bold text-sm text-white tracking-tight group-hover:text-brand-blue transition-colors leading-tight">
+                  ATHENA ELECTION
+                </span>
+                <span className="font-display font-semibold text-[10px] tracking-[0.2em] text-brand-blue uppercase leading-tight mt-0.5">
+                  OBSERVATORY
+                </span>
               </div>
-              <span className="font-display font-bold text-sm text-white uppercase tracking-wider group-hover:text-brand-blue transition-colors">
-                Athena Election Observatory
-              </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
               An independent, non-partisan research initiatives platform auditing election data benchmarks and measuring overall democratic health indicators across Nigeria and regional partner nations.

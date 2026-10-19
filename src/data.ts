@@ -1,7 +1,156 @@
 import { Report, DiaryItem, EventItem, TeamMember, WeeklyIssue, AnnouncementItem } from './types';
 import { sortItemsByDate } from './utils/date';
 
-export const REPORTS: Report[] = [];
+export const REPORTS: Report[] = [
+  {
+    id: 'custom-xl8sg',
+    title: 'Africa Election Watch: Morocco Votes 2026',
+    tag: 'AFRICA ELECTION WATCH',
+    tagType: 'africa-election-watch',
+    date: '23 September 2026',
+    author: 'Athena Election Observatory',
+    summary: 'Comprehensive observation analysis of the Kingdom of Morocco House of Representatives and regional council elections, evaluating proportional representation formulas, biometric accreditation, and electoral health.',
+    size: '2.4 MB',
+    readingTime: '6 min read',
+    pdfUrl: 'ref:pdf_custom-xl8sg',
+    sections: [
+      {
+        title: 'Executive Summary',
+        content: 'On 23 September 2026, the Kingdom of Morocco conducted parliamentary elections for the 395 seats of the House of Representatives alongside 12 regional council assemblies. Athena Election Observatory deployed regional monitors to evaluate party list competitiveness, voting station compliance, and collation integrity across Rabat and provincial divisions.'
+      },
+      {
+        title: 'Key Findings & Oversight Metrics',
+        content: 'Our observation desk tracked voter participation rates across urban centers and rural provinces, biometric voter verification speed, and the application of regional quotient rules. Collation procedures exhibited high administrative discipline with verifiable returns.'
+      }
+    ],
+    slug: 'africa-election-watch-morocco-votes-2026',
+    createdAt: 1728901212022
+  },
+  {
+    id: 'custom-64kyo',
+    title: 'The AEO Read: Monitoring Nigeria\'s Democratic and Electoral Landscape',
+    tag: 'POLITICAL LANDSCAPE MONITOR',
+    tagType: 'tech',
+    date: '15 October 2026',
+    author: 'AEO Forensics & Tech Desk',
+    summary: 'Monthly evidence-based assessment tracking democratic health, institutional autonomy, technology uptime, and electoral administration across Nigeria\'s 36 states and the FCT.',
+    size: '1.8 MB',
+    readingTime: '8 min read',
+    pdfUrl: 'ref:pdf_custom-64kyo',
+    sections: [
+      {
+        title: 'The Five Permanent Pillars',
+        content: 'The AEO Read provides a monthly evidence-based assessment across five permanent pillars: Biometric Accreditation Uptime, Form EC8A Reconciliation Rates, Collation Transparency, Electoral Dispute Adjudication, and Political Climate Health.'
+      },
+      {
+        title: 'Sub-National Preparation Scores',
+        content: 'State-by-state evaluation of BVAS readiness, logistical staging, and observer deployment accreditation across forthcoming election territories.'
+      }
+    ],
+    slug: 'the-aeo-read-monitoring-nigerias-democratic-and-electoral-landscape',
+    createdAt: 1729006301964
+  },
+  {
+    id: 'custom-19oz4',
+    title: 'Sub-National Electoral Integrity & Technology Assessment',
+    tag: 'REPORTS & BRIEFS',
+    tagType: 'brief',
+    date: '14 October 2026',
+    author: 'Jane Azubuike, Chinedu C.',
+    summary: 'A forensic study on institutional autonomy, field observer deployment protocols, and electronic result transmission integrity in sub-national elections.',
+    size: '1.2 MB',
+    readingTime: '7 min read',
+    pdfUrl: 'ref:pdf_custom-19oz4',
+    image: 'ref:img_custom-19oz4',
+    sections: [
+      {
+        title: 'Executive Overview',
+        content: 'This technical brief presents an empirical analysis of electoral integrity safeguards at the state and LGA levels. Focusing on polling unit accreditation workflows, transmission latency, and primary source verification.'
+      },
+      {
+        title: 'Procedural Recommendations',
+        content: 'Key recommendations include mandatory dual-channel verification for EC8A upload certificates, proactive machine diagnostic checks 48 hours prior to poll opening, and open observer collation feeds.'
+      }
+    ],
+    slug: 'sub-national-electoral-integrity-technology-assessment',
+    createdAt: 1728901240259
+  },
+  {
+    id: 'custom-42rbo',
+    title: 'Forensic Election Audit & Result Reconciliation Report',
+    tag: 'ELECTION AUDIT',
+    tagType: 'analysis',
+    date: '14 October 2026',
+    author: 'Athena Forensics & Legal Unit',
+    summary: 'In-depth forensic audit cross-matching BVAS accreditation logs with physical Form EC8A certificates, examining discrepancy indices and collation integrity.',
+    size: '14.8 MB',
+    readingTime: '12 min read',
+    pdfUrl: 'ref:pdf_custom-42rbo',
+    image: 'ref:img_custom-42rbo',
+    sections: [
+      {
+        title: 'Methodology & Primary Source Scope',
+        content: 'Athena Election Observatory deployed trained field observers to audit polling units, cross-referencing biometric logs against uploaded Form EC8A sheets to calculate the Electoral Health & Integrity Index (EHII).'
+      },
+      {
+        title: 'Accreditation vs Upload Discrepancies',
+        content: 'Quantitative analysis reveals patterns in transmission timing, server upload timestamps, and manual collation overrides across monitored polling divisions.'
+      }
+    ],
+    slug: 'forensic-election-audit-result-reconciliation-report',
+    createdAt: 1728901245388
+  },
+  {
+    id: 'custom-uf3v9',
+    title: 'The Imperative of Competitive Politics: Multiparty Dynamics in Nigeria',
+    tag: 'POLITICAL LANDSCAPE MONITOR',
+    tagType: 'tech',
+    date: '14 October 2026',
+    author: 'AEO Policy & Governance Research',
+    summary: 'An empirical exploration of political competition, institutional guardrails, and democratic competitiveness indices across sub-national party chapters.',
+    size: '2.1 MB',
+    readingTime: '9 min read',
+    pdfUrl: 'ref:pdf_custom-uf3v9',
+    image: 'ref:img_custom-uf3v9',
+    sections: [
+      {
+        title: 'Democratic Competitiveness Landscape',
+        content: 'Analysis of party fragmentation, incumbency advantages, and voter mobilization patterns in recent Nigerian electoral cycles.'
+      },
+      {
+        title: 'Institutional Guardrails & Regulatory Oversight',
+        content: 'Assessing the role of electoral management bodies and judicial oversight in maintaining competitive balance and transparent electoral contests.'
+      }
+    ],
+    slug: 'the-imperative-of-competitive-politics-multiparty-dynamics',
+    createdAt: 1728901248780
+  },
+  {
+    id: 'custom-t1mcu',
+    title: 'Field Observer Accreditation & Election Administration Protocol',
+    tag: 'REPORTS & BRIEFS',
+    tagType: 'brief',
+    date: '14 October 2026',
+    author: 'Athena Field Operations Directorate',
+    summary: 'Operational review of observer deployment methodologies, security coordination protocols, and primary evidence collection standards.',
+    size: '1.5 MB',
+    readingTime: '5 min read',
+    pdfUrl: 'ref:pdf_custom-t1mcu',
+    image: 'ref:img_custom-t1mcu',
+    sections: [
+      {
+        title: 'Standardized Observer Protocols',
+        content: 'Guidelines for deployed field observers documenting opening procedures, queue management, biometric accreditation timing, and vote counting.'
+      },
+      {
+        title: 'Evidence Verification Pipeline',
+        content: 'Protocols for high-resolution EC8A documentation, tamper-evident physical collation reporting, and incident response dispatch.'
+      }
+    ],
+    slug: 'field-observer-accreditation-election-administration-protocol',
+    createdAt: 1728901248436
+  }
+];
 
 export const DIARY_NATIONAL: DiaryItem[] = [
   {
@@ -1509,6 +1658,33 @@ export const TEAM: TeamMember[] = [
   }
 ];
 
-export const WEEKLY_ISSUES: WeeklyIssue[] = [];
+export const WEEKLY_ISSUES: WeeklyIssue[] = [
+  {
+    id: 'weekly-custom-64kyo',
+    title: 'The AEO Read: Monitoring Nigeria\'s Democratic and Electoral Landscape',
+    tag: 'AEO WEEKLY DIGEST',
+    date: '15 October 2026',
+    summary: 'Monthly evidence-based assessment across five permanent pillars: Accreditation, EC8A Reconciliation, Collation, Dispute Adjudication, and Political Climate.',
+    linkText: 'Read Issue',
+    author: 'Athena Intelligence Desk',
+    pdfUrl: 'ref:pdf_custom-64kyo',
+    slug: 'the-aeo-read-monitoring-nigerias-democratic-and-electoral-landscape',
+    createdAt: 1729006301964
+  }
+];
 
-export const ANNOUNCEMENTS: AnnouncementItem[] = [];
+export const ANNOUNCEMENTS: AnnouncementItem[] = [
+  {
+    id: 'ann-1',
+    title: 'Call for Independent Field Observers: Osun State Governorship Election',
+    category: 'alert',
+    month: 'JUL',
+    day: '18',
+    date: '18 July 2026',
+    summary: 'Accreditation portal opens for 1,200 non-partisan field observers across all 30 LGAs in Osun State.',
+    content: 'Athena Election Observatory invites applications from qualified citizen observers to participate in our verified field deployment for the forthcoming Osun State election.',
+    slug: 'call-for-independent-field-observers-osun-state-governorship',
+    createdAt: 1728901200000
+  }
+];
+

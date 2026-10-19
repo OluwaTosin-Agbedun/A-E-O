@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Sparkles, BookOpen, Clock, AlertCircle } from 'lucide-react';
 import SEO from './SEO';
 import { useCMS } from '../context/CMSContext';
 import { triggerPdfDownload } from './PublicationsPage';
@@ -117,6 +117,16 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
                 }`}>
                   {report.tagType === 'africa-election-watch' ? (report.tag || 'Africa Election Watch') : report.tag}
                 </span>
+                {report.status === 'archived' && (
+                  <span className="text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase bg-slate-100 text-slate-700 border border-slate-300">
+                    Archived
+                  </span>
+                )}
+                {report.status === 'current' && (
+                  <span className="text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Current
+                  </span>
+                )}
               </div>
 
               <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink leading-tight tracking-tight">
@@ -157,6 +167,21 @@ export default function ReportReader({ reportId, onClose }: ReportReaderProps) {
             )}
           </div>
         </div>
+
+        {/* Archived Document Notification */}
+        {report.status === 'archived' && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 text-xs sm:text-sm flex items-start gap-3 mb-8">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider font-mono text-xs text-amber-800">
+                Archived Publication
+              </p>
+              <p className="mt-0.5">
+                This is a historical DCM update for the reporting period <strong className="font-semibold">{report.reportingPeriod || report.date}</strong>. Historical publications are retained in the observatory archive for comparative research.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Dynamic Section Contents */}
         <div className="space-y-8 text-ink text-sm sm:text-base leading-relaxed">

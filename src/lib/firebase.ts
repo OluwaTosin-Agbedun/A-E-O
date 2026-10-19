@@ -12,7 +12,7 @@ const firebaseConfig = {
   appId: firebaseAppletConfig.appId || "1:762919391051:web:6b72f621e192c7b8a0e2ce"
 };
 
-const databaseId = firebaseAppletConfig.firestoreDatabaseId || "ai-studio-athenaelectionob-f9fd98b2-b5fa-4c58-95e8-8d4d87819146";
+const databaseId = firebaseAppletConfig.firestoreDatabaseId || "aeo19oct-clone";
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

@@ -29,6 +29,8 @@ export interface Report {
   createdAt?: number;
   reads?: number;
   downloads?: number;
+  status?: 'current' | 'archived' | string;
+  reportingPeriod?: string;
 }
 
 export interface CandidateParticipant {

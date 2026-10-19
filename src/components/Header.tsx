@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Menu, X, ChevronDown, Mail, BookOpen, ShieldAlert, FileText, Bell, Award, Globe } from 'lucide-react';
+import { AthenaLogo } from './AthenaLogo';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,15 +49,18 @@ export default function Header() {
           <div className="flex items-center justify-between h-18">
             {/* Logo/Brand */}
             <div 
-              className="flex items-center gap-3 cursor-pointer" 
+              className="flex items-center gap-3 cursor-pointer group" 
               onClick={handleBrandClick}
             >
-              <div className="w-9 h-9 rounded bg-brand-blue flex items-center justify-center font-display font-bold text-lg text-white tracking-tighter">
-                A
+              <AthenaLogo className="w-12 h-12" dark={true} />
+              <div className="flex flex-col">
+                <span className="font-display font-bold text-xs sm:text-sm md:text-base tracking-tight text-white group-hover:text-brand-blue transition-colors leading-tight">
+                  ATHENA ELECTION
+                </span>
+                <span className="font-display font-semibold text-[10px] sm:text-xs tracking-[0.22em] text-brand-blue uppercase leading-tight mt-0.5">
+                  OBSERVATORY
+                </span>
               </div>
-              <span className="font-display font-bold text-sm sm:text-base md:text-lg tracking-tight hover:text-brand-blue transition-colors">
-                ATHENA ELECTION OBSERVATORY
-              </span>
             </div>
 
             {/* Desktop Navigation */}
