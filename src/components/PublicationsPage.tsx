@@ -5,6 +5,7 @@ import { formatReportDate, parseDateValue, sortItemsByDate } from '../utils/date
 import { getItemSlug } from '../utils/url';
 import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
+import { FlourishMap } from './FlourishMap';
 
 export const triggerPdfDownload = (title: string, summary: string, author: string, date: string, pdfUrl?: string, customContent?: string) => {
   if (pdfUrl) {
@@ -452,7 +453,7 @@ export default function PublicationsPage() {
       case 'dcm':
         return {
           title: "Democratic Competitiveness Map (DCM)",
-          description: "*Period: 1st July – 30th September 2026*\n\nNigeria’s political competition environment remains uneven as the 2027 elections approach.\n\nConcerns around political mobilisation are most evident in Benue, Delta and Enugu, while campaign-access issues have emerged in Anambra, Abia and Enugu. In Imo, Kaduna and Kogi, unresolved disputes and incidents warrant continued monitoring.\n\nThe findings provide an early picture of changing political competition conditions as Nigeria approaches the 2027 general elections.\n\nAcross these states, the main signals relate to political mobilisation, campaign access and institutional neutrality.",
+          description: "*Reporting Period: 1st October 2026 – 28th September 2026*\n\nThree months before the 2027 general elections, the space for opposition campaigning is narrowing in a growing number of states. In the first half of October, five more states showed material concerns, and violence against opposition events and party offices spread beyond the South-East.\n\nThis brief sets out where conditions are deteriorating, why it matters, and what each institution can do before campaigns intensify.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'africa-election-watch':
@@ -540,12 +541,7 @@ export default function PublicationsPage() {
               </div>
 
               <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
-                <iframe 
-                  src="https://flo.uri.sh/visualisation/30399422/embed" 
-                  title="AEO Democratic Competitiveness Monitor Map"
-                  className="w-full h-[650px] sm:h-[800px] lg:h-[850px] border-0"
-                  sandbox="allow-same-origin allow-scripts allow-top-navigation allow-popups"
-                />
+                <FlourishMap id="30596006" title="AEO Democratic Competitiveness Monitor Map" />
               </div>
 
               <div className="text-xs text-mut leading-relaxed italic border-t border-line pt-4">

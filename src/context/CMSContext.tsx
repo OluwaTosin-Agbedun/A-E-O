@@ -298,14 +298,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
 
             const finalVal = transform ? transform(raw as T) : (raw as T);
             if (Array.isArray(finalVal)) {
-              setter(localVal => {
-                // If remote has data, apply it. If remote has 0 items but local has items,
-                // do not wipe unless explicitly confirmed.
-                if (finalVal.length === 0 && Array.isArray(localVal) && localVal.length > 0) {
-                  return localVal;
-                }
-                return applyRemoteCollection(localVal as any, finalVal as any) as unknown as T;
-              });
+              setter(localVal => applyRemoteCollection(localVal as any, finalVal as any) as unknown as T);
             } else {
               setter(finalVal);
             }

@@ -1673,18 +1673,5 @@ export const WEEKLY_ISSUES: WeeklyIssue[] = [
   }
 ];
 
-export const ANNOUNCEMENTS: AnnouncementItem[] = [
-  {
-    id: 'ann-1',
-    title: 'Call for Independent Field Observers: Osun State Governorship Election',
-    category: 'alert',
-    month: 'JUL',
-    day: '18',
-    date: '18 July 2026',
-    summary: 'Accreditation portal opens for 1,200 non-partisan field observers across all 30 LGAs in Osun State.',
-    content: 'Athena Election Observatory invites applications from qualified citizen observers to participate in our verified field deployment for the forthcoming Osun State election.',
-    slug: 'call-for-independent-field-observers-osun-state-governorship',
-    createdAt: 1728901200000
-  }
-];
+export const ANNOUNCEMENTS: AnnouncementItem[] = [];
 
