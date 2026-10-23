@@ -30,6 +30,8 @@ import EventReader from './components/EventReader';
 import AnnouncementReader from './components/AnnouncementReader';
 import ElectionDetails from './components/ElectionDetails';
 import PastElectionsArchive from './components/PastElectionsArchive';
+import { DemocraticCompetitivenessMap } from './components/DemocraticCompetitivenessMap';
+import { DemocraticCompetitivenessMapNative } from './components/DemocraticCompetitivenessMapNative';
 
 export default function App() {
   const getInitialPath = () => {
@@ -134,6 +136,20 @@ export default function App() {
   let seo = null;
 
   if (
+    path === '/dcm-preview' ||
+    path === '/dcm-internal' ||
+    path === '/democratic-competitiveness-map-preview' ||
+    path === '/democratic-competitiveness-map/preview'
+  ) {
+    seo = (
+      <SEO 
+        title="DCM Native Engine (Hidden Preview)" 
+        description="Internal implementation of the 37-jurisdiction native SVG DCM engine." 
+        canonicalPath="/dcm-preview" 
+      />
+    );
+    content = <DemocraticCompetitivenessMapNative />;
+  } else if (
     path === '/publications' ||
     path.startsWith('/publications/') ||
     path === '/reports-and-briefs' ||
@@ -141,6 +157,7 @@ export default function App() {
     path === '/post-election-audits' ||
     path === '/political-landscape-monitor' ||
     path === '/democratic-competitiveness-map' ||
+    path === '/publications/democratic-competitiveness-map' ||
     path === '/africa-election-watch' ||
     path === '/aeo-weekly-digest' ||
     path === '/announcements'

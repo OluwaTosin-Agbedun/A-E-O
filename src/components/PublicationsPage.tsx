@@ -76,6 +76,7 @@ interface UnifiedPublication {
 
 export default function PublicationsPage() {
   const { reports, weekly, announcements, diaryNat, diaryLoc, diaryAfr, diaryOth } = useCMS();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -453,7 +454,7 @@ export default function PublicationsPage() {
       case 'dcm':
         return {
           title: "Democratic Competitiveness Map (DCM)",
-          description: "*Reporting Period: 1st October 2026 – 28th September 2026*\n\nThree months before the 2027 general elections, the space for opposition campaigning is narrowing in a growing number of states. In the first half of October, five more states showed material concerns, and violence against opposition events and party offices spread beyond the South-East.\n\nThis brief sets out where conditions are deteriorating, why it matters, and what each institution can do before campaigns intensify.",
+          description: "*Reporting Period: 1st October to 15th October 2026*\n\nThree months before the 2027 general elections, the space for opposition campaigning is narrowing in a growing number of states. In the first half of October, five more states showed material concerns, and violence against opposition events and party offices spread beyond the South-East.\n\nThis brief sets out where conditions are deteriorating, why it matters, and what each institution can do before campaigns intensify.",
           icon: <Award className="w-8 h-8 text-brand-blue" />
         };
       case 'africa-election-watch':
@@ -525,7 +526,7 @@ export default function PublicationsPage() {
             </div>
           </div>
 
-          {/* AEO Democratic Competitiveness Monitor (DCM) Map Section */}
+          {/* Democratic Competitiveness Map (DCM) Section */}
           {pageMode === 'dcm' && (
             <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm mb-12">
               <div className="space-y-2">
@@ -533,15 +534,19 @@ export default function PublicationsPage() {
                   Interactive Map Visualization
                 </div>
                 <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
-                  AEO Democratic Competitiveness Monitor (DCM) Map
+                  Democratic Competitiveness Map (DCM)
                 </h2>
                 <p className="text-ink2 text-sm leading-relaxed max-w-3xl">
-                  Explore the latest Democratic Competitiveness Monitor (DCM) update across Nigeria. The map provides a state-level overview of classifications based on traceable evidence gathered during the monitoring cycle.
+                  Explore the latest Democratic Competitiveness Map (DCM) update across Nigeria. The map provides a state-level overview of classifications based on traceable evidence gathered during the monitoring cycle.
                 </p>
               </div>
 
-              <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
-                <FlourishMap id="30596006" title="AEO Democratic Competitiveness Monitor Map" />
+              <div className="w-full overflow-hidden rounded-xl border border-line bg-paper p-2 sm:p-4">
+                <FlourishMap 
+                  id="30596006"
+                  height="h-[550px] sm:h-[650px] lg:h-[750px]"
+                  title="AEO Democratic Competitiveness Map"
+                />
               </div>
 
               <div className="text-xs text-mut leading-relaxed italic border-t border-line pt-4">

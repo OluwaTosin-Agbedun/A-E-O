@@ -3,7 +3,7 @@ import {
   X, Database, Edit3, Trash2, Plus, Save, RotateCcw, 
   BookOpen, Calendar, MapPin, Users, FileText, CheckCircle2, ChevronRight, LogOut, Bell, Search, Loader2,
   ChevronUp, ChevronDown, FileSpreadsheet, UploadCloud, Download, Table, PlusCircle, UserPlus, Check, AlertCircle, Sparkles,
-  RefreshCw, ShieldCheck
+  RefreshCw, ShieldCheck, Award
 } from 'lucide-react';
 import { useCMS } from '../context/CMSContext';
 import { auth, db } from '../lib/firebase';
@@ -23,6 +23,7 @@ import { INITIAL_STATES } from './LiveDashboard';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 import { prepareDocumentUrl } from '../utils/url';
 import { RichTextEditor } from './RichTextEditor';
+import { DcmCmsManager } from './DcmCmsManager';
 
 interface CMSPanelProps {
   isOpen?: boolean;
@@ -31,7 +32,7 @@ interface CMSPanelProps {
   onNavigateHome?: () => void;
 }
 
-type TabType = 'publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections';
+type TabType = 'publications' | 'dcm_publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections';
 
 const DEFAULT_PARTY_NAMES: Record<string, string> = {
   APC: 'All Progressives Congress',
@@ -1314,6 +1315,15 @@ export default function CMSPanel({
             <span>Publications ({reports.length + weekly.length + announcements.length})</span>
           </button>
           <button
+            onClick={() => { setActiveTab('dcm_publications'); setEditingId(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border border-brand-blue/30 ${
+              activeTab === 'dcm_publications' ? 'bg-brand-blue text-white font-bold' : 'hover:bg-line text-brand-blue font-bold'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5 text-amber-300" />
+            <span>DCM Publications</span>
+          </button>
+          <button
             onClick={() => { setActiveTab('diary'); setEditingId(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'diary' ? 'bg-navy text-white' : 'hover:bg-line text-ink2'
@@ -1372,6 +1382,11 @@ export default function CMSPanel({
         {/* Tab Contents Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
+          {/* DCM PUBLICATIONS TAB (Dedicated Manager) */}
+          {activeTab === 'dcm_publications' && (
+            <DcmCmsManager />
+          )}
+
           {/* PUBLICATIONS TAB (Unified Point for all publications) */}
           {activeTab === 'publications' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

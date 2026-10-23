@@ -324,7 +324,7 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
                   Interactive Map Visualization
                 </span>
                 <h2 className="font-display font-bold text-2xl sm:text-3xl text-ink">
-                  AEO Democratic Competitiveness Monitor (DCM) Map
+                  Democratic Competitiveness Map (DCM)
                 </h2>
               </div>
               <div>
@@ -347,8 +347,12 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
               Nigeria’s political competition environment remains uneven, with concerns concentrated around political mobilisation, campaign access and institutional neutrality as the 2027 elections approach.
             </p>
 
-            <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
-              <FlourishMap id="30596006" />
+            <div className="w-full overflow-hidden rounded-xl border border-line bg-paper p-2 sm:p-4">
+              <FlourishMap 
+                id="30596006"
+                height="h-[550px] sm:h-[650px] lg:h-[720px]"
+                title="AEO Democratic Competitiveness Map"
+              />
             </div>
           </div>
         )}

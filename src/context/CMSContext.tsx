@@ -16,6 +16,8 @@ import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { sanitizeAndSyncItems, loadAssetFromFirestore, removeUndefined } from '../lib/firebaseAssets';
 import { sortItemsByDate } from '../utils/date';
 import { generateSlug } from '../utils/url';
+import { DcmPublication } from '../types/dcm';
+import { INITIAL_DCM_PUBLICATIONS } from '../data/dcmInitialData';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -160,6 +162,10 @@ interface CMSContextType {
   saveHeroConfig: (config: HeroConfig) => Promise<void>;
   saveStatsConfig: (config: StatItemConfig[]) => Promise<void>;
 
+  dcmPublications: DcmPublication[];
+  saveDcmPublication: (pub: DcmPublication) => Promise<void>;
+  deleteDcmPublication: (id: string) => Promise<void>;
+
   incrementPublicationStat: (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => Promise<void>;
   resetAllData: () => Promise<void>;
   restorePublicationsBackup: () => Promise<{ success: boolean; count: number }>;
@@ -271,12 +277,13 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const [weekly, setWeekly] = useState<WeeklyIssue[]>(initialWeekly);
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(INITIAL_HERO_CONFIG);
   const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(INITIAL_STATS_CONFIG);
+  const [dcmPublications, setDcmPublications] = useState<DcmPublication[]>(INITIAL_DCM_PUBLICATIONS);
 
   // Subscribe to Firestore in Real-Time for global site sync with safe non-destructive read
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
     let loadedCount = 0;
-    const totalDocs = 11;
+    const totalDocs = 12;
 
     const subscribeSafe = <T,>(
       docName: string, 
@@ -349,6 +356,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       return cfg;
     }));
     unsubscribes.push(subscribeSafe('stats', setStatsConfig, INITIAL_STATS_CONFIG));
+    unsubscribes.push(subscribeSafe('dcm_publications', setDcmPublications, INITIAL_DCM_PUBLICATIONS));
 
     return () => {
       unsubscribes.forEach(unsub => unsub());
@@ -729,6 +737,58 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     await syncToFirestore('stats', { items: config });
   };
 
+  const saveDcmPublication = async (pub: DcmPublication) => {
+    try {
+      const docRef = doc(db, 'cms', 'dcm_publications');
+      const docSnap = await getDoc(docRef);
+      let current: DcmPublication[] = [];
+      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
+        current = docSnap.data().items;
+      } else {
+        current = dcmPublications;
+      }
+
+      const exists = current.some(p => p.id === pub.id);
+      const updated: DcmPublication = {
+        ...pub,
+        updatedAt: Date.now()
+      };
+      
+      let next = exists ? current.map(p => p.id === pub.id ? updated : p) : [updated, ...current];
+      if (pub.isLatest) {
+        next = next.map(p => p.id === pub.id ? p : { ...p, isLatest: false });
+      }
+
+      next.sort((a, b) => new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime());
+
+      setDcmPublications(next);
+      await syncToFirestore('dcm_publications', { items: next });
+    } catch (err) {
+      console.error('Error saving DCM publication:', err);
+      throw err;
+    }
+  };
+
+  const deleteDcmPublication = async (id: string) => {
+    try {
+      const docRef = doc(db, 'cms', 'dcm_publications');
+      const docSnap = await getDoc(docRef);
+      let current: DcmPublication[] = [];
+      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
+        current = docSnap.data().items;
+      } else {
+        current = dcmPublications;
+      }
+
+      const next = current.filter(p => p.id !== id);
+      setDcmPublications(next);
+      await syncToFirestore('dcm_publications', { items: next });
+    } catch (err) {
+      console.error('Error deleting DCM publication:', err);
+      throw err;
+    }
+  };
+
   // Safe stat incrementation: targeted write with merge: true to avoid rewriting assets or racing with admin saves
   const incrementPublicationStat = async (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => {
     try {
@@ -880,10 +940,11 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       events,
       team,
       heroConfig,
-      statsConfig
+      statsConfig,
+      dcmPublications
     };
     return JSON.stringify(backupObj, null, 2);
-  }, [reports, weekly, announcements, diaryNat, diaryLoc, diaryAfr, diaryOth, events, team, heroConfig, statsConfig]);
+  }, [reports, weekly, announcements, diaryNat, diaryLoc, diaryAfr, diaryOth, events, team, heroConfig, statsConfig, dcmPublications]);
 
   // Import entire CMS data from JSON string
   const importDataJson = async (jsonStr: string): Promise<{ success: boolean; message: string }> => {
@@ -941,6 +1002,11 @@ export function CMSProvider({ children }: { children: ReactNode }) {
         setStatsConfig(parsed.statsConfig);
         await syncToFirestore('stats', { items: parsed.statsConfig });
       }
+      if (Array.isArray(parsed.dcmPublications) && parsed.dcmPublications.length > 0) {
+        setDcmPublications(parsed.dcmPublications);
+        await syncToFirestore('dcm_publications', { items: parsed.dcmPublications });
+        count += parsed.dcmPublications.length;
+      }
 
       await saveBackupSnapshot(
         parsed.reports || reports,
@@ -967,6 +1033,9 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       weekly,
       heroConfig,
       statsConfig,
+      dcmPublications,
+      saveDcmPublication,
+      deleteDcmPublication,
       dataLoaded,
       saveReport,
       deleteReport,
