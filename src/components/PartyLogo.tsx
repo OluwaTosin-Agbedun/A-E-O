@@ -56,6 +56,18 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
     };
   }, [party]);
 
+  // Resolve reference keys if customLogos[party] starts with 'ref:'
+  useEffect(() => {
+    const logoVal = customLogos[party];
+    if (logoVal && logoVal.startsWith('ref:')) {
+      loadAssetFromFirestore('logo', logoVal).then(resolved => {
+        if (resolved) {
+          setCustomLogos(prev => ({ ...prev, [party]: resolved }));
+        }
+      });
+    }
+  }, [customLogos[party], party]);
+
   // 1. If we have a custom user-uploaded logo (base64 or URL), render it
   if (customLogos[party]) {
     return (

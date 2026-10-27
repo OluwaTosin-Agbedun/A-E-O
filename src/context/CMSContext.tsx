@@ -11,13 +11,16 @@ import {
   WEEKLY_ISSUES as initialWeekly,
   ANNOUNCEMENTS as initialAnnouncements
 } from '../data';
-import { db } from '../lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { sanitizeAndSyncItems, loadAssetFromFirestore, removeUndefined } from '../lib/firebaseAssets';
+import { auth, db } from '../lib/firebase';
+import { doc, onSnapshot, setDoc, getDoc, runTransaction } from 'firebase/firestore';
+import { saveAssetToFirestore, loadAssetFromFirestore, removeUndefined } from '../lib/firebaseAssets';
+import { handleFirestoreError, OperationType } from '../lib/firebaseError';
 import { sortItemsByDate } from '../utils/date';
 import { generateSlug } from '../utils/url';
 import { DcmPublication } from '../types/dcm';
 import { INITIAL_DCM_PUBLICATIONS } from '../data/dcmInitialData';
+
+const SUPER_ADMIN_UID = 'BGknJG2kEwSVOxcQtNHeW6l0wUo1';
 
 const INITIAL_HERO_CONFIG: HeroConfig = {
   badgeText: "Independent · Non-partisan · Evidence-based",
@@ -167,11 +170,11 @@ interface CMSContextType {
   deleteDcmPublication: (id: string) => Promise<void>;
 
   incrementPublicationStat: (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => Promise<void>;
-  resetAllData: () => Promise<void>;
+  resetAllData: (confirmationPhrase?: string) => Promise<void>;
   restorePublicationsBackup: () => Promise<{ success: boolean; count: number }>;
   refreshData: () => Promise<void>;
   exportAllDataJson: () => string;
-  importDataJson: (jsonStr: string) => Promise<{ success: boolean; message: string }>;
+  importDataJson: (jsonStr: string, confirmationPhrase?: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
@@ -212,19 +215,20 @@ function applyRemoteCollection<T extends { id: string; pdfUrl?: string; image?: 
   return sortItemsByDate(merged, 'date', 'desc');
 }
 
-// Helper to save Firestore document cleanly with asset chunking
-const syncToFirestore = async (docName: string, data: any) => {
-  try {
-    const cleaned = removeUndefined(data);
-    if (cleaned && Array.isArray(cleaned.items)) {
-      await sanitizeAndSyncItems(docName, cleaned.items);
-    } else {
-      await setDoc(doc(db, 'cms', docName), cleaned);
-    }
-  } catch (err) {
-    console.error(`Error syncing ${docName} to Firestore:`, err);
+// Sanitizes item heavy assets before saving to collection array document
+async function sanitizeItemAssets(item: any): Promise<any> {
+  if (!item || !item.id) return item;
+  const copy = { ...item };
+  if (copy.pdfUrl && copy.pdfUrl.startsWith('data:')) {
+    const refKey = await saveAssetToFirestore('pdf', copy.id, copy.pdfUrl);
+    copy.pdfUrl = refKey;
   }
-};
+  if (copy.image && copy.image.startsWith('data:')) {
+    const refKey = await saveAssetToFirestore('img', copy.id, copy.image);
+    copy.image = refKey;
+  }
+  return removeUndefined(copy);
+}
 
 // Automatic multi-layer backup to protect against data wipe
 const saveBackupSnapshot = async (
@@ -256,11 +260,12 @@ const saveBackupSnapshot = async (
       try {
         localStorage.setItem('aeo_publications_backup', JSON.stringify(payload));
       } catch (e) {
-        // LocalStorage quota might be small, ignore
+        // LocalStorage quota limit ignored
       }
     }
   } catch (err) {
     console.warn('Backup snapshot error:', err);
+    handleFirestoreError(err, OperationType.WRITE, 'cms/publications_backup');
   }
 };
 
@@ -279,7 +284,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
   const [statsConfig, setStatsConfig] = useState<StatItemConfig[]>(INITIAL_STATS_CONFIG);
   const [dcmPublications, setDcmPublications] = useState<DcmPublication[]>(INITIAL_DCM_PUBLICATIONS);
 
-  // Subscribe to Firestore in Real-Time for global site sync with safe non-destructive read
+  // Subscribe to Firestore in Real-Time for global site sync with STRICT 100% READ-ONLY LISTENERS
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
     let loadedCount = 0;
@@ -312,12 +317,8 @@ export function CMSProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // Document does NOT exist in Firestore:
-          // CRITICAL BUG FIX: NEVER write destructive empty defaults to Firestore during reads!
+          // CRITICAL REQUIREMENT: 100% READ-ONLY! Set local fallback state, NEVER call setDoc or syncToFirestore!
           setter(fallbackVal);
-          // Only seed illustrative non-publication documents if completely missing
-          if (docName !== 'reports' && docName !== 'weekly' && docName !== 'announcements') {
-            syncToFirestore(docName, docName === 'hero' ? { config: fallbackVal } : { items: fallbackVal });
-          }
         }
         
         if (isFirst) {
@@ -329,6 +330,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
         }
       }, err => {
         console.warn(`Firestore snapshot error for ${docName}:`, err);
+        handleFirestoreError(err, OperationType.GET, `cms/${docName}`);
         if (isFirst) {
           isFirst = false;
           loadedCount++;
@@ -371,14 +373,14 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       // Hydrate Reports
       for (const r of reports) {
         if (cancelled) return;
-        if (r.id && (!r.pdfUrl || r.pdfUrl.startsWith('ref:'))) {
-          const fullPdf = await loadAssetFromFirestore('pdf', r.id);
+        if (r.id && r.pdfUrl && r.pdfUrl.startsWith('ref:')) {
+          const fullPdf = await loadAssetFromFirestore('pdf', r.pdfUrl);
           if (fullPdf && !cancelled) {
             setReports(prev => prev.map(item => item.id === r.id ? { ...item, pdfUrl: fullPdf } : item));
           }
         }
-        if (r.id && (!r.image || r.image.startsWith('ref:'))) {
-          const fullImg = await loadAssetFromFirestore('img', r.id);
+        if (r.id && r.image && r.image.startsWith('ref:')) {
+          const fullImg = await loadAssetFromFirestore('img', r.image);
           if (fullImg && !cancelled) {
             setReports(prev => prev.map(item => item.id === r.id ? { ...item, image: fullImg } : item));
           }
@@ -388,14 +390,14 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       // Hydrate Weekly Issues
       for (const w of weekly) {
         if (cancelled) return;
-        if (w.id && (!w.pdfUrl || w.pdfUrl.startsWith('ref:'))) {
-          const fullPdf = await loadAssetFromFirestore('pdf', w.id);
+        if (w.id && w.pdfUrl && w.pdfUrl.startsWith('ref:')) {
+          const fullPdf = await loadAssetFromFirestore('pdf', w.pdfUrl);
           if (fullPdf && !cancelled) {
             setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, pdfUrl: fullPdf } : item));
           }
         }
-        if (w.id && (!w.image || w.image.startsWith('ref:'))) {
-          const fullImg = await loadAssetFromFirestore('img', w.id);
+        if (w.id && w.image && w.image.startsWith('ref:')) {
+          const fullImg = await loadAssetFromFirestore('img', w.image);
           if (fullImg && !cancelled) {
             setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, image: fullImg } : item));
           }
@@ -405,14 +407,14 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       // Hydrate Announcements
       for (const a of announcements) {
         if (cancelled) return;
-        if (a.id && (!a.pdfUrl || a.pdfUrl.startsWith('ref:'))) {
-          const fullPdf = await loadAssetFromFirestore('pdf', a.id);
+        if (a.id && a.pdfUrl && a.pdfUrl.startsWith('ref:')) {
+          const fullPdf = await loadAssetFromFirestore('pdf', a.pdfUrl);
           if (fullPdf && !cancelled) {
             setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, pdfUrl: fullPdf } : item));
           }
         }
-        if (a.id && (!a.image || a.image.startsWith('ref:'))) {
-          const fullImg = await loadAssetFromFirestore('img', a.id);
+        if (a.id && a.image && a.image.startsWith('ref:')) {
+          const fullImg = await loadAssetFromFirestore('img', a.image);
           if (fullImg && !cancelled) {
             setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, image: fullImg } : item));
           }
@@ -431,394 +433,458 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     announcements.map(a => a.id + (a.pdfUrl ? a.pdfUrl.substring(0, 8) : '') + (a.image ? a.image.substring(0, 8) : '')).join(',')
   ]);
 
-  // SAFE MUTATION HANDLERS: Always fetch authoritative cloud items first to prevent race-condition wipeouts
+  // SAFE TRANSACTIONAL MUTATION HANDLERS
+  // Reads live authoritative document state directly within runTransaction to prevent race conditions
 
   const saveReport = async (report: Report) => {
+    const path = 'cms/reports';
     try {
-      const docRef = doc(db, 'cms', 'reports');
-      const docSnap = await getDoc(docRef);
-      let currentItems: Report[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = reports;
-      }
-
-      const reportWithSlug: Report = {
+      const sanitizedReport = await sanitizeItemAssets({
         ...report,
         slug: report.slug ? generateSlug(report.slug) : generateSlug(report.title),
         createdAt: report.createdAt || Date.now()
-      };
+      });
 
-      const existsIndex = currentItems.findIndex(r => r.id === report.id);
-      let updatedItems: Report[];
-      if (existsIndex > -1) {
-        updatedItems = [...currentItems];
-        updatedItems[existsIndex] = reportWithSlug;
-      } else {
-        updatedItems = [reportWithSlug, ...currentItems];
-      }
+      let updatedSorted: Report[] = [];
 
-      const sorted = sortItemsByDate(updatedItems, 'date', 'desc');
-      setReports(sorted);
-      await syncToFirestore('reports', { items: sorted });
-      await saveBackupSnapshot(sorted, weekly, announcements);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'reports');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: Report[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const existsIndex = currentItems.findIndex(r => r.id === report.id);
+        let updatedItems: Report[];
+        if (existsIndex > -1) {
+          updatedItems = [...currentItems];
+          updatedItems[existsIndex] = sanitizedReport;
+        } else {
+          updatedItems = [sanitizedReport, ...currentItems];
+        }
+
+        updatedSorted = sortItemsByDate(updatedItems, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setReports(updatedSorted);
+      await saveBackupSnapshot(updatedSorted, weekly, announcements);
     } catch (err) {
-      console.error('Error saving report:', err);
+      console.error('Error saving report in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteReport = async (id: string) => {
+    const path = 'cms/reports';
     try {
-      const docRef = doc(db, 'cms', 'reports');
-      const docSnap = await getDoc(docRef);
-      let currentItems: Report[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = reports;
-      }
+      let updatedSorted: Report[] = [];
 
-      const next = currentItems.filter(r => r.id !== id);
-      setReports(next);
-      await syncToFirestore('reports', { items: next });
-      await saveBackupSnapshot(next, weekly, announcements);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'reports');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: Report[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const next = currentItems.filter(r => r.id !== id);
+        updatedSorted = sortItemsByDate(next, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setReports(updatedSorted);
+      await saveBackupSnapshot(updatedSorted, weekly, announcements);
     } catch (err) {
-      console.error('Error deleting report:', err);
+      console.error('Error deleting report in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveWeeklyIssue = async (issue: WeeklyIssue) => {
+    const path = 'cms/weekly';
     try {
-      const docRef = doc(db, 'cms', 'weekly');
-      const docSnap = await getDoc(docRef);
-      let currentItems: WeeklyIssue[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = weekly;
-      }
-
-      const issueWithSlug: WeeklyIssue = {
+      const sanitizedIssue = await sanitizeItemAssets({
         ...issue,
         slug: issue.slug ? generateSlug(issue.slug) : generateSlug(issue.title),
         createdAt: issue.createdAt || Date.now()
-      };
+      });
 
-      const existsIndex = currentItems.findIndex(w => w.id === issue.id);
-      let updatedItems: WeeklyIssue[];
-      if (existsIndex > -1) {
-        updatedItems = [...currentItems];
-        updatedItems[existsIndex] = issueWithSlug;
-      } else {
-        updatedItems = [issueWithSlug, ...currentItems];
-      }
+      let updatedSorted: WeeklyIssue[] = [];
 
-      const sorted = sortItemsByDate(updatedItems, 'date', 'desc');
-      setWeekly(sorted);
-      await syncToFirestore('weekly', { items: sorted });
-      await saveBackupSnapshot(reports, sorted, announcements);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'weekly');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: WeeklyIssue[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const existsIndex = currentItems.findIndex(w => w.id === issue.id);
+        let updatedItems: WeeklyIssue[];
+        if (existsIndex > -1) {
+          updatedItems = [...currentItems];
+          updatedItems[existsIndex] = sanitizedIssue;
+        } else {
+          updatedItems = [sanitizedIssue, ...currentItems];
+        }
+
+        updatedSorted = sortItemsByDate(updatedItems, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setWeekly(updatedSorted);
+      await saveBackupSnapshot(reports, updatedSorted, announcements);
     } catch (err) {
-      console.error('Error saving weekly issue:', err);
+      console.error('Error saving weekly issue in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteWeeklyIssue = async (id: string) => {
+    const path = 'cms/weekly';
     try {
-      const docRef = doc(db, 'cms', 'weekly');
-      const docSnap = await getDoc(docRef);
-      let currentItems: WeeklyIssue[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = weekly;
-      }
+      let updatedSorted: WeeklyIssue[] = [];
 
-      const next = currentItems.filter(w => w.id !== id);
-      setWeekly(next);
-      await syncToFirestore('weekly', { items: next });
-      await saveBackupSnapshot(reports, next, announcements);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'weekly');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: WeeklyIssue[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const next = currentItems.filter(w => w.id !== id);
+        updatedSorted = sortItemsByDate(next, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setWeekly(updatedSorted);
+      await saveBackupSnapshot(reports, updatedSorted, announcements);
     } catch (err) {
-      console.error('Error deleting weekly issue:', err);
+      console.error('Error deleting weekly issue in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveAnnouncement = async (announcement: AnnouncementItem) => {
+    const path = 'cms/announcements';
     try {
-      const docRef = doc(db, 'cms', 'announcements');
-      const docSnap = await getDoc(docRef);
-      let currentItems: AnnouncementItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = announcements;
-      }
-
-      const annWithSlug: AnnouncementItem = {
+      const sanitizedAnn = await sanitizeItemAssets({
         ...announcement,
         slug: announcement.slug ? generateSlug(announcement.slug) : generateSlug(announcement.title),
         createdAt: announcement.createdAt || Date.now()
-      };
+      });
 
-      const existsIndex = currentItems.findIndex(a => a.id === announcement.id);
-      let updatedItems: AnnouncementItem[];
-      if (existsIndex > -1) {
-        updatedItems = [...currentItems];
-        updatedItems[existsIndex] = annWithSlug;
-      } else {
-        updatedItems = [annWithSlug, ...currentItems];
-      }
+      let updatedSorted: AnnouncementItem[] = [];
 
-      const sorted = sortItemsByDate(updatedItems, 'date', 'desc');
-      setAnnouncements(sorted);
-      await syncToFirestore('announcements', { items: sorted });
-      await saveBackupSnapshot(reports, weekly, sorted);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'announcements');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: AnnouncementItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const existsIndex = currentItems.findIndex(a => a.id === announcement.id);
+        let updatedItems: AnnouncementItem[];
+        if (existsIndex > -1) {
+          updatedItems = [...currentItems];
+          updatedItems[existsIndex] = sanitizedAnn;
+        } else {
+          updatedItems = [sanitizedAnn, ...currentItems];
+        }
+
+        updatedSorted = sortItemsByDate(updatedItems, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setAnnouncements(updatedSorted);
+      await saveBackupSnapshot(reports, weekly, updatedSorted);
     } catch (err) {
-      console.error('Error saving announcement:', err);
+      console.error('Error saving announcement in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteAnnouncement = async (id: string) => {
+    const path = 'cms/announcements';
     try {
-      const docRef = doc(db, 'cms', 'announcements');
-      const docSnap = await getDoc(docRef);
-      let currentItems: AnnouncementItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        currentItems = docSnap.data().items;
-      } else {
-        currentItems = announcements;
-      }
+      let updatedSorted: AnnouncementItem[] = [];
 
-      const next = currentItems.filter(a => a.id !== id);
-      setAnnouncements(next);
-      await syncToFirestore('announcements', { items: next });
-      await saveBackupSnapshot(reports, weekly, next);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'announcements');
+        const sfDoc = await transaction.get(docRef);
+        let currentItems: AnnouncementItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const next = currentItems.filter(a => a.id !== id);
+        updatedSorted = sortItemsByDate(next, 'date', 'desc');
+        transaction.set(docRef, removeUndefined({ items: updatedSorted, updatedAt: Date.now() }));
+      });
+
+      setAnnouncements(updatedSorted);
+      await saveBackupSnapshot(reports, weekly, updatedSorted);
     } catch (err) {
-      console.error('Error deleting announcement:', err);
+      console.error('Error deleting announcement in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveDiaryItem = async (category: 'national' | 'local' | 'africa' | 'other', item: DiaryItem) => {
     const docKey = category === 'national' ? 'diary_nat' : category === 'local' ? 'diary_loc' : category === 'africa' ? 'diary_afr' : 'diary_oth';
+    const path = `cms/${docKey}`;
     try {
-      const docRef = doc(db, 'cms', docKey);
-      const docSnap = await getDoc(docRef);
-      let current: DiaryItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = category === 'national' ? diaryNat : category === 'local' ? diaryLoc : category === 'africa' ? diaryAfr : diaryOth;
-      }
+      let nextSorted: DiaryItem[] = [];
 
-      const exists = current.some(d => d.id === item.id);
-      const unsorted = exists ? current.map(d => d.id === item.id ? item : d) : [...current, item];
-      const next = sortItemsByDate(unsorted, 'date', 'asc');
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', docKey);
+        const sfDoc = await transaction.get(docRef);
+        let current: DiaryItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
 
-      if (category === 'national') setDiaryNat(next);
-      else if (category === 'local') setDiaryLoc(next);
-      else if (category === 'africa') setDiaryAfr(next);
-      else if (category === 'other') setDiaryOth(next);
+        const exists = current.some(d => d.id === item.id);
+        const unsorted = exists ? current.map(d => d.id === item.id ? item : d) : [...current, item];
+        nextSorted = sortItemsByDate(unsorted, 'date', 'asc');
+        transaction.set(docRef, removeUndefined({ items: nextSorted, updatedAt: Date.now() }));
+      });
 
-      await syncToFirestore(docKey, { items: next });
+      if (category === 'national') setDiaryNat(nextSorted);
+      else if (category === 'local') setDiaryLoc(nextSorted);
+      else if (category === 'africa') setDiaryAfr(nextSorted);
+      else if (category === 'other') setDiaryOth(nextSorted);
     } catch (err) {
-      console.error(`Error saving diary ${category}:`, err);
+      console.error(`Error saving diary ${category} in transaction:`, err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteDiaryItem = async (category: 'national' | 'local' | 'africa' | 'other', id: string) => {
     const docKey = category === 'national' ? 'diary_nat' : category === 'local' ? 'diary_loc' : category === 'africa' ? 'diary_afr' : 'diary_oth';
+    const path = `cms/${docKey}`;
     try {
-      const docRef = doc(db, 'cms', docKey);
-      const docSnap = await getDoc(docRef);
-      let current: DiaryItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = category === 'national' ? diaryNat : category === 'local' ? diaryLoc : category === 'africa' ? diaryAfr : diaryOth;
-      }
+      let nextSorted: DiaryItem[] = [];
 
-      const next = current.filter(d => d.id !== id);
-      if (category === 'national') setDiaryNat(next);
-      else if (category === 'local') setDiaryLoc(next);
-      else if (category === 'africa') setDiaryAfr(next);
-      else if (category === 'other') setDiaryOth(next);
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', docKey);
+        const sfDoc = await transaction.get(docRef);
+        let current: DiaryItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
 
-      await syncToFirestore(docKey, { items: next });
+        const next = current.filter(d => d.id !== id);
+        nextSorted = sortItemsByDate(next, 'date', 'asc');
+        transaction.set(docRef, removeUndefined({ items: nextSorted, updatedAt: Date.now() }));
+      });
+
+      if (category === 'national') setDiaryNat(nextSorted);
+      else if (category === 'local') setDiaryLoc(nextSorted);
+      else if (category === 'africa') setDiaryAfr(nextSorted);
+      else if (category === 'other') setDiaryOth(nextSorted);
     } catch (err) {
-      console.error(`Error deleting diary ${category}:`, err);
+      console.error(`Error deleting diary ${category} in transaction:`, err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveEvent = async (event: EventItem) => {
+    const path = 'cms/events';
     try {
-      const docRef = doc(db, 'cms', 'events');
-      const docSnap = await getDoc(docRef);
-      let current: EventItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = events;
-      }
+      let nextEvents: EventItem[] = [];
 
-      const exists = current.some(e => e.id === event.id);
-      const next = exists ? current.map(e => e.id === event.id ? event : e) : [...current, event];
-      setEvents(next);
-      await syncToFirestore('events', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'events');
+        const sfDoc = await transaction.get(docRef);
+        let current: EventItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const exists = current.some(e => e.id === event.id);
+        nextEvents = exists ? current.map(e => e.id === event.id ? event : e) : [...current, event];
+        transaction.set(docRef, removeUndefined({ items: nextEvents, updatedAt: Date.now() }));
+      });
+
+      setEvents(nextEvents);
     } catch (err) {
-      console.error('Error saving event:', err);
+      console.error('Error saving event in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteEvent = async (id: string) => {
+    const path = 'cms/events';
     try {
-      const docRef = doc(db, 'cms', 'events');
-      const docSnap = await getDoc(docRef);
-      let current: EventItem[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = events;
-      }
+      let nextEvents: EventItem[] = [];
 
-      const next = current.filter(e => e.id !== id);
-      setEvents(next);
-      await syncToFirestore('events', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'events');
+        const sfDoc = await transaction.get(docRef);
+        let current: EventItem[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        nextEvents = current.filter(e => e.id !== id);
+        transaction.set(docRef, removeUndefined({ items: nextEvents, updatedAt: Date.now() }));
+      });
+
+      setEvents(nextEvents);
     } catch (err) {
-      console.error('Error deleting event:', err);
+      console.error('Error deleting event in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveTeamMember = async (member: TeamMember) => {
+    const path = 'cms/team';
     try {
-      const docRef = doc(db, 'cms', 'team');
-      const docSnap = await getDoc(docRef);
-      let current: TeamMember[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = team;
-      }
+      let nextTeam: TeamMember[] = [];
 
-      const exists = current.some(t => t.id === member.id);
-      const next = exists ? current.map(t => t.id === member.id ? member : t) : [...current, member];
-      setTeam(next);
-      await syncToFirestore('team', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'team');
+        const sfDoc = await transaction.get(docRef);
+        let current: TeamMember[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const exists = current.some(t => t.id === member.id);
+        nextTeam = exists ? current.map(t => t.id === member.id ? member : t) : [...current, member];
+        transaction.set(docRef, removeUndefined({ items: nextTeam, updatedAt: Date.now() }));
+      });
+
+      setTeam(nextTeam);
     } catch (err) {
-      console.error('Error saving team member:', err);
+      console.error('Error saving team member in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
     }
   };
 
   const deleteTeamMember = async (id: string) => {
+    const path = 'cms/team';
     try {
-      const docRef = doc(db, 'cms', 'team');
-      const docSnap = await getDoc(docRef);
-      let current: TeamMember[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = team;
-      }
+      let nextTeam: TeamMember[] = [];
 
-      const next = current.filter(t => t.id !== id);
-      setTeam(next);
-      await syncToFirestore('team', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'team');
+        const sfDoc = await transaction.get(docRef);
+        let current: TeamMember[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        nextTeam = current.filter(t => t.id !== id);
+        transaction.set(docRef, removeUndefined({ items: nextTeam, updatedAt: Date.now() }));
+      });
+
+      setTeam(nextTeam);
     } catch (err) {
-      console.error('Error deleting team member:', err);
+      console.error('Error deleting team member in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
   const saveHeroConfig = async (config: HeroConfig) => {
-    setHeroConfig(config);
-    await syncToFirestore('hero', { config });
+    const path = 'cms/hero';
+    try {
+      await setDoc(doc(db, 'cms', 'hero'), removeUndefined({ config, updatedAt: Date.now() }));
+      setHeroConfig(config);
+    } catch (err) {
+      console.error('Error saving hero config:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
   };
 
   const saveStatsConfig = async (config: StatItemConfig[]) => {
-    setStatsConfig(config);
-    await syncToFirestore('stats', { items: config });
+    const path = 'cms/stats';
+    try {
+      await setDoc(doc(db, 'cms', 'stats'), removeUndefined({ items: config, updatedAt: Date.now() }));
+      setStatsConfig(config);
+    } catch (err) {
+      console.error('Error saving stats config:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
   };
 
   const saveDcmPublication = async (pub: DcmPublication) => {
+    const path = 'cms/dcm_publications';
     try {
-      const docRef = doc(db, 'cms', 'dcm_publications');
-      const docSnap = await getDoc(docRef);
-      let current: DcmPublication[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = dcmPublications;
-      }
-
-      const exists = current.some(p => p.id === pub.id);
-      const updated: DcmPublication = {
+      const sanitizedPub = await sanitizeItemAssets({
         ...pub,
         updatedAt: Date.now()
-      };
-      
-      let next = exists ? current.map(p => p.id === pub.id ? updated : p) : [updated, ...current];
-      if (pub.isLatest) {
-        next = next.map(p => p.id === pub.id ? p : { ...p, isLatest: false });
-      }
+      });
 
-      next.sort((a, b) => new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime());
+      let nextDcm: DcmPublication[] = [];
 
-      setDcmPublications(next);
-      await syncToFirestore('dcm_publications', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'dcm_publications');
+        const sfDoc = await transaction.get(docRef);
+        let current: DcmPublication[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        const exists = current.some(p => p.id === pub.id);
+        nextDcm = exists ? current.map(p => p.id === pub.id ? sanitizedPub : p) : [sanitizedPub, ...current];
+        if (pub.isLatest) {
+          nextDcm = nextDcm.map(p => p.id === pub.id ? p : { ...p, isLatest: false });
+        }
+
+        nextDcm.sort((a, b) => new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime());
+        transaction.set(docRef, removeUndefined({ items: nextDcm, updatedAt: Date.now() }));
+      });
+
+      setDcmPublications(nextDcm);
     } catch (err) {
-      console.error('Error saving DCM publication:', err);
+      console.error('Error saving DCM publication in transaction:', err);
+      handleFirestoreError(err, OperationType.WRITE, path);
       throw err;
     }
   };
 
   const deleteDcmPublication = async (id: string) => {
+    const path = 'cms/dcm_publications';
     try {
-      const docRef = doc(db, 'cms', 'dcm_publications');
-      const docSnap = await getDoc(docRef);
-      let current: DcmPublication[] = [];
-      if (docSnap.exists() && Array.isArray(docSnap.data().items)) {
-        current = docSnap.data().items;
-      } else {
-        current = dcmPublications;
-      }
+      let nextDcm: DcmPublication[] = [];
 
-      const next = current.filter(p => p.id !== id);
-      setDcmPublications(next);
-      await syncToFirestore('dcm_publications', { items: next });
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', 'dcm_publications');
+        const sfDoc = await transaction.get(docRef);
+        let current: DcmPublication[] = sfDoc.exists() && Array.isArray(sfDoc.data()?.items) ? sfDoc.data()!.items : [];
+
+        nextDcm = current.filter(p => p.id !== id);
+        transaction.set(docRef, removeUndefined({ items: nextDcm, updatedAt: Date.now() }));
+      });
+
+      setDcmPublications(nextDcm);
     } catch (err) {
-      console.error('Error deleting DCM publication:', err);
+      console.error('Error deleting DCM publication in transaction:', err);
+      handleFirestoreError(err, OperationType.DELETE, path);
       throw err;
     }
   };
 
-  // Safe stat incrementation: targeted write with merge: true to avoid rewriting assets or racing with admin saves
+  // Safe transactional stat incrementation: atomic update inside transaction without full document rewrite or asset loss
   const incrementPublicationStat = async (type: 'report' | 'weekly' | 'announcement', id: string, statType: 'reads' | 'downloads') => {
+    // 1. Update in-memory state so session counters increment smoothly
+    if (type === 'report') {
+      setReports(prev => prev.map(item => item.id === id ? { ...item, [statType]: (item[statType] || 0) + 1 } : item));
+    } else if (type === 'weekly') {
+      setWeekly(prev => prev.map(item => item.id === id ? { ...item, [statType]: (item[statType] || 0) + 1 } : item));
+    } else if (type === 'announcement') {
+      setAnnouncements(prev => prev.map(item => item.id === id ? { ...item, [statType]: (item[statType] || 0) + 1 } : item));
+    }
+
+    // 2. Only attempt persistent Firestore write if user is authenticated Super Admin
+    // Public/anonymous users are restricted from CMS writes by published Firestore security rules
+    if (auth.currentUser?.uid !== SUPER_ADMIN_UID) {
+      return;
+    }
+
+    const collectionKey = type === 'report' ? 'reports' : type === 'weekly' ? 'weekly' : 'announcements';
     try {
-      const collectionKey = type === 'report' ? 'reports' : type === 'weekly' ? 'weekly' : 'announcements';
-      const docRef = doc(db, 'cms', collectionKey);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const items = data.items || [];
-        const itemIndex = items.findIndex((item: any) => item.id === id);
-        
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, 'cms', collectionKey);
+        const sfDoc = await transaction.get(docRef);
+        if (!sfDoc.exists()) return;
+
+        const data = sfDoc.data();
+        const items = Array.isArray(data?.items) ? [...data.items] : [];
+        const itemIndex = items.findIndex((item: any) => item && item.id === id);
+
         if (itemIndex > -1) {
-          const item = items[itemIndex];
+          const item = { ...items[itemIndex] };
           const currentValue = item[statType] || 0;
-          items[itemIndex] = {
-            ...item,
-            [statType]: currentValue + 1
-          };
-          
-          await setDoc(docRef, { ...data, items }, { merge: true });
+          item[statType] = currentValue + 1;
+          items[itemIndex] = item;
+          transaction.update(docRef, { items });
         }
-      }
+      });
     } catch (error) {
-      console.error(`Failed to increment ${statType} for ${type} ${id}:`, error);
+      console.warn(`Stat increment skipped in Firestore for ${type} ${id}:`, error);
     }
   };
 
-  // Reset function that PRESERVES publications and never destroys them!
-  const resetAllData = async () => {
-    // Only resets non-publication templates. Publications are NEVER wiped by resetAllData!
+  // Reset function requiring Super Admin UID and explicit confirmation string, NEVER destroying publication collections!
+  const resetAllData = async (confirmationPhrase?: string) => {
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid !== SUPER_ADMIN_UID) {
+      throw new Error("Unauthorized: Only the permanent Super Administrator can reset CMS templates.");
+    }
+
+    if (!confirmationPhrase || confirmationPhrase.trim().toUpperCase() !== 'CONFIRM RESET DATA') {
+      throw new Error("Confirmation required: Please enter 'CONFIRM RESET DATA' to proceed with resetting general templates.");
+    }
+
+    // Reset ONLY non-publication general templates. Publications, DCM, and assets are NEVER wiped!
     setDiaryNat(initialDiaryNat);
     setDiaryLoc(initialDiaryLoc);
     setDiaryAfr(initialDiaryAfr);
@@ -828,17 +894,25 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     setHeroConfig(INITIAL_HERO_CONFIG);
     setStatsConfig(INITIAL_STATS_CONFIG);
 
-    await syncToFirestore('diary_nat', { items: initialDiaryNat });
-    await syncToFirestore('diary_loc', { items: initialDiaryLoc });
-    await syncToFirestore('diary_afr', { items: initialDiaryAfr });
-    await syncToFirestore('diary_oth', { items: initialDiaryOth });
-    await syncToFirestore('events', { items: initialEvents });
-    await syncToFirestore('team', { items: initialTeam });
-    await syncToFirestore('hero', { config: INITIAL_HERO_CONFIG });
-    await syncToFirestore('stats', { items: INITIAL_STATS_CONFIG });
+    const safeSync = async (docName: string, payload: any) => {
+      try {
+        await setDoc(doc(db, 'cms', docName), removeUndefined(payload));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `cms/${docName}`);
+      }
+    };
+
+    await safeSync('diary_nat', { items: initialDiaryNat, updatedAt: Date.now() });
+    await safeSync('diary_loc', { items: initialDiaryLoc, updatedAt: Date.now() });
+    await safeSync('diary_afr', { items: initialDiaryAfr, updatedAt: Date.now() });
+    await safeSync('diary_oth', { items: initialDiaryOth, updatedAt: Date.now() });
+    await safeSync('events', { items: initialEvents, updatedAt: Date.now() });
+    await safeSync('team', { items: initialTeam, updatedAt: Date.now() });
+    await safeSync('hero', { config: INITIAL_HERO_CONFIG, updatedAt: Date.now() });
+    await safeSync('stats', { items: INITIAL_STATS_CONFIG, updatedAt: Date.now() });
   };
 
-  // Restore publications from cloud backup or local storage
+  // Restore publications from cloud backup or local storage safely
   const restorePublicationsBackup = async (): Promise<{ success: boolean; count: number }> => {
     try {
       // 1. Try cloud backup
@@ -862,21 +936,22 @@ export function CMSProvider({ children }: { children: ReactNode }) {
 
       if (restoredReports && restoredReports.length > 0) {
         setReports(restoredReports);
-        await syncToFirestore('reports', { items: restoredReports });
+        await setDoc(doc(db, 'cms', 'reports'), removeUndefined({ items: restoredReports, updatedAt: Date.now() }));
       }
       if (restoredWeekly && restoredWeekly.length > 0) {
         setWeekly(restoredWeekly);
-        await syncToFirestore('weekly', { items: restoredWeekly });
+        await setDoc(doc(db, 'cms', 'weekly'), removeUndefined({ items: restoredWeekly, updatedAt: Date.now() }));
       }
       if (restoredAnnouncements && restoredAnnouncements.length > 0) {
         setAnnouncements(restoredAnnouncements);
-        await syncToFirestore('announcements', { items: restoredAnnouncements });
+        await setDoc(doc(db, 'cms', 'announcements'), removeUndefined({ items: restoredAnnouncements, updatedAt: Date.now() }));
       }
 
       const total = (restoredReports?.length || 0) + (restoredWeekly?.length || 0) + (restoredAnnouncements?.length || 0);
       return { success: true, count: total };
     } catch (err) {
       console.error('Error restoring publications backup:', err);
+      handleFirestoreError(err, OperationType.WRITE, 'cms/reports');
       return { success: false, count: 0 };
     }
   };
@@ -922,6 +997,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.warn('Error refreshing cloud data:', e);
+      handleFirestoreError(e, OperationType.GET, 'cms/all');
     }
   };
 
@@ -946,77 +1022,116 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     return JSON.stringify(backupObj, null, 2);
   }, [reports, weekly, announcements, diaryNat, diaryLoc, diaryAfr, diaryOth, events, team, heroConfig, statsConfig, dcmPublications]);
 
-  // Import entire CMS data from JSON string
-  const importDataJson = async (jsonStr: string): Promise<{ success: boolean; message: string }> => {
+  // Import entire CMS data from JSON string with Super Admin UID check, schema validation, and double confirmation
+  const importDataJson = async (jsonStr: string, confirmationPhrase?: string): Promise<{ success: boolean; message: string }> => {
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid !== SUPER_ADMIN_UID) {
+      return { success: false, message: 'Unauthorized: Only the Super Administrator can import database backups.' };
+    }
+
+    if (!confirmationPhrase || confirmationPhrase.trim().toUpperCase() !== 'CONFIRM RESTORE DATABASE') {
+      return { success: false, message: "Confirmation required: Please type 'CONFIRM RESTORE DATABASE' to apply database backup import." };
+    }
+
     try {
       const parsed = JSON.parse(jsonStr);
       if (!parsed || typeof parsed !== 'object') {
         return { success: false, message: 'Invalid JSON file format.' };
       }
 
+      // Schema verification helpers
+      const validateItems = (arr: any[], requiredFields: string[]) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(item => item && typeof item === 'object' && requiredFields.every(field => item[field] !== undefined));
+      };
+
       let count = 0;
-      if (Array.isArray(parsed.reports) && parsed.reports.length > 0) {
-        setReports(parsed.reports);
-        await syncToFirestore('reports', { items: parsed.reports });
-        count += parsed.reports.length;
+      const validReports = validateItems(parsed.reports, ['id', 'title', 'summary']);
+      if (validReports.length > 0) {
+        setReports(validReports);
+        await setDoc(doc(db, 'cms', 'reports'), removeUndefined({ items: validReports, updatedAt: Date.now() }));
+        count += validReports.length;
       }
-      if (Array.isArray(parsed.weekly) && parsed.weekly.length > 0) {
-        setWeekly(parsed.weekly);
-        await syncToFirestore('weekly', { items: parsed.weekly });
-        count += parsed.weekly.length;
+
+      const validWeekly = validateItems(parsed.weekly, ['id', 'title', 'summary']);
+      if (validWeekly.length > 0) {
+        setWeekly(validWeekly);
+        await setDoc(doc(db, 'cms', 'weekly'), removeUndefined({ items: validWeekly, updatedAt: Date.now() }));
+        count += validWeekly.length;
       }
-      if (Array.isArray(parsed.announcements) && parsed.announcements.length > 0) {
-        setAnnouncements(parsed.announcements);
-        await syncToFirestore('announcements', { items: parsed.announcements });
-        count += parsed.announcements.length;
+
+      const validAnnouncements = validateItems(parsed.announcements, ['id', 'title', 'summary']);
+      if (validAnnouncements.length > 0) {
+        setAnnouncements(validAnnouncements);
+        await setDoc(doc(db, 'cms', 'announcements'), removeUndefined({ items: validAnnouncements, updatedAt: Date.now() }));
+        count += validAnnouncements.length;
       }
-      if (Array.isArray(parsed.diaryNat)) {
-        setDiaryNat(parsed.diaryNat);
-        await syncToFirestore('diary_nat', { items: parsed.diaryNat });
+
+      const validDNat = validateItems(parsed.diaryNat, ['id', 'title', 'date']);
+      if (validDNat.length > 0) {
+        setDiaryNat(validDNat);
+        await setDoc(doc(db, 'cms', 'diary_nat'), removeUndefined({ items: validDNat, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.diaryLoc)) {
-        setDiaryLoc(parsed.diaryLoc);
-        await syncToFirestore('diary_loc', { items: parsed.diaryLoc });
+
+      const validDLoc = validateItems(parsed.diaryLoc, ['id', 'title', 'date']);
+      if (validDLoc.length > 0) {
+        setDiaryLoc(validDLoc);
+        await setDoc(doc(db, 'cms', 'diary_loc'), removeUndefined({ items: validDLoc, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.diaryAfr)) {
-        setDiaryAfr(parsed.diaryAfr);
-        await syncToFirestore('diary_afr', { items: parsed.diaryAfr });
+
+      const validDAfr = validateItems(parsed.diaryAfr, ['id', 'title', 'date']);
+      if (validDAfr.length > 0) {
+        setDiaryAfr(validDAfr);
+        await setDoc(doc(db, 'cms', 'diary_afr'), removeUndefined({ items: validDAfr, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.diaryOth)) {
-        setDiaryOth(parsed.diaryOth);
-        await syncToFirestore('diary_oth', { items: parsed.diaryOth });
+
+      const validDOth = validateItems(parsed.diaryOth, ['id', 'title', 'date']);
+      if (validDOth.length > 0) {
+        setDiaryOth(validDOth);
+        await setDoc(doc(db, 'cms', 'diary_oth'), removeUndefined({ items: validDOth, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.events)) {
-        setEvents(parsed.events);
-        await syncToFirestore('events', { items: parsed.events });
+
+      const validEvents = validateItems(parsed.events, ['id', 'title']);
+      if (validEvents.length > 0) {
+        setEvents(validEvents);
+        await setDoc(doc(db, 'cms', 'events'), removeUndefined({ items: validEvents, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.team)) {
-        setTeam(parsed.team);
-        await syncToFirestore('team', { items: parsed.team });
+
+      const validTeam = validateItems(parsed.team, ['id', 'name', 'role']);
+      if (validTeam.length > 0) {
+        setTeam(validTeam);
+        await setDoc(doc(db, 'cms', 'team'), removeUndefined({ items: validTeam, updatedAt: Date.now() }));
       }
-      if (parsed.heroConfig) {
+
+      if (parsed.heroConfig && typeof parsed.heroConfig === 'object' && parsed.heroConfig.title) {
         setHeroConfig(parsed.heroConfig);
-        await syncToFirestore('hero', { config: parsed.heroConfig });
+        await setDoc(doc(db, 'cms', 'hero'), removeUndefined({ config: parsed.heroConfig, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.statsConfig)) {
-        setStatsConfig(parsed.statsConfig);
-        await syncToFirestore('stats', { items: parsed.statsConfig });
+
+      const validStats = validateItems(parsed.statsConfig, ['id', 'title', 'value']);
+      if (validStats.length > 0) {
+        setStatsConfig(validStats);
+        await setDoc(doc(db, 'cms', 'stats'), removeUndefined({ items: validStats, updatedAt: Date.now() }));
       }
-      if (Array.isArray(parsed.dcmPublications) && parsed.dcmPublications.length > 0) {
-        setDcmPublications(parsed.dcmPublications);
-        await syncToFirestore('dcm_publications', { items: parsed.dcmPublications });
-        count += parsed.dcmPublications.length;
+
+      const validDcm = validateItems(parsed.dcmPublications, ['id', 'title']);
+      if (validDcm.length > 0) {
+        setDcmPublications(validDcm);
+        await setDoc(doc(db, 'cms', 'dcm_publications'), removeUndefined({ items: validDcm, updatedAt: Date.now() }));
+        count += validDcm.length;
       }
 
       await saveBackupSnapshot(
-        parsed.reports || reports,
-        parsed.weekly || weekly,
-        parsed.announcements || announcements
+        validReports.length > 0 ? validReports : reports,
+        validWeekly.length > 0 ? validWeekly : weekly,
+        validAnnouncements.length > 0 ? validAnnouncements : announcements
       );
 
-      return { success: true, message: `Successfully restored ${count} publications and all associated CMS data.` };
+      return { success: true, message: `Successfully validated and restored ${count} verified records into production Firestore.` };
     } catch (e: any) {
-      return { success: false, message: e?.message || 'Failed to parse JSON backup file.' };
+      console.error('Import error:', e);
+      handleFirestoreError(e, OperationType.WRITE, 'cms/all');
+      return { success: false, message: e?.message || 'Failed to parse or validate JSON backup file.' };
     }
   };
 

@@ -6,7 +6,8 @@ import {
 import { PartyLogo } from './PartyLogo';
 import { FlourishMap } from './FlourishMap';
 import { db } from '../lib/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firebaseError';
 import { useCMS } from '../context/CMSContext';
 import DiaryElectionDetail from './DiaryElectionDetail';
 import { DiaryItem } from '../types';
@@ -257,12 +258,13 @@ export default function LiveDashboard({ isPreview = false }: LiveDashboardProps)
           setStates(formatted);
         }
       } else {
-        // Auto-seed if doc doesn't exist
-        setDoc(doc(db, 'cms', 'monitored_states'), { items: INITIAL_STATES })
-          .catch(err => console.error('Error seeding monitored_states:', err));
+        // Document missing in Firestore: fall back to in-memory defaults without writing to database
+        setStates(INITIAL_STATES);
       }
     }, err => {
       console.warn("Firestore monitored states fallback:", err);
+      handleFirestoreError(err, OperationType.GET, 'cms/monitored_states');
+      setStates(INITIAL_STATES);
     });
 
     return () => unsub();

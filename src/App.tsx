@@ -4,7 +4,7 @@ import SEO from './components/SEO';
 import { CMSProvider } from './context/CMSContext';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
-import AdminAuth from './components/AdminAuth';
+import AdminGuard from './components/AdminGuard';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Stats from './components/Stats';
@@ -105,30 +105,10 @@ export default function App() {
   };
 
   if (path === '/admin') {
-    if (authLoading) {
-      return (
-        <div className="min-h-screen bg-panel flex items-center justify-center">
-          <div className="text-center font-mono text-xs text-mut animate-pulse">Verifying authorization...</div>
-        </div>
-      );
-    }
-
-    if (!user) {
-      return (
-        <AdminAuth 
-          onSuccess={() => {}} 
-          onNavigateHome={() => navigate('/')} 
-        />
-      );
-    }
-
     return (
-      <CMSProvider>
-        <CMSPanel 
-          isStandalone={true}
-          onNavigateHome={() => navigate('/')}
-        />
-      </CMSProvider>
+      <AdminGuard 
+        onNavigateHome={() => navigate('/')} 
+      />
     );
   }
 

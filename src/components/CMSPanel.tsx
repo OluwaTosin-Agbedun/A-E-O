@@ -22,17 +22,21 @@ import { PartyLogo } from './PartyLogo';
 import { INITIAL_STATES } from './LiveDashboard';
 import { saveAssetToFirestore, compressImageFile } from '../lib/firebaseAssets';
 import { prepareDocumentUrl } from '../utils/url';
+import { User, onAuthStateChanged } from 'firebase/auth';
 import { RichTextEditor } from './RichTextEditor';
 import { DcmCmsManager } from './DcmCmsManager';
+import { AdminManagement } from './AdminManagement';
+import { isSuperAdmin } from '../lib/adminSession';
 
 interface CMSPanelProps {
   isOpen?: boolean;
   onClose?: () => void;
   isStandalone?: boolean;
   onNavigateHome?: () => void;
+  currentUser?: User | null;
 }
 
-type TabType = 'publications' | 'dcm_publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections';
+type TabType = 'publications' | 'dcm_publications' | 'diary' | 'events' | 'team' | 'hero_stats' | 'subscribers' | 'elections' | 'admins';
 
 const DEFAULT_PARTY_NAMES: Record<string, string> = {
   APC: 'All Progressives Congress',
@@ -146,7 +150,8 @@ export default function CMSPanel({
   isOpen = false, 
   onClose = () => {}, 
   isStandalone = false, 
-  onNavigateHome = () => {} 
+  onNavigateHome = () => {},
+  currentUser: propUser
 }: CMSPanelProps) {
   const {
     reports, diaryNat, diaryLoc, diaryAfr, diaryOth, events, announcements, team, weekly,
@@ -158,6 +163,23 @@ export default function CMSPanel({
     restorePublicationsBackup, refreshData, exportAllDataJson, importDataJson
   } = useCMS();
 
+  const [activeUser, setActiveUser] = useState<User | null>(propUser || auth.currentUser);
+
+  useEffect(() => {
+    if (propUser) {
+      setActiveUser(propUser);
+    }
+  }, [propUser]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setActiveUser(u);
+    });
+    return () => unsub();
+  }, []);
+
+  const effectiveUser = activeUser || auth.currentUser;
+  const isOwner = isSuperAdmin(effectiveUser);
   const [activeTab, setActiveTab] = useState<TabType>('publications');
   const [selectedPubType, setSelectedPubType] = useState<'report' | 'assessment' | 'brief' | 'dcm' | 'africa-election-watch' | 'weekly' | 'announcement'>('report');
   const [pubFilter, setPubFilter] = useState<'all' | 'report' | 'assessment' | 'brief' | 'dcm' | 'africa-election-watch' | 'weekly' | 'announcement'>('all');
@@ -684,11 +706,17 @@ export default function CMSPanel({
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const confirmation = window.prompt("WARNING: Importing a database backup will validate and restore CMS records into production Firestore. Type 'CONFIRM RESTORE DATABASE' to proceed.");
+    if (!confirmation || confirmation.trim().toUpperCase() !== 'CONFIRM RESTORE DATABASE') {
+      showStatus("Import cancelled or confirmation phrase mismatched.", "error");
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (event) => {
       const content = event.target?.result as string;
       if (content) {
-        const res = await importDataJson(content);
+        const res = await importDataJson(content, 'CONFIRM RESTORE DATABASE');
         if (res.success) {
           showStatus(res.message);
         } else {
@@ -701,11 +729,19 @@ export default function CMSPanel({
   };
 
   const handleResetData = () => {
-    triggerConfirm('Reset general templates (diaries, events, team) to default? Your publications will remain safe and will NOT be deleted.', () => {
-      resetAllData();
-      setEditingId(null);
-      showStatus('General templates refreshed (publications preserved).');
-    });
+    const confirmation = window.prompt("WARNING: To reset general templates (Diaries, Events, Team), type 'CONFIRM RESET DATA' below. All published reports, weekly issues, announcements, and DCM documents will be preserved untouched.");
+    if (!confirmation || confirmation.trim().toUpperCase() !== 'CONFIRM RESET DATA') {
+      showStatus("Reset cancelled or confirmation phrase mismatched.", "error");
+      return;
+    }
+    resetAllData('CONFIRM RESET DATA')
+      .then(() => {
+        setEditingId(null);
+        showStatus('General templates reset to defaults (publications preserved).');
+      })
+      .catch((err: any) => {
+        showStatus(err?.message || 'Reset failed.', 'error');
+      });
   };
 
   // Helper to generate IDs
@@ -717,7 +753,7 @@ export default function CMSPanel({
   // Form Submission Handlers
   // ----------------------------------------------------
 
-  const handleSaveReport = (e: FormEvent) => {
+  const handleSaveReport = async (e: FormEvent) => {
     e.preventDefault();
     if (!reportForm.title || !reportForm.summary) {
       showStatus('Please fill out the Title and Summary.', 'error');
@@ -766,13 +802,17 @@ export default function CMSPanel({
       downloadButtonLabel: reportForm.downloadButtonLabel?.trim() || undefined
     };
 
-    saveReport(finalReport);
-    setEditingId(null);
-    setReportForm(EMPTY_REPORT_FORM);
-    showStatus(`Publication "${finalReport.title}" saved successfully!`);
+    try {
+      await saveReport(finalReport);
+      setEditingId(null);
+      setReportForm(EMPTY_REPORT_FORM);
+      showStatus(`Publication "${finalReport.title}" saved successfully!`);
+    } catch (err: any) {
+      showStatus(`Failed to save publication: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
-  const handleSaveDiary = (e: FormEvent) => {
+  const handleSaveDiary = async (e: FormEvent) => {
     e.preventDefault();
     if (!diaryForm.title || !diaryForm.date) {
       showStatus('Please enter Title and Date.', 'error');
@@ -806,10 +846,14 @@ export default function CMSPanel({
       participants: Array.isArray(diaryForm.participants) ? diaryForm.participants : []
     };
 
-    saveDiaryItem(diaryCategory, finalItem);
-    setEditingId(null);
-    setDiaryForm(EMPTY_DIARY_FORM);
-    showStatus(`Electoral timeline "${finalItem.title}" saved successfully!`);
+    try {
+      await saveDiaryItem(diaryCategory, finalItem);
+      setEditingId(null);
+      setDiaryForm(EMPTY_DIARY_FORM);
+      showStatus(`Electoral timeline "${finalItem.title}" saved successfully!`);
+    } catch (err: any) {
+      showStatus(`Failed to save diary item: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
   const handleAddCandidateToDiary = () => {
@@ -1020,7 +1064,7 @@ export default function CMSPanel({
     setElectionsSubMode('manual');
   };
 
-  const handleSaveWeekly = (e: FormEvent) => {
+  const handleSaveWeekly = async (e: FormEvent) => {
     e.preventDefault();
     if (!weeklyForm.title || !weeklyForm.summary) {
       showStatus('Please fill out Title and Summary.', 'error');
@@ -1053,13 +1097,17 @@ export default function CMSPanel({
       downloadButtonLabel: weeklyForm.downloadButtonLabel?.trim() || undefined
     };
 
-    saveWeeklyIssue(finalIssue);
-    setEditingId(null);
-    setWeeklyForm(EMPTY_WEEKLY_FORM);
-    showStatus(`Weekly briefing "${finalIssue.title}" saved!`);
+    try {
+      await saveWeeklyIssue(finalIssue);
+      setEditingId(null);
+      setWeeklyForm(EMPTY_WEEKLY_FORM);
+      showStatus(`Weekly briefing "${finalIssue.title}" saved!`);
+    } catch (err: any) {
+      showStatus(`Failed to save weekly issue: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
-  const handleSaveEvent = (e: FormEvent) => {
+  const handleSaveEvent = async (e: FormEvent) => {
     e.preventDefault();
     if (!eventForm.title) {
       showStatus('Please fill out Event Title.', 'error');
@@ -1090,13 +1138,17 @@ export default function CMSPanel({
       ]
     };
 
-    saveEvent(finalEvent);
-    setEditingId(null);
-    setEventForm({ id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: '', links: [] });
-    showStatus(`Event "${finalEvent.title}" saved!`);
+    try {
+      await saveEvent(finalEvent);
+      setEditingId(null);
+      setEventForm({ id: '', month: 'JUL', day: '15', title: '', description: '', location: 'Online Webinar', type: 'Briefing', imageUrl: '', externalLink: '', links: [] });
+      showStatus(`Event "${finalEvent.title}" saved!`);
+    } catch (err: any) {
+      showStatus(`Failed to save event: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
-  const handleSaveAnnouncement = (e: FormEvent) => {
+  const handleSaveAnnouncement = async (e: FormEvent) => {
     e.preventDefault();
     if (!announcementForm.title) {
       showStatus('Please fill out Announcement Title.', 'error');
@@ -1128,13 +1180,17 @@ export default function CMSPanel({
       downloadButtonLabel: announcementForm.downloadButtonLabel?.trim() || undefined
     };
 
-    saveAnnouncement(finalAnnouncement);
-    setEditingId(null);
-    setAnnouncementForm(EMPTY_ANNOUNCEMENT_FORM);
-    showStatus(`Announcement "${finalAnnouncement.title}" saved!`);
+    try {
+      await saveAnnouncement(finalAnnouncement);
+      setEditingId(null);
+      setAnnouncementForm(EMPTY_ANNOUNCEMENT_FORM);
+      showStatus(`Announcement "${finalAnnouncement.title}" saved!`);
+    } catch (err: any) {
+      showStatus(`Failed to save announcement: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
-  const handleSaveTeam = (e: FormEvent) => {
+  const handleSaveTeam = async (e: FormEvent) => {
     e.preventDefault();
     if (!teamForm.name || !teamForm.role) {
       showStatus('Please fill out Member Name and Role.', 'error');
@@ -1151,10 +1207,14 @@ export default function CMSPanel({
       initials
     };
 
-    saveTeamMember(finalMember);
-    setEditingId(null);
-    setTeamForm({ id: '', name: '', role: '', initials: '' });
-    showStatus(`Team member "${finalMember.name}" saved!`);
+    try {
+      await saveTeamMember(finalMember);
+      setEditingId(null);
+      setTeamForm({ id: '', name: '', role: '', initials: '' });
+      showStatus(`Team member "${finalMember.name}" saved!`);
+    } catch (err: any) {
+      showStatus(`Failed to save team member: ${err?.message || 'Database error'}`, 'error');
+    }
   };
 
   // ----------------------------------------------------
@@ -1377,11 +1437,27 @@ export default function CMSPanel({
             <Database className="w-3.5 h-3.5 text-indigo-600" />
             <span className="font-bold">Elections & Parties</span>
           </button>
+          {isOwner && (
+            <button
+              onClick={() => { setActiveTab('admins'); setEditingId(null); }}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold font-mono tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border border-amber-300 ${
+                activeTab === 'admins' ? 'bg-navy text-brand-gold font-bold shadow-sm' : 'hover:bg-line text-amber-800 font-bold bg-amber-50/50'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-gold" />
+              <span>Manage Administrators</span>
+            </button>
+          )}
         </div>
 
         {/* Tab Contents Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
+          {/* MANAGE ADMINISTRATORS TAB (Super Administrator Only) */}
+          {activeTab === 'admins' && isOwner && effectiveUser && (
+            <AdminManagement currentUser={effectiveUser} />
+          )}
+
           {/* DCM PUBLICATIONS TAB (Dedicated Manager) */}
           {activeTab === 'dcm_publications' && (
             <DcmCmsManager />
