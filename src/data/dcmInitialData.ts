@@ -27,7 +27,7 @@ function buildJurisdictionMap(
         stateName: j.name,
         classification: 'Insufficient evidence' as DcmClassification,
         classificationRationale: '',
-        evidenceSummary: 'Available verified evidence did not meet the classification threshold during this reporting window.',
+        evidenceSummary: '',
         rightOfResponseStatus: 'Not required'
       };
     }
@@ -41,7 +41,7 @@ export const DCM_PUBLICATION_BASELINE: DcmPublication = {
   title: 'Democratic Competitiveness Map: Baseline Assessment',
   year: 2026,
   month: 9,
-  periodIndex: 2,
+  periodIndex: 0,
   periodStart: '2026-07-01',
   periodEnd: '2026-09-30',
   reportingPeriodLabel: '1st July – 30th September 2026',
@@ -51,6 +51,7 @@ export const DCM_PUBLICATION_BASELINE: DcmPublication = {
   revisionNote: 'Initial baseline publication establishing comparative monitoring benchmark across all 36 states and the FCT.',
   status: 'published',
   isLatest: false,
+  isBaseline: true,
   summary: "Initial national assessment evaluating political competition space across Nigeria ahead of the 2027 general elections. Concerns around political mobilisation are evident in Benue, Delta and Enugu, while campaign-access issues have emerged in Anambra, Abia, Imo, Kaduna, Kogi, Osun and Rivers.",
   changesSummary: 'Baseline publication — establishes the initial comparative benchmark. No earlier publication exists for comparison.',
   classifications: buildJurisdictionMap({

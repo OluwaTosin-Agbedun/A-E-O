@@ -12,20 +12,34 @@ const app = express();
 app.use(express.json());
 
 // Load Firebase configuration
-const firebaseConfigPath = path.join(__dirname, 'firebase-applet-config.json');
+const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
 let firebaseConfig: any = {};
 if (fs.existsSync(firebaseConfigPath)) {
   try {
     firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf8'));
+    console.log('Firebase configuration loaded from:', firebaseConfigPath);
   } catch (e) {
     console.error('Failed to parse firebase-applet-config.json:', e);
   }
+} else {
+  console.warn('firebase-applet-config.json not found in cwd, checked:', firebaseConfigPath);
 }
 
 const SUPER_ADMIN_UID = 'BGknJG2kEwSVOxcQtNHeW6l0wUo1';
 const API_KEY = firebaseConfig.apiKey || '';
 const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || 'aeo19oct-clone';
 const PROJECT_ID = firebaseConfig.projectId || 'gen-lang-client-0759742236';
+
+// Safe JSON parser for HTTP responses to prevent Unexpected end of JSON errors
+async function safeFetchJson(res: any): Promise<any> {
+  const text = await res.text().catch(() => '');
+  if (!text || !text.trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { rawText: text };
+  }
+}
 
 // Middleware: Authenticate caller strictly using Firebase Auth REST API lookup and verify Owner UID
 async function authenticateSuperAdmin(req: Request, res: Response, next: NextFunction) {
@@ -50,11 +64,11 @@ async function authenticateSuperAdmin(req: Request, res: Response, next: NextFun
     });
 
     if (!lookupRes.ok) {
-      const errData = await lookupRes.json();
+      const errData = await safeFetchJson(lookupRes);
       return res.status(401).json({ error: 'Authentication failed: Invalid or expired token', details: errData });
     }
 
-    const data = await lookupRes.json();
+    const data = await safeFetchJson(lookupRes);
     const user = data.users && data.users[0];
 
     if (!user) {
@@ -117,7 +131,7 @@ async function authenticateFirebaseUser(req: Request, res: Response, next: NextF
       return res.status(401).json({ error: 'Authentication failed: Invalid or expired token' });
     }
 
-    const data = await lookupRes.json();
+    const data = await safeFetchJson(lookupRes);
     const user = data.users && data.users[0];
     if (!user) {
       return res.status(401).json({ error: 'Authentication failed: User not found' });
@@ -165,10 +179,10 @@ async function getFirestoreDocument(documentPath: string, callerToken?: string):
   const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
   if (res.status === 404) return null;
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     throw new Error(`Firestore GET failed (${res.status}): ${text}`);
   }
-  const data = await res.json();
+  const data = await safeFetchJson(res);
   const parsed = parseFirestoreDocument(data) || {};
   return { ...parsed, _name: data.name };
 }
@@ -194,7 +208,7 @@ async function listFirestoreDocuments(collectionId: string, callerToken?: string
     const res = await fetch(listUrl, { headers, signal: AbortSignal.timeout(12000) });
     if (res.status === 404) return [];
     if (res.ok) {
-      const data = await res.json();
+      const data = await safeFetchJson(res);
       if (!data.documents || !Array.isArray(data.documents)) return [];
       return data.documents.map((d: any) => {
         const id = d.name.split('/').pop();
@@ -202,7 +216,7 @@ async function listFirestoreDocuments(collectionId: string, callerToken?: string
         return { ...parsed, id, uid: parsed.uid || id };
       });
     }
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     primaryError = new Error(`Firestore list failed (${res.status}): ${text}`);
   } catch (err: any) {
     primaryError = err;
@@ -223,7 +237,7 @@ async function listFirestoreDocuments(collectionId: string, callerToken?: string
     });
 
     if (queryRes.ok) {
-      const items = await queryRes.json();
+      const items = await safeFetchJson(queryRes);
       if (Array.isArray(items)) {
         const results: any[] = [];
         for (const item of items) {
@@ -276,10 +290,10 @@ async function writeFirestoreDocument(documentPath: string, fields: Record<strin
   });
 
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     throw new Error(`Firestore PATCH failed (${res.status}): ${text}`);
   }
-  return await res.json();
+  return await safeFetchJson(res);
 }
 
 // Firestore REST Helper: Delete Document
@@ -360,6 +374,16 @@ async function auditOperation(params: {
 // ----------------------------------------------------
 // API ROUTES FOR SUPER ADMINISTRATOR
 // ----------------------------------------------------
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development',
+    configLoaded: !!firebaseConfig.apiKey
+  });
+});
 
 // GET /api/admin/users - List all administrators (Hydrated from Firestore database 'aeo19oct-clone')
 app.get('/api/admin/users', authenticateSuperAdmin, async (req: Request, res: Response) => {
@@ -739,6 +763,16 @@ async function startServer() {
       });
     }
   }
+
+  // Global error handler for JSON errors
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error('Unhandled Server Error:', err);
+    res.status(500).json({ 
+      error: 'Internal Server Error', 
+      message: err.message || 'An unexpected error occurred',
+      path: req.path
+    });
+  });
 
   const PORT = process.env.PORT || 3000;
   app.listen(Number(PORT), '0.0.0.0', () => {

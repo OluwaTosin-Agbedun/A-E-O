@@ -126,48 +126,66 @@ export async function loadAssetFromFirestore(
   const docKey = cleanKey.startsWith(`${assetType}_`) ? cleanKey : `${assetType}_${cleanKey}`;
   const path = `cms/${docKey}`;
 
-  try {
-    const mainRef = doc(db, 'cms', docKey);
-    const snap = await getDoc(mainRef);
+  // Retry up to 2 times for transient offline states during initial app initialization
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const mainRef = doc(db, 'cms', docKey);
+      const snap = await getDoc(mainRef);
 
-    if (!snap.exists()) {
-      console.warn(`Asset document ${docKey} not found in Firestore.`);
-      return null;
-    }
-
-    const data = snap.data();
-    if (data.dataUrl) return data.dataUrl;
-    if (data.logo) return data.logo;
-    if (data.pdfUrl) return data.pdfUrl;
-
-    if (data.chunksCount && data.chunksCount > 1) {
-      const resolvedDocKey = snap.id;
-      const chunkPromises = [];
-      for (let i = 0; i < data.chunksCount; i++) {
-        chunkPromises.push(getDoc(doc(db, 'cms', `${resolvedDocKey}_chunk_${i}`)));
-      }
-      const chunkSnaps = await Promise.all(chunkPromises);
-      let fullStr = '';
-      for (let i = 0; i < chunkSnaps.length; i++) {
-        const cSnap = chunkSnaps[i];
-        if (!cSnap.exists()) {
-          console.error(`Corrupted asset ${resolvedDocKey}: missing chunk index ${i}`);
-          return null;
-        }
-        fullStr += cSnap.data().chunk || '';
-      }
-
-      // Verify reconstructed length matches declared metadata if available
-      if (data.sizeBytes && fullStr.length !== data.sizeBytes) {
-        console.error(`Asset integrity error for ${resolvedDocKey}: expected ${data.sizeBytes} chars, got ${fullStr.length}`);
+      if (!snap.exists()) {
         return null;
       }
 
-      return fullStr || null;
+      const data = snap.data();
+      if (data.dataUrl) return data.dataUrl;
+      if (data.logo) return data.logo;
+      if (data.pdfUrl) return data.pdfUrl;
+
+      if (data.chunksCount && data.chunksCount > 1) {
+        const resolvedDocKey = snap.id;
+        const chunkPromises = [];
+        for (let i = 0; i < data.chunksCount; i++) {
+          chunkPromises.push(getDoc(doc(db, 'cms', `${resolvedDocKey}_chunk_${i}`)));
+        }
+        const chunkSnaps = await Promise.all(chunkPromises);
+        let fullStr = '';
+        for (let i = 0; i < chunkSnaps.length; i++) {
+          const cSnap = chunkSnaps[i];
+          if (!cSnap.exists()) {
+            console.warn(`Corrupted asset ${resolvedDocKey}: missing chunk index ${i}`);
+            return null;
+          }
+          fullStr += cSnap.data().chunk || '';
+        }
+
+        // Verify reconstructed length matches declared metadata if available
+        if (data.sizeBytes && fullStr.length !== data.sizeBytes) {
+          console.warn(`Asset integrity notice for ${resolvedDocKey}: expected ${data.sizeBytes} chars, got ${fullStr.length}`);
+          return null;
+        }
+
+        return fullStr || null;
+      }
+
+      return null;
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isOffline = msg.includes('client is offline') || msg.includes('offline');
+      const isPermissionDenied = err?.code === 'permission-denied' || msg.toLowerCase().includes('permission');
+
+      if (isPermissionDenied) {
+        handleFirestoreError(err, OperationType.GET, path);
+        return null;
+      }
+
+      if (isOffline && attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        continue;
+      }
+
+      console.warn(`Could not load asset ${docKey}:`, msg);
+      return null;
     }
-  } catch (err) {
-    console.warn(`Error loading asset ${docKey}:`, err);
-    handleFirestoreError(err, OperationType.GET, path);
   }
   return null;
 }

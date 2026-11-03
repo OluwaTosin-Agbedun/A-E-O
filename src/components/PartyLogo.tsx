@@ -22,9 +22,13 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
         }
         if (data?.keys && Array.isArray(data.keys)) {
           for (const k of data.keys) {
-            const logoData = await loadAssetFromFirestore('logo', k);
-            if (logoData) {
-              setCustomLogos(prev => ({ ...prev, [k]: logoData }));
+            try {
+              const logoData = await loadAssetFromFirestore('logo', k);
+              if (logoData) {
+                setCustomLogos(prev => ({ ...prev, [k]: logoData }));
+              }
+            } catch (e) {
+              console.warn(`PartyLogo: error loading logo for ${k}:`, e);
             }
           }
         }
@@ -41,7 +45,11 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
           const data = snapshot.data();
           let logoVal = data?.dataUrl || data?.logo;
           if (!logoVal && data?.chunksCount) {
-            logoVal = await loadAssetFromFirestore('logo', party);
+            try {
+              logoVal = await loadAssetFromFirestore('logo', party);
+            } catch (e) {
+              console.warn(`PartyLogo: error loading chunked logo for ${party}:`, e);
+            }
           }
           if (logoVal) {
             setCustomLogos(prev => ({ ...prev, [party]: logoVal }));
@@ -64,6 +72,8 @@ export function PartyLogo({ name = "", className = "w-8 h-8" }: { name?: string;
         if (resolved) {
           setCustomLogos(prev => ({ ...prev, [party]: resolved }));
         }
+      }).catch(err => {
+        console.warn(`PartyLogo: could not resolve logo ref ${logoVal}:`, err);
       });
     }
   }, [customLogos[party], party]);

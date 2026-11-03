@@ -73,13 +73,6 @@ export default function Header() {
                 Elections
               </a>
 
-              <a 
-                href="/post-election-audits" 
-                onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
-                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
-              >
-                Post-Election Audits
-              </a>
 
               <a 
                 href="/publications/africa-election-watch" 
@@ -208,13 +201,6 @@ export default function Header() {
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
             >
               Elections
-            </a>
-            <a 
-              href="/post-election-audits" 
-              onClick={(e) => { e.preventDefault(); navigateTo('/post-election-audits'); }}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-blue-100 hover:text-white hover:bg-navy-dark"
-            >
-              Post-Election Audits
             </a>
             <a 
               href="/publications/africa-election-watch" 

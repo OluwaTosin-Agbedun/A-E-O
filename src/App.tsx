@@ -123,8 +123,8 @@ export default function App() {
   ) {
     seo = (
       <SEO 
-        title="DCM Native Engine (Hidden Preview)" 
-        description="Internal implementation of the 37-jurisdiction native SVG DCM engine." 
+        title="Democratic Competitiveness Map (DCM) | Preview" 
+        description="Explore AEO’s state-by-state outlook of the conditions under which political competition occurs in Nigeria." 
         canonicalPath="/dcm-preview" 
       />
     );
@@ -134,7 +134,6 @@ export default function App() {
     path.startsWith('/publications/') ||
     path === '/reports-and-briefs' ||
     path === '/reports-briefs' ||
-    path === '/post-election-audits' ||
     path === '/political-landscape-monitor' ||
     path === '/democratic-competitiveness-map' ||
     path === '/publications/democratic-competitiveness-map' ||
@@ -144,8 +143,6 @@ export default function App() {
   ) {
     if (path === '/reports-and-briefs' || path === '/reports-briefs' || path === '/publications/reports-and-briefs' || path === '/publications/reports-briefs') {
       seo = <SEO title="Reports and Briefs" description="Access our full registry of forensic election audits, sub-national tech assessments, and policy research briefs." canonicalPath="/publications/reports-and-briefs" />;
-    } else if (path === '/post-election-audits' || path === '/publications/post-election-audits') {
-      seo = <SEO title="Post-Election Audit Reports" description="Explore independent forensic audits scoring electoral administration against primary source evidence." canonicalPath="/publications/post-election-audits" />;
     } else if (path === '/political-landscape-monitor' || path === '/publications/political-landscape-monitor') {
       seo = <SEO title="Political Landscape Monitor" description="Sub-national technological assessments and electoral health monitoring across Nigerian states." canonicalPath="/publications/political-landscape-monitor" />;
     } else if (path === '/democratic-competitiveness-map' || path === '/publications/democratic-competitiveness-map') {
@@ -244,4 +241,3 @@ export default function App() {
     </CMSProvider>
   );
 }
-

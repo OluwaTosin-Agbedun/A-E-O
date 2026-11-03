@@ -52,6 +52,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // Super Administrator Console collections
+    match /cms_admins/{adminId} {
+      // Allow read for admin verification
+      allow read: if true;
+      // Allow create, update, delete only to the permanent Super Administrator (Owner UID: BGknJG2kEwSVOxcQtNHeW6l0wUo1)
+      allow write: if isSignedIn() && request.auth.uid == 'BGknJG2kEwSVOxcQtNHeW6l0wUo1';
+    }
+
+    match /cms_audit_logs/{logId} {
+      allow read, write: if isSignedIn() && request.auth.uid == 'BGknJG2kEwSVOxcQtNHeW6l0wUo1';
+    }
   }
 }
 

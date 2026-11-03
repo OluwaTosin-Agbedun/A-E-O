@@ -9,6 +9,7 @@ import {
   DcmPublication, 
   DcmClassification, 
   DCM_COLORS, 
+  DCM_CLASSIFICATIONS,
   NIGERIA_37_JURISDICTIONS,
   MONTH_NAMES 
 } from '../types/dcm';
@@ -40,7 +41,7 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
     return latest?.id || INITIAL_DCM_PUBLICATIONS[0].id;
   });
 
-  // Selected state on map (null = "All States")
+  // Selected state on map (null = "All States" default)
   const [selectedStateCode, setSelectedStateCode] = useState<string | null>(null);
 
   // Toggle for change highlighting
@@ -115,8 +116,8 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
     setSelectedPubId(pubId);
   };
 
-  // State counts summary for active publication
-  const stateCounts = useMemo(() => {
+  // State counts summary for active publication (STRICT DATA INTEGRITY: Never convert missing to Insufficient evidence)
+  const { stateCounts, unavailableCount, totalValidAudited } = useMemo(() => {
     const counts: Record<DcmClassification, number> = {
       'Open': 0,
       'Emerging concern': 0,
@@ -124,12 +125,25 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
       'Severely constrained': 0,
       'Insufficient evidence': 0
     };
+    let unavail = 0;
+
     for (const j of NIGERIA_37_JURISDICTIONS) {
       const rec = activePublication.classifications[j.code];
-      const cls = rec?.classification || 'Insufficient evidence';
-      counts[cls] = (counts[cls] || 0) + 1;
+      const cls = rec?.classification;
+      if (cls && DCM_CLASSIFICATIONS.includes(cls)) {
+        counts[cls] = (counts[cls] || 0) + 1;
+      } else {
+        unavail += 1;
+      }
     }
-    return counts;
+
+    const totalValid = Object.values(counts).reduce((acc, c) => acc + c, 0);
+
+    return {
+      stateCounts: counts,
+      unavailableCount: unavail,
+      totalValidAudited: totalValid
+    };
   }, [activePublication]);
 
   // Selected state details
@@ -145,31 +159,12 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
 
   return (
     <div className="py-12 sm:py-16 bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
-        {/* Hidden Internal Implementation Badge */}
-        <div className="bg-slate-900 text-white rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono border border-slate-700">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="text-slate-200">
-              <strong className="text-white">Internal Implementation:</strong> Native SVG 37-Jurisdiction Map Engine with Cascading Selectors &amp; History
-            </span>
-          </div>
-          <a
-            href="/democratic-competitiveness-map"
-            onClick={(e) => {
-              e.preventDefault();
-              window.history.pushState({}, '', '/democratic-competitiveness-map');
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }}
-            className="text-brand-blue hover:text-white underline font-bold shrink-0 cursor-pointer"
-          >
-            Switch to Public Embed Map →
-          </a>
-        </div>
-
-        {/* 1. Header / Intro Block with Official Approved Content */}
-        <div className="border-b border-line pb-8 space-y-4">
+        {/* =================================================================== */}
+        {/* 1. DCM INTRODUCTION (APPROVED WORDING & PROMINENT DISCLAIMER)       */}
+        {/* =================================================================== */}
+        <section className="border-b border-line pb-8 space-y-5" aria-labelledby="dcm-intro-title">
           <div className="flex items-center gap-3">
             <Award className="w-8 h-8 text-brand-blue shrink-0" />
             <span className="text-xs font-mono font-bold tracking-widest text-brand-blue uppercase">
@@ -177,7 +172,7 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
             </span>
           </div>
 
-          <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-ink leading-tight">
+          <h1 id="dcm-intro-title" className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-ink leading-tight">
             Democratic Competitiveness Map (DCM)
           </h1>
 
@@ -196,29 +191,31 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
             </p>
 
             {/* MANDATORY HIGH-VISIBILITY DISCLAIMER BANNER */}
-            <div className="p-4 bg-amber-50/80 border-l-4 border-amber-500 rounded-r-xl flex items-center gap-3 text-amber-950 font-display font-bold text-base sm:text-lg">
+            <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl flex items-center gap-3 text-amber-950 font-display font-bold text-base sm:text-lg shadow-2xs">
               <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
               <span>The DCM does not score or rank states.</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* 2. Interactive Navigation Controls (Year -> Month -> Publication Period -> State) */}
-        <div className="bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+        {/* =================================================================== */}
+        {/* 2. EXPLORE DCM PUBLICATIONS (CONTROLS & SELECTORS)                  */}
+        {/* =================================================================== */}
+        <section className="bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm space-y-5" aria-labelledby="dcm-controls-title">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-4">
             <div>
-              <div className="text-xs font-mono font-bold uppercase tracking-wider text-brand-blue">
-                Publication Archive Navigator
-              </div>
-              <h2 className="text-lg font-bold text-ink">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-brand-blue block">
+                Explore DCM Publications
+              </span>
+              <h2 id="dcm-controls-title" className="text-lg font-bold text-ink mt-0.5">
                 Active Publication: {activePublication.title}
               </h2>
             </div>
 
-            {/* Highlight Changes Toggle & Clear Selection */}
+            {/* Highlight Changes Toggle & Clear Selection Controls */}
             <div className="flex items-center gap-3 flex-wrap">
               {comparison.isBaseline ? (
-                <span className="text-xs font-mono text-slate-400 italic bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                <span className="text-xs font-mono text-slate-500 italic bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
                   Baseline publication — no earlier publication for comparison
                 </span>
               ) : (
@@ -233,8 +230,13 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
                   aria-pressed={highlightChanges}
                 >
                   <span className={`w-2.5 h-2.5 rounded-full ${highlightChanges ? 'bg-brand-blue animate-pulse' : 'bg-slate-300'}`} />
-                  <span>Highlight changes since previous publication</span>
-                  {comparison.totalChanged > 0 && (
+                  <span>
+                    {highlightChanges 
+                      ? `Showing ${comparison.totalChanged} changed jurisdiction${comparison.totalChanged !== 1 ? 's' : ''}`
+                      : `Highlight ${comparison.totalChanged} changed jurisdiction${comparison.totalChanged !== 1 ? 's' : ''}`
+                    }
+                  </span>
+                  {comparison.totalChanged > 0 && !highlightChanges && (
                     <span className="px-1.5 py-0.2 bg-brand-blue text-white rounded-full text-[10px]">
                       {comparison.totalChanged}
                     </span>
@@ -304,7 +306,7 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
               >
                 {availablePeriods.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.reportingPeriodLabel} {p.isLatest ? '★ (Latest)' : ''}
+                    {p.reportingPeriodLabel} {p.isBaseline ? '(Baseline Publication)' : p.isLatest ? '★ (Latest)' : ''}
                   </option>
                 ))}
               </select>
@@ -324,265 +326,256 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
                 <option value="">All States (Full National View)</option>
                 {NIGERIA_37_JURISDICTIONS.map(j => {
                   const stateRec = activePublication.classifications[j.code];
+                  const stateClass = stateRec?.classification;
                   return (
                     <option key={j.code} value={j.code}>
-                      {j.name} ({stateRec?.classification || 'Insufficient evidence'})
+                      {j.name} ({stateClass || 'Data unavailable'})
                     </option>
                   );
                 })}
               </select>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* 3. Main Map Section & Selected State Panel */}
-        <div id="dcm-map-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Map Display & Legend Container (8 Cols on Desktop) */}
-          <div className="lg:col-span-8 bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue">
-                  State-by-State Overview
-                </span>
-                <h3 className="font-display font-bold text-xl sm:text-2xl text-ink">
-                  {selectedStateCode ? `${selectedStateMeta?.name} State Selected` : 'National DCM Classification'}
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-ink2 bg-slate-100 px-3 py-1 rounded-md border border-slate-200">
-                  Period: <strong className="text-ink">{activePublication.reportingPeriodLabel}</strong>
-                </span>
-              </div>
-            </div>
-
-            {/* Interactive SVG Map */}
-            <div className="w-full bg-paper rounded-2xl border border-line p-4 flex items-center justify-center">
-              <DcmMap
-                publication={activePublication}
-                selectedStateCode={selectedStateCode}
-                onSelectState={(code) => setSelectedStateCode(code)}
-                highlightChanges={highlightChanges}
-                changedStateCodes={changedStateCodes}
-              />
-            </div>
-
-            {/* Controlled Classification Legend */}
-            <div className="space-y-3 pt-2 border-t border-line">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink">
-                  DCM Classification Legend
-                </span>
-                <span className="text-[11px] text-mut font-mono">
-                  37 jurisdictions audited
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {(Object.keys(DCM_COLORS) as DcmClassification[]).map((cls) => {
-                  const meta = DCM_COLORS[cls];
-                  const count = stateCounts[cls] || 0;
-                  return (
-                    <div 
-                      key={cls}
-                      className="p-2.5 rounded-xl border border-line bg-paper/60 space-y-1 hover:border-slate-300 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10"
-                            style={{ backgroundColor: meta.fill }}
-                          />
-                          <span className="text-xs font-bold text-ink">{cls}</span>
-                        </div>
-                        <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
-                          {count}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-ink2 leading-tight pl-5">
-                        {meta.description}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <p className="text-xs text-mut italic pt-1 leading-relaxed">
-                Colours represent documented political and institutional conditions during a specific reporting period. They are not scores, rankings, ratings, or permanent political labels.
-              </p>
-            </div>
-          </div>
-
-          {/* Right Column: Selected State Info & Timeline (4 Cols on Desktop) */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Selected State Detail Card */}
-            {selectedStateRecord && selectedStateMeta ? (
-              <div className="bg-white border-2 border-brand-blue/30 rounded-2xl p-6 shadow-md space-y-5">
-                <div className="flex items-start justify-between gap-3 border-b border-line pb-4">
-                  <div>
-                    <span className="text-[10px] font-mono text-brand-blue uppercase font-bold">
-                      {selectedStateMeta.zone} Region
-                    </span>
-                    <h3 className="font-display font-bold text-2xl text-ink">
-                      {selectedStateMeta.name} State
-                    </h3>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedStateCode(null)}
-                    className="text-xs font-mono text-mut hover:text-ink underline cursor-pointer"
-                  >
-                    Clear selection
-                  </button>
-                </div>
-
-                {/* State Classification Badge */}
-                <div className="space-y-1">
-                  <span className="text-[10px] font-mono font-bold text-mut uppercase">
-                    Assigned Classification ({activePublication.reportingPeriodLabel})
-                  </span>
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="w-4 h-4 rounded-full shrink-0 border border-black/10"
-                      style={{ backgroundColor: DCM_COLORS[selectedStateRecord.classification]?.fill }}
-                    />
-                    <span className="font-display font-bold text-lg text-ink">
-                      {selectedStateRecord.classification}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Classification Rationale */}
-                {selectedStateRecord.classificationRationale && (
-                  <div className="space-y-1.5 p-3.5 bg-paper rounded-xl border border-line">
-                    <span className="text-xs font-mono font-bold text-ink block">
-                      Decision Rationale
-                    </span>
-                    <p className="text-xs text-ink2 leading-relaxed">
-                      {selectedStateRecord.classificationRationale}
-                    </p>
-                  </div>
-                )}
-
-                {/* Evidence Summary */}
-                {selectedStateRecord.evidenceSummary && (
-                  <div className="space-y-1.5 p-3.5 bg-paper rounded-xl border border-line">
-                    <span className="text-xs font-mono font-bold text-ink block">
-                      Evidence Summary
-                    </span>
-                    <p className="text-xs text-ink2 leading-relaxed">
-                      {selectedStateRecord.evidenceSummary}
-                    </p>
-                  </div>
-                )}
-
-                {/* Right of Response Status (only if meaningful) */}
-                {selectedStateRecord.rightOfResponseStatus && selectedStateRecord.rightOfResponseStatus !== 'Not required' && (
-                  <div className="flex items-center justify-between text-xs font-mono bg-blue-50/60 p-2.5 rounded-lg border border-blue-100">
-                    <span className="text-slate-600">Right of Response:</span>
-                    <span className="font-bold text-brand-blue">
-                      {selectedStateRecord.rightOfResponseStatus}
-                    </span>
-                  </div>
-                )}
-
-                {/* Interactive January - December Historical Timeline for this State */}
-                <div className="pt-2 border-t border-line">
-                  <DcmTimeline
-                    stateCode={selectedStateMeta.code}
-                    stateName={selectedStateMeta.name}
-                    activePublication={activePublication}
-                    allPublications={publications}
-                    onSelectPublication={(pub) => setSelectedPubId(pub.id)}
-                  />
-                </div>
-              </div>
-            ) : (
-              /* All States Overview Summary Card */
-              <div className="bg-white border border-line rounded-2xl p-6 shadow-sm space-y-5">
-                <div className="border-b border-line pb-3">
-                  <span className="text-[10px] font-mono text-brand-blue uppercase font-bold">
-                    National Distribution
-                  </span>
-                  <h3 className="font-display font-bold text-xl text-ink">
-                    All States Overview
-                  </h3>
-                  <p className="text-xs text-ink2 mt-1">
-                    Click any state on the map or choose a state from the dropdown above to inspect detailed classifications and historical timeline.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-950 text-xs">
-                    <span className="font-bold">Constrained (Orange)</span>
-                    <span className="font-mono font-bold text-sm">{stateCounts['Constrained']} states</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs">
-                    <span className="font-bold">Emerging concern (Amber)</span>
-                    <span className="font-mono font-bold text-sm">{stateCounts['Emerging concern']} states</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-100 border border-slate-300 text-slate-800 text-xs">
-                    <span className="font-bold">Insufficient evidence (Grey)</span>
-                    <span className="font-mono font-bold text-sm">{stateCounts['Insufficient evidence']} units</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs">
-                    <span className="font-bold">Open (Green)</span>
-                    <span className="font-mono font-bold text-sm">{stateCounts['Open']} states</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-950 text-xs">
-                    <span className="font-bold">Severely constrained (Red)</span>
-                    <span className="font-mono font-bold text-sm">{stateCounts['Severely constrained']} states</span>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-100 text-xs text-blue-900 leading-relaxed">
-                  <strong>Notice:</strong> The DCM examines the environment in which political actors compete — assessing whether parties and candidates have fair opportunity to organise, communicate, assemble and campaign.
-                </div>
-              </div>
-            )}
-
-            {/* Quick Actions Card */}
-            <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md space-y-4">
-              <div className="flex items-center gap-2 text-brand-blue text-xs font-mono font-bold uppercase tracking-widest">
-                <FileText className="w-4 h-4" />
-                <span>Full Analytical Brief</span>
-              </div>
-              <h4 className="font-display font-bold text-lg text-white">
-                Request Complete DCM Brief &amp; Evidence Records
-              </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Receive the primary evidentiary citations, police investigation logs, and full 37-jurisdiction analytical matrix directly from our research desk.
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsBriefModalOpen(true)}
-                className="w-full py-2.5 px-4 bg-brand-blue hover:bg-brand-blue-dark text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Request DCM Brief</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. "What changed in this publication?" Section */}
-        <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-          <div className="border-b border-line pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* =================================================================== */}
+        {/* 3. INTERACTIVE MAP AND CLASSIFICATION LEGEND                        */}
+        {/* =================================================================== */}
+        <section id="dcm-map-section" className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm" aria-labelledby="dcm-map-title">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
             <div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue">
-                Comparative Forensics
+                State-by-State Overview
               </span>
-              <h3 className="font-display font-bold text-xl sm:text-2xl text-ink">
-                What changed in this publication?
+              <h3 id="dcm-map-title" className="font-display font-bold text-xl sm:text-2xl text-ink">
+                {selectedStateCode ? `${selectedStateMeta?.name} State Selected` : 'National DCM Classification'}
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-ink2 bg-slate-100 px-3 py-1 rounded-md border border-slate-200">
+                Period: <strong className="text-ink">{activePublication.reportingPeriodLabel}</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive SVG Map */}
+          <div className="w-full bg-paper rounded-2xl border border-line p-4 sm:p-6 flex items-center justify-center">
+            <DcmMap
+              publication={activePublication}
+              selectedStateCode={selectedStateCode}
+              onSelectState={(code) => setSelectedStateCode(code)}
+              highlightChanges={highlightChanges}
+              changedStateCodes={changedStateCodes}
+            />
+          </div>
+
+          {/* Controlled Classification Legend */}
+          <div className="space-y-3 pt-2 border-t border-line">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink">
+                DCM Classification Legend
+              </span>
+              <span className="text-xs text-mut font-mono">
+                {totalValidAudited === 37 ? (
+                  <strong className="text-ink">37 jurisdictions assessed</strong>
+                ) : (
+                  <span>
+                    <strong className="text-ink">{totalValidAudited} / 37</strong> jurisdictions assessed
+                    {unavailableCount > 0 && <span className="text-amber-600 ml-1">({unavailableCount} unavailable)</span>}
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {(Object.keys(DCM_COLORS) as DcmClassification[]).map((cls) => {
+                const meta = DCM_COLORS[cls];
+                const count = stateCounts[cls] || 0;
+                return (
+                  <div 
+                    key={cls}
+                    className="p-3 rounded-xl border border-line bg-paper/60 space-y-1.5 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10"
+                          style={{ backgroundColor: meta.fill }}
+                        />
+                        <span className="text-xs font-bold text-ink">{cls}</span>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                        {count}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-ink2 leading-relaxed pl-5">
+                      {meta.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-mut italic pt-1 leading-relaxed">
+              Colours represent documented political and institutional conditions during a specific reporting period. They are not scores, rankings, ratings, or permanent political labels.
+            </p>
+          </div>
+        </section>
+
+        {/* =================================================================== */}
+        {/* 4. SELECTED-STATE DETAILS / HISTORY                                 */}
+        {/* =================================================================== */}
+        <section aria-labelledby="dcm-state-section-title">
+          {selectedStateRecord && selectedStateMeta ? (
+            <div className="bg-white border-2 border-brand-blue/30 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-line pb-4">
+                <div>
+                  <span className="text-xs font-mono text-brand-blue uppercase font-bold tracking-wider">
+                    {selectedStateMeta.zone} Region
+                  </span>
+                  <h3 id="dcm-state-section-title" className="font-display font-bold text-2xl sm:text-3xl text-ink mt-0.5">
+                    {selectedStateMeta.name} State
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedStateCode(null)}
+                  className="self-start px-3 py-1.5 rounded-lg text-xs font-mono text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Clear selection (Return to All States)</span>
+                </button>
+              </div>
+
+              {/* State Classification & Metadata Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left: Classification & Rationale */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-mono font-bold text-mut uppercase tracking-wider block">
+                      Classification ({activePublication.reportingPeriodLabel})
+                    </span>
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="w-4 h-4 rounded-full shrink-0 border border-black/10"
+                        style={{ backgroundColor: DCM_COLORS[selectedStateRecord.classification]?.fill || '#94A3B8' }}
+                      />
+                      <span className="font-display font-bold text-xl text-ink">
+                        {selectedStateRecord.classification || 'Data unavailable'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {selectedStateRecord.classificationRationale && (
+                    <div className="space-y-1.5 p-4 bg-paper rounded-xl border border-line">
+                      <span className="text-xs font-mono font-bold text-ink uppercase tracking-wider block">
+                        Classification Rationale
+                      </span>
+                      <p className="text-xs sm:text-sm text-ink2 leading-relaxed">
+                        {selectedStateRecord.classificationRationale}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Evidence Summary & Right of Response */}
+                <div className="space-y-4">
+                  {selectedStateRecord.evidenceSummary && selectedStateRecord.evidenceSummary.trim() ? (
+                    <div className="space-y-1.5 p-4 bg-paper rounded-xl border border-line">
+                      <span className="text-xs font-mono font-bold text-ink uppercase tracking-wider block">
+                        Evidence Summary
+                      </span>
+                      <p className="text-xs sm:text-sm text-ink2 leading-relaxed">
+                        {selectedStateRecord.evidenceSummary}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {selectedStateRecord.rightOfResponseStatus && selectedStateRecord.rightOfResponseStatus !== 'Not required' && (
+                    <div className="flex items-center justify-between text-xs font-mono bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+                      <span className="text-slate-600 font-semibold">Right of Response:</span>
+                      <span className="font-bold text-brand-blue">
+                        {selectedStateRecord.rightOfResponseStatus}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Interactive State Historical Timeline */}
+              <div className="pt-4 border-t border-line">
+                <DcmTimeline
+                  stateCode={selectedStateMeta.code}
+                  stateName={selectedStateMeta.name}
+                  activePublication={activePublication}
+                  allPublications={publications}
+                  onSelectPublication={(pub) => setSelectedPubId(pub.id)}
+                />
+              </div>
+            </div>
+          ) : (
+            /* All States (Default Mode) Overview Panel */
+            <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+              <div className="border-b border-line pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-mono text-brand-blue uppercase font-bold tracking-wider block">
+                    National View
+                  </span>
+                  <h3 id="dcm-state-section-title" className="font-display font-bold text-xl sm:text-2xl text-ink mt-0.5">
+                    All States Overview
+                  </h3>
+                </div>
+                <span className="text-xs font-mono text-mut">
+                  Default view: all 37 jurisdictions displayed
+                </span>
+              </div>
+
+              <p className="text-sm text-ink2 leading-relaxed">
+                All States mode is active. Click any state on the map or select a state from the <strong>Focus State</strong> dropdown above to view its classification rationale, evidence summary, and historical timeline.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+                <div className="p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-950">
+                  <div className="text-[11px] font-mono font-bold uppercase text-orange-800">Constrained</div>
+                  <div className="font-display font-bold text-xl mt-1">{stateCounts['Constrained']} states</div>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950">
+                  <div className="text-[11px] font-mono font-bold uppercase text-amber-800">Emerging concern</div>
+                  <div className="font-display font-bold text-xl mt-1">{stateCounts['Emerging concern']} states</div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-100 border border-slate-300 text-slate-800">
+                  <div className="text-[11px] font-mono font-bold uppercase text-slate-700">Insufficient evidence</div>
+                  <div className="font-display font-bold text-xl mt-1">{stateCounts['Insufficient evidence']} units</div>
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950">
+                  <div className="text-[11px] font-mono font-bold uppercase text-emerald-800">Open</div>
+                  <div className="font-display font-bold text-xl mt-1">{stateCounts['Open']} states</div>
+                </div>
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-950">
+                  <div className="text-[11px] font-mono font-bold uppercase text-red-800">Severely constrained</div>
+                  <div className="font-display font-bold text-xl mt-1">{stateCounts['Severely constrained']} states</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* =================================================================== */}
+        {/* 5. CHANGES SINCE THE PREVIOUS PUBLICATION                           */}
+        {/* =================================================================== */}
+        <section className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm" aria-labelledby="dcm-changes-title">
+          <div className="border-b border-line pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 id="dcm-changes-title" className="font-display font-bold text-xl sm:text-2xl text-ink">
+                Changes Since the Previous Publication
               </h3>
             </div>
 
             {comparison.hasPrevious && (
               <span className="text-xs font-mono text-mut">
-                Compared against: <strong>{comparison.previousPublication?.reportingPeriodLabel}</strong>
+                Compared against: <strong className="text-ink">{comparison.previousPublication?.reportingPeriodLabel}</strong>
               </span>
             )}
           </div>
@@ -610,13 +603,13 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
           ) : (
             <div className="space-y-4">
               <div className="text-xs font-mono text-ink2">
-                <strong>{comparison.totalChanged} jurisdiction{comparison.totalChanged > 1 ? 's' : ''}</strong> changed classification between <span className="font-bold text-ink">{comparison.previousPublication?.reportingPeriodLabel}</span> and <span className="font-bold text-ink">{activePublication.reportingPeriodLabel}</span>:
+                <strong className="text-ink">{comparison.totalChanged} jurisdiction{comparison.totalChanged > 1 ? 's' : ''}</strong> changed classification between <span className="font-bold text-ink">{comparison.previousPublication?.reportingPeriodLabel}</span> and <span className="font-bold text-ink">{activePublication.reportingPeriodLabel}</span>:
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {comparison.changedStates.map((change) => {
-                  const prevMeta = DCM_COLORS[change.previousClassification];
-                  const newMeta = DCM_COLORS[change.newClassification];
+                  const prevMeta = DCM_COLORS[change.previousClassification] || DCM_COLORS['Insufficient evidence'];
+                  const newMeta = DCM_COLORS[change.newClassification] || DCM_COLORS['Insufficient evidence'];
                   const isCurrentSelected = selectedStateCode === change.stateCode;
 
                   return (
@@ -669,7 +662,7 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Decision Rationale */}
+                      {/* Classification Rationale */}
                       {change.rationale && (
                         <p className="text-xs text-ink2 leading-relaxed border-t border-line/60 pt-2 line-clamp-3">
                           {change.rationale}
@@ -688,17 +681,19 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* 5. "About this publication" Card */}
-        <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+        {/* =================================================================== */}
+        {/* 6. ABOUT THIS PUBLICATION (METADATA & REVISION NOTE)               */}
+        {/* =================================================================== */}
+        <section className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm" aria-labelledby="dcm-about-title">
           <div className="border-b border-line pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue">
-                Publication Metadata &amp; Methodology
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue block">
+                Methodology &amp; Provenance
               </span>
-              <h3 className="font-display font-bold text-xl sm:text-2xl text-ink">
-                About this publication
+              <h3 id="dcm-about-title" className="font-display font-bold text-xl sm:text-2xl text-ink mt-0.5">
+                About This Publication
               </h3>
             </div>
 
@@ -739,53 +734,66 @@ export const DemocraticCompetitivenessMapNative: React.FC = () => {
             </div>
           </div>
 
-          {/* Revision Note */}
+          {/* Revision Note (Only shown if revisionNote is present) */}
           {activePublication.revisionNote && (
             <div className="p-4 bg-slate-50 border border-line rounded-xl text-xs space-y-1">
               <span className="font-mono font-bold text-ink uppercase tracking-wider block">
-                Revision &amp; Audit Note
+                Revision Note
               </span>
               <p className="text-ink2 leading-relaxed font-sans">
                 {activePublication.revisionNote}
               </p>
             </div>
           )}
+        </section>
 
-          {/* Publication Summary */}
-          {activePublication.summary && (
-            <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-ink uppercase tracking-wider block">
+        {/* =================================================================== */}
+        {/* 7. EXECUTIVE ASSESSMENT                                            */}
+        {/* =================================================================== */}
+        {activePublication.summary && (
+          <section className="bg-white border border-line rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm" aria-labelledby="dcm-assessment-title">
+            <div className="border-b border-line pb-4">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue block">
+                Analytical Summary
+              </span>
+              <h3 id="dcm-assessment-title" className="font-display font-bold text-xl sm:text-2xl text-ink mt-0.5">
                 Executive Assessment
-              </span>
-              <p className="text-sm text-ink2 leading-relaxed">
-                {activePublication.summary}
-              </p>
+              </h3>
             </div>
-          )}
+            <p className="text-sm sm:text-base text-ink2 leading-relaxed whitespace-pre-line font-sans">
+              {activePublication.summary}
+            </p>
+          </section>
+        )}
 
-          {/* Request Brief CTA banner */}
-          <div className="p-5 bg-gradient-to-r from-blue-900 to-slate-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-xs font-mono font-bold text-brand-blue uppercase">
-                Official Access Pipeline
-              </span>
-              <h4 className="font-display font-bold text-base text-white">
-                Need the comprehensive evidentiary record and verified incident logs?
-              </h4>
-              <p className="text-xs text-blue-200">
-                Submit an institutional brief request to receive primary source transcripts and forensic data.
-              </p>
-            </div>
+        {/* =================================================================== */}
+        {/* 8. REQUEST THE FULL DCM BRIEF (APPROVED PROMOTIONAL SECTION)        */}
+        {/* =================================================================== */}
+        <section className="bg-gradient-to-r from-navy via-slate-900 to-navy text-white rounded-2xl p-6 sm:p-10 shadow-lg space-y-5 border border-white/10" aria-labelledby="dcm-brief-title">
+          <div className="flex items-center gap-2 text-brand-blue text-xs font-mono font-bold uppercase tracking-widest">
+            <FileText className="w-4 h-4" />
+            <span>Research &amp; Policy Briefs</span>
+          </div>
 
+          <h3 id="dcm-brief-title" className="font-display font-bold text-2xl sm:text-3xl text-white">
+            Request the Full DCM Brief
+          </h3>
+
+          <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+            Receive the full DCM Brief, supporting evidence references, state-level analysis and methodology notes.
+          </p>
+
+          <div className="pt-2">
             <button
               type="button"
               onClick={() => setIsBriefModalOpen(true)}
-              className="px-5 py-2.5 bg-brand-blue hover:bg-brand-blue-dark text-white rounded-lg text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
+              className="px-6 py-3 bg-brand-blue hover:bg-brand-blue-dark text-white rounded-xl text-sm font-bold font-mono uppercase tracking-wider transition-all shadow-md flex items-center gap-2 cursor-pointer"
             >
-              Request Full DCM Brief
+              <span>Request the Full DCM Brief</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        </section>
 
       </div>
 

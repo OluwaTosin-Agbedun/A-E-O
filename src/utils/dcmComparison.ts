@@ -24,7 +24,7 @@ export function compareDcmPublications(
 
   const currentIndex = sorted.findIndex(p => p.id === currentPublication.id);
 
-  if (currentIndex <= 0) {
+  if (currentPublication.isBaseline || currentIndex <= 0) {
     // Baseline publication or not found
     return {
       hasPrevious: false,
@@ -44,6 +44,7 @@ export function compareDcmPublications(
     const currRecord = currentPublication.classifications[code];
 
     if (!prevRecord || !currRecord) continue;
+    if (!prevRecord.classification || !currRecord.classification) continue;
 
     if (prevRecord.classification !== currRecord.classification) {
       let changeType: 'changed' | 'first-classification' | 'returned-to-insufficient' = 'changed';
@@ -89,6 +90,8 @@ export function getStateHistoryAcrossPublications(
   periodIndex: number;
   periodEnd: string;
   classification: string;
+  isBaseline?: boolean;
+  hasExplicitClassification: boolean;
   rationale?: string;
   evidence?: string;
   response?: string;
@@ -98,6 +101,7 @@ export function getStateHistoryAcrossPublications(
 
   return published.map(pub => {
     const record = pub.classifications[stateCode];
+    const hasExplicit = Boolean(record && record.classification);
     return {
       publicationId: pub.id,
       reportingPeriodLabel: pub.reportingPeriodLabel,
@@ -105,7 +109,9 @@ export function getStateHistoryAcrossPublications(
       month: pub.month,
       periodIndex: pub.periodIndex,
       periodEnd: pub.periodEnd,
-      classification: record?.classification || 'Insufficient evidence',
+      isBaseline: pub.isBaseline,
+      classification: hasExplicit ? (record!.classification) : 'Data unavailable',
+      hasExplicitClassification: hasExplicit,
       rationale: record?.classificationRationale,
       evidence: record?.evidenceSummary,
       response: record?.rightOfResponseStatus,

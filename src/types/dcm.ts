@@ -41,6 +41,7 @@ export interface DcmPublication {
   revisionNote?: string;
   status: DcmPublicationStatus;
   isLatest: boolean;
+  isBaseline?: boolean;
   summary: string;
   changesSummary?: string;
   supportingDocumentUrl?: string;

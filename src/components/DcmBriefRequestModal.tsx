@@ -144,7 +144,7 @@ export const DcmBriefRequestModal: React.FC<DcmBriefRequestModalProps> = ({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-xs text-ink2 leading-relaxed">
-                The comprehensive DCM Brief provides verified decision records, evidentiary citations, right-of-response transcripts, and comparative matrix analysis for institutional observers and researchers.
+                The comprehensive DCM Brief provides verified decision records, supporting evidence references, state-level analysis and methodology notes for institutional observers and researchers.
               </p>
 
               {error && (

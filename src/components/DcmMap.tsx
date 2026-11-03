@@ -53,8 +53,10 @@ export const DcmMap: React.FC<DcmMapProps> = ({
           {/* Map State Paths for All 36 States and FCT */}
           {NIGERIA_ACCURATE_STATE_PATHS.map((st) => {
             const stateRecord = publication.classifications[st.code];
-            const classification: DcmClassification = stateRecord?.classification || 'Insufficient evidence';
-            const colorMeta = DCM_COLORS[classification] || DCM_COLORS['Insufficient evidence'];
+            const hasExplicitClassification = Boolean(stateRecord && stateRecord.classification);
+            const classification = hasExplicitClassification ? stateRecord.classification : null;
+            const isUnavailable = !hasExplicitClassification || !DCM_COLORS[classification!];
+            const colorMeta = !isUnavailable ? DCM_COLORS[classification!] : null;
             
             const isSelected = selectedStateCode === st.code;
             const isHovered = hoveredState?.code === st.code;
@@ -69,6 +71,10 @@ export const DcmMap: React.FC<DcmMapProps> = ({
             const isCompactState = ['LA', 'FC', 'EK', 'OS', 'IM', 'AB', 'AN', 'EB'].includes(st.code);
             const fontSize = isCompactState ? '8.5px' : '10.5px';
 
+            const accessibleLabel = isUnavailable
+              ? `${st.name} — Classification data unavailable — Reporting period ${publication.reportingPeriodLabel}`
+              : `${st.name} — ${classification} — Reporting period ${publication.reportingPeriodLabel}`;
+
             return (
               <g
                 key={st.code}
@@ -78,7 +84,7 @@ export const DcmMap: React.FC<DcmMapProps> = ({
                 className="cursor-pointer transition-all duration-200 outline-none group"
                 tabIndex={0}
                 role="button"
-                aria-label={`${st.name} — ${classification} — Reporting period ${publication.reportingPeriodLabel}`}
+                aria-label={accessibleLabel}
                 aria-pressed={isSelected}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -90,13 +96,13 @@ export const DcmMap: React.FC<DcmMapProps> = ({
                 {/* Real Geographic State Boundary Path */}
                 <path
                   d={st.path}
-                  fill={colorMeta.fill}
+                  fill={isUnavailable ? '#E2E8F0' : colorMeta!.fill}
                   opacity={stateOpacity}
-                  stroke={isSelected ? '#0F172A' : isChanged ? '#1E3A5F' : '#FFFFFF'}
+                  stroke={isSelected ? '#0F172A' : isChanged ? '#1E3A5F' : isUnavailable ? '#94A3B8' : '#FFFFFF'}
                   strokeWidth={isSelected ? 3.5 : isChanged ? 2.5 : 1.2}
                   strokeLinejoin="round"
                   strokeLinecap="round"
-                  strokeDasharray={isChanged && !isSelected ? '5,2.5' : undefined}
+                  strokeDasharray={isUnavailable ? '3,2' : (isChanged && !isSelected ? '5,2.5' : undefined)}
                   className="transition-all duration-200 hover:brightness-105"
                   style={{
                     filter: isSelected 
@@ -165,16 +171,27 @@ export const DcmMap: React.FC<DcmMapProps> = ({
               )}
             </div>
             <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-white/10">
-              <span
-                className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-xs"
-                style={{
-                  backgroundColor:
-                    DCM_COLORS[publication.classifications[hoveredState.code]?.classification || 'Insufficient evidence']?.fill
-                }}
-              />
-              <span className="text-slate-100 font-semibold font-sans">
-                {publication.classifications[hoveredState.code]?.classification || 'Insufficient evidence'}
-              </span>
+              {publication.classifications[hoveredState.code]?.classification ? (
+                <>
+                  <span
+                    className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-xs"
+                    style={{
+                      backgroundColor:
+                        DCM_COLORS[publication.classifications[hoveredState.code]?.classification]?.fill || '#94A3B8'
+                    }}
+                  />
+                  <span className="text-slate-100 font-semibold font-sans">
+                    {publication.classifications[hoveredState.code]?.classification}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0 bg-slate-400 border border-slate-300" />
+                  <span className="text-slate-300 italic font-sans">
+                    Classification data unavailable
+                  </span>
+                </>
+              )}
             </div>
             {publication.classifications[hoveredState.code]?.classificationRationale && (
               <p className="text-[11px] text-slate-300 mt-1 font-sans line-clamp-2 leading-relaxed">

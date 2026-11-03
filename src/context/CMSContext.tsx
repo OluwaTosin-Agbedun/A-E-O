@@ -365,8 +365,9 @@ export function CMSProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Sync individual PDF and Image documents from Firestore if main array included reference placeholders
+  // Sync individual PDF and Image documents from Firestore once live data is connected
   useEffect(() => {
+    if (!dataLoaded) return;
     let cancelled = false;
 
     const hydrateAssets = async () => {
@@ -374,15 +375,23 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       for (const r of reports) {
         if (cancelled) return;
         if (r.id && r.pdfUrl && r.pdfUrl.startsWith('ref:')) {
-          const fullPdf = await loadAssetFromFirestore('pdf', r.pdfUrl);
-          if (fullPdf && !cancelled) {
-            setReports(prev => prev.map(item => item.id === r.id ? { ...item, pdfUrl: fullPdf } : item));
+          try {
+            const fullPdf = await loadAssetFromFirestore('pdf', r.pdfUrl);
+            if (fullPdf && !cancelled) {
+              setReports(prev => prev.map(item => item.id === r.id ? { ...item, pdfUrl: fullPdf } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate PDF for ${r.id}:`, e);
           }
         }
         if (r.id && r.image && r.image.startsWith('ref:')) {
-          const fullImg = await loadAssetFromFirestore('img', r.image);
-          if (fullImg && !cancelled) {
-            setReports(prev => prev.map(item => item.id === r.id ? { ...item, image: fullImg } : item));
+          try {
+            const fullImg = await loadAssetFromFirestore('img', r.image);
+            if (fullImg && !cancelled) {
+              setReports(prev => prev.map(item => item.id === r.id ? { ...item, image: fullImg } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate image for ${r.id}:`, e);
           }
         }
       }
@@ -391,15 +400,23 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       for (const w of weekly) {
         if (cancelled) return;
         if (w.id && w.pdfUrl && w.pdfUrl.startsWith('ref:')) {
-          const fullPdf = await loadAssetFromFirestore('pdf', w.pdfUrl);
-          if (fullPdf && !cancelled) {
-            setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, pdfUrl: fullPdf } : item));
+          try {
+            const fullPdf = await loadAssetFromFirestore('pdf', w.pdfUrl);
+            if (fullPdf && !cancelled) {
+              setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, pdfUrl: fullPdf } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate weekly PDF for ${w.id}:`, e);
           }
         }
         if (w.id && w.image && w.image.startsWith('ref:')) {
-          const fullImg = await loadAssetFromFirestore('img', w.image);
-          if (fullImg && !cancelled) {
-            setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, image: fullImg } : item));
+          try {
+            const fullImg = await loadAssetFromFirestore('img', w.image);
+            if (fullImg && !cancelled) {
+              setWeekly(prev => prev.map(item => item.id === w.id ? { ...item, image: fullImg } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate weekly image for ${w.id}:`, e);
           }
         }
       }
@@ -408,15 +425,23 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       for (const a of announcements) {
         if (cancelled) return;
         if (a.id && a.pdfUrl && a.pdfUrl.startsWith('ref:')) {
-          const fullPdf = await loadAssetFromFirestore('pdf', a.pdfUrl);
-          if (fullPdf && !cancelled) {
-            setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, pdfUrl: fullPdf } : item));
+          try {
+            const fullPdf = await loadAssetFromFirestore('pdf', a.pdfUrl);
+            if (fullPdf && !cancelled) {
+              setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, pdfUrl: fullPdf } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate announcement PDF for ${a.id}:`, e);
           }
         }
         if (a.id && a.image && a.image.startsWith('ref:')) {
-          const fullImg = await loadAssetFromFirestore('img', a.image);
-          if (fullImg && !cancelled) {
-            setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, image: fullImg } : item));
+          try {
+            const fullImg = await loadAssetFromFirestore('img', a.image);
+            if (fullImg && !cancelled) {
+              setAnnouncements(prev => prev.map(item => item.id === a.id ? { ...item, image: fullImg } : item));
+            }
+          } catch (e) {
+            console.warn(`Could not hydrate announcement image for ${a.id}:`, e);
           }
         }
       }
@@ -428,6 +453,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [
+    dataLoaded,
     reports.map(r => r.id + (r.pdfUrl ? r.pdfUrl.substring(0, 8) : '') + (r.image ? r.image.substring(0, 8) : '')).join(','),
     weekly.map(w => w.id + (w.pdfUrl ? w.pdfUrl.substring(0, 8) : '') + (w.image ? w.image.substring(0, 8) : '')).join(','),
     announcements.map(a => a.id + (a.pdfUrl ? a.pdfUrl.substring(0, 8) : '') + (a.image ? a.image.substring(0, 8) : '')).join(',')
@@ -1134,6 +1160,7 @@ export function CMSProvider({ children }: { children: ReactNode }) {
       return { success: false, message: e?.message || 'Failed to parse or validate JSON backup file.' };
     }
   };
+
 
   return (
     <CMSContext.Provider value={{
